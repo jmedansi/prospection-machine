@@ -1,0 +1,10 @@
+.env
+*.json
+!requirements.txt
+errors.log
+debug_out.txt
+cles_api_sauvegarde.txt
+__pycache__/
+*.pyc
+.vscode/
+.idea/
