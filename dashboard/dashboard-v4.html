@@ -692,6 +692,7 @@
                     <div class="fgr"><label class="fl">Mot-clé / Secteur</label><input type="text" id="modal-keyword" value="restaurant" placeholder="restaurant, avocat..."></div>
                     <div class="fgr"><label class="fl">Ville</label><input type="text" id="modal-city" value="" placeholder="Paris, Lyon..."></div>
                     <div class="fgr"><label class="fl">Nombre de leads</label><input type="number" id="modal-limit" value="20" min="1" max="500"></div>
+                    <div class="fgr"><label class="fl">Emails min. à trouver</label><input type="number" id="modal-min-emails" value="" placeholder="ex: 5" min="0"></div>
                 </div>
                 <div class="cg" style="margin-top:10px">
                     <label class="ci"><input type="checkbox" id="modal-multi-zone" checked> Multi-zones</label>
@@ -1222,10 +1223,21 @@
             const keyword = document.getElementById('modal-keyword').value;
             const city = document.getElementById('modal-city').value;
             const limit = document.getElementById('modal-limit').value;
+            const minEmails = document.getElementById('modal-min-emails').value;
             
             document.getElementById('keyword').value = keyword;
             document.getElementById('city').value = city;
             document.getElementById('limit').value = limit;
+            
+            // Créer ou mettre à jour le champ min-emails
+            let minEmailsEl = document.getElementById('min-emails');
+            if (!minEmailsEl) {
+                minEmailsEl = document.createElement('input');
+                minEmailsEl.id = 'min-emails';
+                minEmailsEl.type = 'hidden';
+                document.querySelector('#pg-collecte form')?.appendChild(minEmailsEl);
+            }
+            minEmailsEl.value = minEmails;
             
             closeModal('modal-scraper');
             launchScraper();
