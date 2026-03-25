@@ -1698,7 +1698,7 @@ function pollAuditCompletion(leadId, attempts) {
             fetch('/api/audit/launch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lead_ids: [nom] })
+                body: JSON.stringify({ lead_names: [nom] })
             })
             .then(r => r.json())
             .then(data => {

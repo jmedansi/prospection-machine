@@ -1324,9 +1324,12 @@ def api_audit_launch():
         cmd = [sys.executable, '-u', os.path.join(ROOT, 'auditeur', 'main.py')]
 
         # Pré-remplir total depuis le nombre de leads demandés
-        if lead_ids:
+        if lead_names:
+            _audit_job['total'] = len(lead_names)
+            cmd.extend(['--leads'] + lead_names)
+        elif lead_ids:
             _audit_job['total'] = len(lead_ids)
-            cmd.extend(['--leads'] + lead_ids)
+            cmd.extend(['--ids'] + [str(x) for x in lead_ids])
         elif limit:
             _audit_job['total'] = limit
             cmd.extend(['--limit', str(limit)])
