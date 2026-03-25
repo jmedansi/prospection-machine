@@ -856,8 +856,17 @@
                     _campaignData = d.leads;
                     syncAllLeads();
                     renderCampaignTable(d.leads);
+                    // Afficher le total et avertir si > 100
+                    const total = d.total || 0;
+                    const countEl = document.getElementById('campaign-count');
+                    if (total > 100) {
+                        countEl.innerHTML = `<span style="color:var(--warning)">${d.leads.length} / ${total} leads</span> <span style="font-size:12px;color:var(--ink3)">(limite 100, paginez pour voir plus)</span>`;
+                    } else {
+                        countEl.textContent = total + ' leads';
+                    }
                 } else {
                     document.getElementById('tbody-campaign').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem">Aucun lead trouvé</td></tr>';
+                    document.getElementById('campaign-count').textContent = '0 leads';
                 }
             } catch(e) { console.error('loadCampaignTable:', e); }
         }
@@ -903,7 +912,7 @@
             }).join('');
             
             document.getElementById('tbody-campaign').innerHTML = rows || '<tr><td colspan="9" style="text-align:center;padding:2rem">Aucun lead</td></tr>';
-            document.getElementById('campaign-count').textContent = filtered.length + ' leads';
+            // Le total est géré par loadCampaignTable pour éviter les dupplications
         }
         
         function getStatusBadge(statut) {
