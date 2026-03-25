@@ -181,6 +181,7 @@ async function refreshAll() {
     await Promise.all([
         typeof loadCollectes === 'function' ? loadCollectes() : Promise.resolve(),
         typeof loadCampaigns === 'function' ? loadCampaigns() : Promise.resolve(),
+        typeof loadSectors === 'function' ? loadSectors() : Promise.resolve(),
         loadStats(),
         typeof loadLeads === 'function' ? loadLeads() : Promise.resolve(),
         typeof loadEmails === 'function' ? loadEmails() : Promise.resolve(),

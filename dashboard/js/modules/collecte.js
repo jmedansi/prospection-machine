@@ -240,6 +240,49 @@ async function loadCampaigns() {
     } catch (e) { console.error('loadCampaigns:', e); }
 }
 
+async function loadSectors() {
+    try {
+        const r = await fetch('/api/campaigns');
+        const d = await r.json();
+        if (d.error) return;
+        
+        const sectors = [...new Set(d.campaigns.map(c => c.secteur || '').filter(s => s))];
+        
+        const select = document.getElementById('global-sector-select');
+        if (select) {
+            let html = '<option value="">Tous secteurs</option>';
+            sectors.forEach(s => {
+                html += `<option value="${escHtml(s)}">${escHtml(s)}</option>`;
+            });
+            select.innerHTML = html;
+        }
+    } catch (e) { console.error('loadSectors:', e); }
+}
+
+async function loadCampaignsForSector(sector) {
+    const select = document.getElementById('global-campaign-select');
+    if (!sector) {
+        loadCampaigns();
+        return;
+    }
+    try {
+        const r = await fetch('/api/campaigns');
+        const d = await r.json();
+        if (d.error) return;
+        
+        const filtered = d.campaigns.filter(c => c.secteur === sector);
+        
+        if (select) {
+            let html = '<option value="">Toutes les campagnes</option>';
+            filtered.forEach(c => {
+                const campName = c.nom || (c.secteur && c.ville ? `${c.secteur} ${c.ville}` : 'Campagne ' + c.id);
+                html += `<option value="${c.id}">${escHtml(campName)}</option>`;
+            });
+            select.innerHTML = html;
+        }
+    } catch (e) { console.error('loadCampaignsForSector:', e); }
+}
+
 async function deleteCampaign(id, name) {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer la campagne "${name}" ?\nLes leads ne seront pas supprimés mais ne seront plus associés à cette campagne.`)) return;
     try {

@@ -382,6 +382,12 @@
                 <div class="pt" id="PT">Cockpit</div>
                 <div class="tr">
                     <div style="display:flex;align-items:center;gap:8px;margin-right:15px;padding-right:15px;border-right:1px solid var(--border)">
+                        <span style="font-size:11px;font-weight:600;color:var(--ink3)">Secteur:</span>
+                        <select id="global-sector-select" style="font-size:14px;padding:8px 12px;width:140px" onchange="loadCampaignsForSector(this.value)">
+                            <option value="">Tous secteurs</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-right:15px;padding-right:15px;border-right:1px solid var(--border)">
                         <span style="font-size:11px;font-weight:600;color:var(--ink3)">Campagne:</span>
                         <select id="global-campaign-select" style="font-size:14px;padding:8px 12px;width:200px" onchange="changeGlobalCampaign(this.value)">
                             <option value="">Toutes les campagnes</option>
