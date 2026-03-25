@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT BEAUTÉ 1 : #c9a0a0 (rose poudré)
+  Python remplace '#c9a0a0'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}}
+              {{TYPE_SALON}} ex: "Coiffure · Soin · Beauté"
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Jost',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600&q=90') center/cover no-repeat;
+  animation:zoomin 10s ease-out forwards;
+}
+@keyframes zoomin{from{transform:scale(1.06)}to{transform:scale(1)}}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to top,
+      rgba(12,6,8,.97) 0%,
+      rgba(12,6,8,.88) 30%,
+      rgba(12,6,8,.60) 55%,
+      rgba(12,6,8,.25) 75%,
+      rgba(12,6,8,.05) 92%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(12,6,8,.45) 0%,
+      transparent 55%
+    );
+}
+
+/* Particule décorative */
+.hero-deco{
+  position:absolute;right:4rem;top:50%;transform:translateY(-50%);
+  z-index:3;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  opacity:.35;
+}
+.deco-line{width:1px;height:80px;background:linear-gradient(to bottom,transparent,#c9a0a0,transparent)}
+.deco-diamond{
+  width:8px;height:8px;background:#c9a0a0;
+  transform:rotate(45deg);flex-shrink:0;
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3rem;
+}
+
+.nav-logo-img{height:36px;width:auto;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.5rem;font-weight:400;color:#fff;
+  text-decoration:none;letter-spacing:.06em;
+  font-style:italic;
+}
+.nav-logo-text span{font-style:normal;color:#c9a0a0}
+
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{
+  font-size:.7rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#c9a0a0}
+
+.nav-rdv{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.58rem 1.5rem;
+  border:1px solid rgba(201,160,160,.4);
+  color:#c9a0a0;
+  font-size:.7rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;
+  border-radius:1px;text-decoration:none;transition:all .25s;
+}
+.nav-rdv:hover{background:#c9a0a0;color:#0c0608;border-color:#c9a0a0}
+
+/* ── CONTENU ── */
+.hero-content{
+  position:relative;z-index:5;
+  padding:0 3rem 5rem;
+  max-width:760px;
+}
+
+.hero-tag{
+  display:inline-flex;align-items:center;gap:.875rem;
+  margin-bottom:1.75rem;
+}
+.tag-ornament{color:#c9a0a0;font-size:.9rem;opacity:.8}
+.tag-text{
+  font-size:.68rem;font-weight:400;letter-spacing:.24em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);
+}
+
+.hero-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(3.2rem,7vw,6rem);
+  font-weight:300;line-height:1.0;
+  color:#fff;margin-bottom:1.5rem;
+  text-shadow:0 2px 24px rgba(0,0,0,.5);
+}
+.hero-title em{
+  font-style:italic;color:#c9a0a0;display:block;
+}
+.hero-title strong{font-weight:600;display:block}
+
+.hero-divider{
+  display:flex;align-items:center;gap:1rem;margin:1.5rem 0;
+}
+.div-line{flex:1;height:1px;background:rgba(255,255,255,.1);max-width:60px}
+.div-text{
+  font-size:.65rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);
+}
+
+.hero-desc{
+  font-size:.92rem;font-weight:300;
+  color:rgba(255,255,255,.62);
+  line-height:1.95;max-width:480px;
+  margin-bottom:2.25rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-services{
+  display:flex;gap:.75rem;flex-wrap:wrap;
+  margin-bottom:2.5rem;
+}
+.srv{
+  font-size:.65rem;font-weight:400;letter-spacing:.12em;text-transform:uppercase;
+  padding:.3rem .875rem;
+  background:rgba(201,160,160,.08);
+  border:1px solid rgba(201,160,160,.22);
+  color:rgba(255,255,255,.65);
+  border-radius:20px;
+}
+
+.hero-ctas{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
+
+.btn-rdv{
+  display:inline-block;
+  padding:.9rem 2.25rem;
+  background:#c9a0a0;color:#0c0608;
+  font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;
+  box-shadow:0 4px 20px rgba(201,160,160,.3);
+}
+.btn-rdv:hover{background:#fff;color:#0c0608;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+
+.btn-tel{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.82rem;font-weight:300;
+  color:rgba(255,255,255,.72);text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:1px;
+  transition:color .2s;
+}
+.btn-tel:hover{color:#fff;border-bottom-color:#fff}
+
+/* Stats droite bas */
+.hero-stats{
+  position:absolute;bottom:0;right:0;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.08);
+  border-left:1px solid rgba(255,255,255,.08);
+}
+.stat-block{
+  padding:1rem 1.75rem;text-align:center;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.stat-block:last-child{border-right:none}
+.stat-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.8rem;font-weight:400;color:#fff;
+  display:block;line-height:1;
+}
+.stat-label{
+  font-size:.62rem;font-weight:400;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);display:block;margin-top:.3rem;
+}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#fdf5f5,#f5e8e8);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:2.8rem;color:#200e10;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#5a3a3a;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:180px;height:120px;background:#e8d0d0;border-radius:4px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.65rem;font-weight:400;letter-spacing:.24em;text-transform:uppercase;color:#c9a0a0}
+.preview-msg{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.9rem;font-style:italic;font-weight:300;
+  color:#200e10;text-align:center;max-width:400px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#200e10;color:#fff;
+  font-size:.72rem;font-weight:400;letter-spacing:.16em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#c9a0a0;color:#0c0608;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-content{padding:0 1.5rem 3rem}
+  .hero-stats,.hero-deco{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-deco">
+    <div class="deco-line"></div>
+    <div class="deco-diamond"></div>
+    <div class="deco-line"></div>
+  </div>
+
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text"><span>✦</span> {{NOM_ENTREPRISE}}</a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Services</a></li>
+      <li><a href="#">L'équipe</a></li>
+      <li><a href="#">Tarifs</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <a href="#" class="nav-rdv">Prendre RDV</a>
+  </nav>
+
+  <div class="hero-content">
+    <div class="hero-tag">
+      <span class="tag-ornament">✦</span>
+      <span class="tag-text">{{TYPE_SALON}} · {{VILLE}}</span>
+    </div>
+    <h1 class="hero-title">
+      <em>La beauté</em>
+      <strong>sublimée,</strong>
+      à {{VILLE}}.
+    </h1>
+    <div class="hero-divider">
+      <div class="div-line"></div>
+      <span class="div-text">{{TYPE_SALON}}</span>
+      <div class="div-line"></div>
+    </div>
+    <p class="hero-desc">
+      {{NOM_ENTREPRISE}} est l'adresse des femmes et hommes
+      qui exigent l'excellence. Un cadre raffiné, des experts
+      passionnés, une expérience inoubliable à {{VILLE}}.
+    </p>
+    <div class="hero-services">
+      <span class="srv">Coiffure</span>
+      <span class="srv">Soins visage</span>
+      <span class="srv">Manucure</span>
+      <span class="srv">Maquillage</span>
+      <span class="srv">Épilation</span>
+    </div>
+    <div class="hero-ctas">
+      <a href="#" class="btn-rdv">Réserver maintenant</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-tel">📞 {{TELEPHONE}}</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-block">
+      <span class="stat-num">{{NB_AVIS}}</span>
+      <span class="stat-label">Avis Google</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">4.9★</span>
+      <span class="stat-label">Note moyenne</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">100%</span>
+      <span class="stat-label">Satisfaits</span>
+    </div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos prestations</h2>
+    <p>Coiffure, soins, maquillage... Chaque prestation est réalisée avec les meilleurs produits par des experts passionnés.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Découvrez toutes nos prestations"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Prendre RDV — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/*
+  VARIABLES REMPLACÉES PAR LE PIPELINE PYTHON :
+  {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}} {{ADRESSE}}
+  {{NB_AVIS}} {{ANNEE_CREATION}} {{SECTEUR_TAGLINE}} {{LOGO_URL}}
+
+  COULEUR : Python remplace directement '#d4822a' dans le CSS
+  Valeur par défaut = #d4822a (cuivre chaud restaurant)
+*/
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Lato',sans-serif;overflow-x:hidden}
+
+/* ── HERO ── */
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;align-items:center;
+  overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&q=90') center/cover no-repeat;
+}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(
+    to right,
+    rgba(15,10,5,.95) 0%,
+    rgba(15,10,5,.80) 38%,
+    rgba(15,10,5,.40) 65%,
+    rgba(15,10,5,.12) 100%
+  );
+}
+
+.hero-grain{
+  position:absolute;inset:0;opacity:.04;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3.5rem;
+}
+
+.nav-brand{display:flex;align-items:center;gap:.875rem}
+
+/* Logo image — affiché si logo disponible */
+.nav-logo-img{
+  height:38px;width:auto;object-fit:contain;
+  filter:brightness(0) invert(1);
+  display:none; /* Python → display:block si logo dispo */
+}
+
+/* Nom + tagline texte — affiché par défaut */
+.nav-brand-text{
+  /* Python → display:none si logo dispo */
+}
+.nav-name{
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem;font-weight:700;color:#fff;letter-spacing:.02em;
+  text-decoration:none;display:block;
+}
+.nav-tagline{
+  font-size:.62rem;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:#d4822a; /* couleur accent */
+  display:block;margin-top:2px;
+}
+
+.nav-right{display:flex;align-items:center;gap:2rem}
+
+.nav-links{
+  display:flex;gap:2rem;list-style:none;
+}
+.nav-links a{
+  font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#fff}
+
+/* Bouton téléphone nav — couleur solide */
+.nav-tel{
+  display:inline-block;
+  padding:.58rem 1.5rem;
+  background:#d4822a; /* couleur accent */
+  color:#fff;
+  font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;
+  transition:all .2s;
+  white-space:nowrap;
+}
+.nav-tel:hover{background:#fff;color:#0f0a05}
+
+/* ── CONTENU ── */
+.hero-inner{
+  position:relative;z-index:5;
+  padding:0 3.5rem;
+  max-width:680px;
+}
+
+.hero-eyebrow{
+  display:flex;align-items:center;gap:1rem;margin-bottom:1.75rem;
+}
+.eyebrow-line{
+  width:36px;height:1.5px;
+  background:#d4822a; /* couleur accent */
+  flex-shrink:0;
+}
+.eyebrow-text{
+  font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:#d4822a; /* couleur accent */
+}
+
+.hero-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(3rem,6.5vw,5.2rem);
+  font-weight:900;line-height:1.0;
+  color:#fff;margin-bottom:.75rem;
+}
+.hero-title .line-italic{
+  font-weight:400;font-style:italic;
+  color:rgba(255,255,255,.72);display:block;
+}
+.hero-title .line-accent{
+  color:#d4822a; /* couleur accent */
+  display:block;
+}
+
+.hero-divider{
+  width:56px;height:2px;
+  background:#d4822a; /* couleur accent */
+  margin:1.75rem 0;
+}
+
+.hero-desc{
+  font-size:.98rem;font-weight:300;
+  color:rgba(255,255,255,.58);
+  line-height:1.9;max-width:420px;
+  margin-bottom:2.5rem;
+}
+
+.hero-ctas{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+
+/* Bouton principal blanc — toujours lisible */
+.cta-primary{
+  display:inline-block;
+  padding:.92rem 2.5rem;
+  background:#fff;color:#0f0a05;
+  font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;
+  transition:all .25s;
+}
+.cta-primary:hover{
+  background:#d4822a;color:#fff; /* couleur accent */
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+
+/* Bouton secondaire — bordure simple */
+.cta-secondary{
+  display:inline-block;
+  padding:.92rem 2rem;
+  border:1.5px solid rgba(255,255,255,.28);
+  color:rgba(255,255,255,.8);
+  font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;
+  transition:all .25s;
+}
+.cta-secondary:hover{border-color:#fff;color:#fff}
+
+/* ── BADGE FLOTTANT ── */
+.hero-badge{
+  position:absolute;right:4rem;top:50%;transform:translateY(-50%);
+  z-index:5;
+  display:flex;flex-direction:column;align-items:center;gap:1.25rem;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(10px);
+  padding:1.75rem 1.5rem;border-radius:4px;
+  text-align:center;
+}
+.badge-item{display:flex;flex-direction:column;align-items:center}
+.badge-num{
+  font-family:'Playfair Display',serif;
+  font-size:2rem;font-weight:700;color:#fff;line-height:1;
+}
+.badge-label{
+  font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.4);margin-top:.3rem;
+}
+.badge-sep{width:22px;height:1px;background:rgba(255,255,255,.15)}
+
+/* ── BARRE BAS ── */
+.hero-bottom{
+  position:absolute;bottom:0;left:0;right:0;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.bottom-item{
+  flex:1;padding:.9rem 1.75rem;
+  display:flex;align-items:center;gap:.75rem;
+  border-right:1px solid rgba(255,255,255,.08);
+  transition:background .2s;
+}
+.bottom-item:last-child{border-right:none}
+.bottom-item:hover{background:rgba(255,255,255,.05)}
+.bottom-icon{font-size:.95rem;opacity:.65;flex-shrink:0}
+.bottom-strong{
+  display:block;
+  color:rgba(255,255,255,.8);font-size:.8rem;font-weight:700;
+}
+.bottom-small{
+  color:rgba(255,255,255,.45);font-size:.73rem;
+}
+
+/* ── SCROLL ── */
+.scroll-indicator{
+  position:absolute;left:3.5rem;bottom:5rem;z-index:5;
+  display:flex;flex-direction:column;align-items:center;gap:.75rem;
+  animation:scr 2.5s ease-in-out infinite;
+}
+@keyframes scr{
+  0%,100%{transform:translateY(0);opacity:.4}
+  50%{transform:translateY(8px);opacity:.8}
+}
+.scroll-text{
+  font-size:.62rem;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:rgba(255,255,255,.4);
+  writing-mode:vertical-lr;
+}
+.scroll-arrow{
+  width:1px;height:36px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.5),transparent);
+}
+
+/* ── SUITE FLOUE ── */
+.page-preview{
+  height:100vh;background:#faf8f4;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-content{
+  filter:blur(7px);opacity:.32;
+  pointer-events:none;user-select:none;
+  text-align:center;padding:0 2rem;
+}
+.preview-content h2{
+  font-family:'Playfair Display',serif;
+  font-size:2.6rem;font-weight:700;color:#2a1810;margin-bottom:1rem;
+}
+.preview-content p{font-size:.9rem;color:#5a4030;line-height:1.8;max-width:440px;margin:0 auto}
+.preview-items{display:flex;gap:1.5rem;margin-top:1.5rem;justify-content:center}
+.preview-item{width:170px;height:100px;background:#e8e0d0;border-radius:3px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{
+  font-size:.68rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:#d4822a; /* couleur accent */
+}
+.preview-title{
+  font-family:'Playfair Display',serif;
+  font-size:1.8rem;font-weight:700;font-style:italic;
+  color:#2a1810;text-align:center;max-width:360px;line-height:1.3;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;
+  background:#2a1810;color:#fff;
+  font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;
+  transition:all .25s;
+}
+.preview-cta:hover{background:#d4822a;transform:translateY(-2px)} /* couleur accent */
+
+/* MOBILE */
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-inner{padding:0 1.5rem}
+  .hero-badge{display:none}
+  .hero-bottom{display:none}
+  .scroll-indicator{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-grain"></div>
+
+  <nav>
+    <div class="nav-brand">
+      <!--
+        PIPELINE PYTHON — logique logo/nom :
+        SI logo_url disponible :
+          .nav-logo-img  → display:block
+          .nav-brand-text → display:none
+        SINON :
+          .nav-logo-img  → display:none (déjà par défaut)
+          .nav-brand-text → display:block (déjà par défaut)
+      -->
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <div class="nav-brand-text">
+        <a href="#" class="nav-name">{{NOM_ENTREPRISE}}</a>
+        <span class="nav-tagline">Restaurant · {{VILLE}}</span>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <ul class="nav-links">
+        <li><a href="#">La carte</a></li>
+        <li><a href="#">Notre histoire</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+      <a href="tel:{{TELEPHONE}}" class="nav-tel">📞 {{TELEPHONE}}</a>
+    </div>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <div class="eyebrow-line"></div>
+      <div class="eyebrow-text">{{VILLE}} · Cuisine authentique</div>
+    </div>
+
+    <h1 class="hero-title">
+      {{NOM_ENTREPRISE}}
+      <span class="line-italic">une table</span>
+      <span class="line-accent">inoubliable.</span>
+    </h1>
+
+    <div class="hero-divider"></div>
+
+    <p class="hero-desc">
+      Chaque assiette est une invitation.
+      Des produits choisis, une cuisine qui vous ressemble,
+      une adresse que vous garderez secrète.
+    </p>
+
+    <div class="hero-ctas">
+      <a href="#" class="cta-primary">Réserver une table</a>
+      <a href="tel:{{TELEPHONE}}" class="cta-secondary">📞 Nous appeler</a>
+    </div>
+  </div>
+
+  <div class="hero-badge">
+    <div class="badge-item">
+      <div class="badge-num">4.8</div>
+      <div class="badge-label">Note Google</div>
+    </div>
+    <div class="badge-sep"></div>
+    <div class="badge-item">
+      <div class="badge-num">{{NB_AVIS}}</div>
+      <div class="badge-label">Avis clients</div>
+    </div>
+    <div class="badge-sep"></div>
+    <div class="badge-item">
+      <div class="badge-num">★★★★★</div>
+      <div class="badge-label">Recommandé</div>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="bottom-item">
+      <span class="bottom-icon">📍</span>
+      <div>
+        <span class="bottom-strong">{{ADRESSE}}</span>
+        <span class="bottom-small">{{VILLE}}</span>
+      </div>
+    </div>
+    <div class="bottom-item">
+      <span class="bottom-icon">🕐</span>
+      <div>
+        <span class="bottom-strong">Ouvert 7j/7</span>
+        <span class="bottom-small">Midi &amp; Soir</span>
+      </div>
+    </div>
+    <div class="bottom-item">
+      <span class="bottom-icon">📞</span>
+      <div>
+        <span class="bottom-strong">{{TELEPHONE}}</span>
+        <span class="bottom-small">Réservation directe</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-text">Découvrir</div>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- Suite floue — crée l'envie sans révéler -->
+<div class="page-preview">
+  <div class="preview-content">
+    <h2>Notre carte du moment</h2>
+    <p>Des recettes transmises, revisitées avec les meilleurs produits de saison. Une cuisine qui parle à votre mémoire.</p>
+    <div class="preview-items">
+      <div class="preview-item"></div>
+      <div class="preview-item"></div>
+      <div class="preview-item"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-title">
+      Découvrez tout ce que<br>{{NOM_ENTREPRISE}} a à offrir
+    </div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">
+      Contactez-nous — {{TELEPHONE}}
+    </a>
+  </div>
+</div>
+
+<script>
+/*
+  PIPELINE PYTHON — instructions de remplacement :
+
+  1. Variables texte :
+     html.replace('{{NOM_ENTREPRISE}}', lead['nom'])
+     html.replace('{{VILLE}}', lead['ville'])
+     html.replace('{{TELEPHONE}}', lead['telephone'] or '')
+     html.replace('{{ADRESSE}}', lead['adresse'] or '')
+     html.replace('{{NB_AVIS}}', str(lead['reviews_count']))
+     html.replace('{{ANNEE_CREATION}}', '2010')
+
+  2. Couleur accent (remplacer la valeur hex en dur) :
+     html.replace('#d4822a', couleur_par_secteur[secteur])
+
+  3. Logo vs nom :
+     if lead['logo_url']:
+       html = html.replace('display:none; /✱ Python → display:block si logo dispo ✱/', 'display:block;')
+       html = html.replace('{{LOGO_URL}}', lead['logo_url'])
+     else:
+       # Laisser tel quel — nav-logo-img reste display:none par défaut
+
+  4. Screenshot avec Playwright :
+     page.set_content(html)
+     page.wait_for_load_state('networkidle')
+     page.screenshot(path=f'mockups/{nom}.png', full_page=False)
+*/
+
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t)t.scrollIntoView({behavior:'smooth'});
+  });
+});
+</script>
+</body>
+</html>

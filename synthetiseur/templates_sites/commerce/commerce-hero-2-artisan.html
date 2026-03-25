@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT COMMERCE 2 : #2a9d8f (vert menthe frais)
+  Python remplace '#2a9d8f'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}} {{TYPE_COMMERCE}}
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Outfit',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;align-items:center;overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1542838132-92c53300491e?w=1600&q=90') center/cover no-repeat;
+}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(5,25,20,.97) 0%,
+      rgba(5,25,20,.86) 40%,
+      rgba(5,25,20,.52) 65%,
+      rgba(5,25,20,.15) 100%
+    ),
+    linear-gradient(
+      to top,
+      rgba(5,25,20,.65) 0%,
+      transparent 50%
+    );
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3rem;
+}
+
+.nav-left{display:flex;align-items:center;gap:.875rem}
+.nav-logo-img{height:36px;width:auto;filter:brightness(0) invert(1);display:none}
+.nav-brand{display:flex;flex-direction:column}
+.nav-name{
+  font-family:'Playfair Display',serif;
+  font-size:1.2rem;font-weight:700;color:#fff;
+  text-decoration:none;display:block;
+}
+.nav-type{
+  font-size:.6rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:#2a9d8f;display:block;margin-top:2px;
+}
+
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-size:.72rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#fff}
+
+.nav-cta{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.5rem;
+  background:rgba(42,157,143,.2);
+  border:1.5px solid #2a9d8f;
+  color:#2a9d8f;
+  font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;transition:all .2s;
+}
+.nav-cta:hover{background:#2a9d8f;color:#fff}
+
+/* ── CONTENU ── */
+.hero-inner{
+  position:relative;z-index:5;
+  padding:0 3rem;max-width:660px;
+}
+
+.hero-eyebrow{
+  display:flex;align-items:center;gap:.875rem;
+  margin-bottom:2rem;
+}
+.ew-line{width:32px;height:2px;background:#2a9d8f;flex-shrink:0}
+.ew-text{
+  font-size:.7rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:#2a9d8f;
+}
+
+.hero-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(2.8rem,5.5vw,4.8rem);
+  font-weight:700;line-height:1.1;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 20px rgba(0,0,0,.5);
+}
+.hero-title em{
+  font-style:italic;font-weight:400;
+  color:#81d4c8;display:block;
+}
+
+.hero-desc{
+  font-size:.95rem;font-weight:300;
+  color:rgba(255,255,255,.68);
+  line-height:1.9;max-width:480px;
+  margin-bottom:2rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-features{
+  display:flex;flex-direction:column;gap:.625rem;
+  margin-bottom:2.5rem;
+}
+.hfeat{
+  display:flex;align-items:center;gap:.75rem;
+  font-size:.82rem;color:rgba(255,255,255,.72);
+}
+.hfeat-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#2a9d8f;flex-shrink:0;
+}
+
+.hero-ctas{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+
+.btn-main{
+  display:inline-block;
+  padding:.9rem 2.25rem;
+  background:#2a9d8f;color:#fff;
+  font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;
+  transition:all .25s;box-shadow:0 4px 20px rgba(42,157,143,.35);
+}
+.btn-main:hover{background:#fff;color:#051914;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.9rem 1.75rem;
+  border:1.5px solid rgba(255,255,255,.22);
+  color:rgba(255,255,255,.82);
+  font-size:.78rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;transition:all .25s;
+}
+.btn-ghost:hover{border-color:#fff;color:#fff}
+
+/* Badge avis flottant */
+.hero-review{
+  position:absolute;right:3.5rem;top:50%;transform:translateY(-50%);
+  z-index:5;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(10px);
+  border-radius:8px;
+  padding:1.5rem;
+  display:flex;flex-direction:column;gap:.875rem;
+  min-width:210px;
+}
+.rev-header{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);
+}
+.rev-stars{color:#2a9d8f;letter-spacing:.1em;font-size:.9rem}
+.rev-num{
+  font-family:'Playfair Display',serif;
+  font-size:2.4rem;font-weight:700;color:#fff;line-height:1;
+}
+.rev-label{font-size:.7rem;color:rgba(255,255,255,.45);margin-top:2px}
+.rev-sep{height:1px;background:rgba(255,255,255,.1)}
+.rev-quote{
+  font-size:.8rem;font-style:italic;color:rgba(255,255,255,.65);line-height:1.6;
+}
+.rev-author{font-size:.68rem;font-weight:600;color:rgba(255,255,255,.5);margin-top:.25rem}
+
+/* Barre bas */
+.hero-bottom{
+  position:absolute;bottom:0;left:0;right:0;z-index:5;
+  display:flex;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(5,25,20,.5);backdrop-filter:blur(6px);
+}
+.bi{
+  flex:1;padding:.875rem 1.75rem;
+  display:flex;align-items:center;gap:.625rem;
+  border-right:1px solid rgba(255,255,255,.06);
+  font-size:.72rem;color:rgba(255,255,255,.5);
+}
+.bi:last-child{border-right:none}
+.bi strong{color:rgba(255,255,255,.82)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#f4faf8,#e5f5f2);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Playfair Display',serif;
+  font-size:2.6rem;color:#051914;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#2a4038;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-grid{display:grid;grid-template-columns:repeat(3,160px);gap:1rem;margin-top:2rem;justify-content:center}
+.preview-card{height:120px;background:#c0dcd8;border-radius:6px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#2a9d8f}
+.preview-msg{
+  font-family:'Playfair Display',serif;
+  font-size:1.7rem;font-style:italic;
+  color:#051914;text-align:center;max-width:400px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#051914;color:#fff;
+  font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#2a9d8f;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-inner{padding:0 1.5rem}
+  .hero-review,.hero-bottom{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+
+  <nav>
+    <div class="nav-left">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <div class="nav-brand">
+        <a href="#" class="nav-name">{{NOM_ENTREPRISE}}</a>
+        <span class="nav-type">{{TYPE_COMMERCE}} · {{VILLE}}</span>
+      </div>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Produits</a></li>
+      <li><a href="#">À propos</a></li>
+      <li><a href="#">Horaires</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <a href="tel:{{TELEPHONE}}" class="nav-cta">📞 {{TELEPHONE}}</a>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <div class="ew-line"></div>
+      <span class="ew-text">{{TYPE_COMMERCE}} · {{VILLE}}</span>
+    </div>
+    <h1 class="hero-title">
+      Qualité locale,
+      <em>livré avec passion.</em>
+    </h1>
+    <p class="hero-desc">
+      {{NOM_ENTREPRISE}}, c'est la référence locale pour
+      ceux qui exigent le meilleur. Chaque produit est
+      sélectionné avec soin, chaque client est reçu
+      comme il se doit.
+    </p>
+    <div class="hero-features">
+      <div class="hfeat"><div class="hfeat-dot"></div>Produits sélectionnés avec soin</div>
+      <div class="hfeat"><div class="hfeat-dot"></div>Service personnalisé · Équipe disponible</div>
+      <div class="hfeat"><div class="hfeat-dot"></div>{{NB_AVIS}} clients satisfaits · Note 4.8/5</div>
+    </div>
+    <div class="hero-ctas">
+      <a href="#" class="btn-main">Découvrir</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-ghost">📞 {{TELEPHONE}}</a>
+    </div>
+  </div>
+
+  <div class="hero-review">
+    <div class="rev-header">
+      <span>Avis Google</span>
+      <span class="rev-stars">★★★★★</span>
+    </div>
+    <div>
+      <div class="rev-num">{{NB_AVIS}}</div>
+      <div class="rev-label">avis · Note 4.8/5</div>
+    </div>
+    <div class="rev-sep"></div>
+    <div>
+      <div class="rev-quote">"Une adresse incontournable à {{VILLE}}. Produits de qualité, accueil chaleureux."</div>
+      <div class="rev-author">— Client Google</div>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="bi">📍 <strong>{{ADRESSE}}</strong>, {{VILLE}}</div>
+    <div class="bi">🕐 Ouvert <strong>7j/7</strong> · 9h–20h</div>
+    <div class="bi">📞 <strong>{{TELEPHONE}}</strong></div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Notre sélection du moment</h2>
+    <p>Des produits d'exception, des marques choisies avec soin, une offre renouvelée régulièrement.</p>
+    <div class="preview-grid">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Découvrez tout ce que {{NOM_ENTREPRISE}} propose"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Nous contacter — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

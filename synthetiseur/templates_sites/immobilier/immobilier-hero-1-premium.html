@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT IMMOBILIER 1 : #1a3c34 (vert forêt premium)
+  Python remplace '#1a3c34'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}}
+              {{NB_BIENS}} ex: "240 biens vendus"
+              {{SPECIALITE_IMMO}} ex: "Vente · Location · Gestion"
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Jost',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;align-items:flex-end;overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&q=90') center/cover no-repeat;
+  animation:zoomin 12s ease-out forwards;
+}
+@keyframes zoomin{from{transform:scale(1.06)}to{transform:scale(1)}}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to top,
+      rgba(8,14,10,.98) 0%,
+      rgba(8,14,10,.88) 28%,
+      rgba(8,14,10,.62) 52%,
+      rgba(8,14,10,.28) 72%,
+      rgba(8,14,10,.06) 90%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(8,14,10,.50) 0%,
+      transparent 58%
+    );
+}
+
+/* Ligne verte décorative */
+.hero-line{
+  position:absolute;left:0;top:0;bottom:0;
+  width:3px;z-index:5;
+  background:linear-gradient(
+    to bottom,
+    transparent,
+    #1a3c34 30%,
+    #4caf82 50%,
+    #1a3c34 70%,
+    transparent
+  );
+  opacity:.7;
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3rem;
+}
+
+.nav-logo-img{height:36px;max-width:180px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.4rem;font-weight:600;color:#fff;
+  text-decoration:none;letter-spacing:.04em;
+  max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-logo-text span{color:#4caf82}
+
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{
+  font-size:.7rem;font-weight:400;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#4caf82}
+
+.nav-cta{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.5rem;
+  background:#1a3c34;color:#fff;
+  font-size:.7rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;transition:all .2s;
+  border:1px solid rgba(76,175,130,.3);
+}
+.nav-cta:hover{background:#4caf82;color:#080e0a;border-color:#4caf82}
+
+/* ── CONTENU ── */
+.hero-content{
+  position:relative;z-index:5;
+  padding:0 3rem 5rem 4rem;
+  max-width:760px;
+}
+
+.hero-tag{
+  display:flex;align-items:center;gap:.875rem;
+  margin-bottom:1.75rem;
+}
+.tag-line{width:32px;height:1.5px;background:#4caf82;flex-shrink:0}
+.tag-text{
+  font-size:.68rem;font-weight:400;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(255,255,255,.45);
+}
+
+.hero-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.6rem,6.5vw,5.5rem);
+  font-weight:300;line-height:1.05;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 24px rgba(0,0,0,.5);
+  max-width:100%;word-wrap:break-word;overflow:hidden;
+}
+.hero-title em{
+  font-style:italic;color:#4caf82;display:block;
+}
+.hero-title strong{font-weight:600;display:block}
+
+.hero-divider{
+  display:flex;align-items:center;gap:1rem;margin:1.5rem 0;
+}
+.div-line{flex:1;height:1px;background:rgba(255,255,255,.1);max-width:50px}
+.div-diamond{
+  width:6px;height:6px;background:#4caf82;
+  transform:rotate(45deg);flex-shrink:0;
+}
+
+.hero-desc{
+  font-size:.92rem;font-weight:300;
+  color:rgba(255,255,255,.62);
+  line-height:1.95;max-width:480px;
+  margin-bottom:2.25rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-specialites{
+  display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:2.5rem;
+}
+.spec{
+  font-size:.65rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
+  padding:.3rem .875rem;
+  background:rgba(26,60,52,.4);
+  border:1px solid rgba(76,175,130,.25);
+  color:rgba(255,255,255,.65);border-radius:2px;
+}
+
+.hero-ctas{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
+
+.btn-main{
+  display:inline-block;
+  padding:.9rem 2.25rem;
+  background:#1a3c34;color:#fff;
+  font-size:.75rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;
+  transition:all .25s;
+  border:1px solid rgba(76,175,130,.4);
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+.btn-main:hover{
+  background:#4caf82;color:#080e0a;
+  border-color:#4caf82;
+  transform:translateY(-2px);
+  box-shadow:0 8px 28px rgba(76,175,130,.3);
+}
+
+.btn-tel{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.85rem;font-weight:300;
+  color:rgba(255,255,255,.75);text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.25);padding-bottom:1px;
+  transition:color .2s;
+}
+.btn-tel:hover{color:#fff}
+
+/* Stats */
+.hero-stats{
+  position:absolute;bottom:0;right:0;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.08);
+  border-left:1px solid rgba(255,255,255,.08);
+}
+.stat-block{
+  padding:1.1rem 1.75rem;text-align:center;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.stat-block:last-child{border-right:none}
+.stat-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.8rem;font-weight:600;color:#fff;
+  display:block;line-height:1;
+}
+.stat-label{
+  font-size:.62rem;font-weight:400;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);display:block;margin-top:.3rem;
+}
+
+/* Barre bas */
+.hero-bar{
+  position:absolute;bottom:0;left:0;z-index:5;
+  display:flex;border-top:1px solid rgba(255,255,255,.07);
+}
+.bi{
+  padding:.875rem 1.75rem;
+  font-size:.7rem;color:rgba(255,255,255,.45);
+  display:flex;align-items:center;gap:.5rem;
+  border-right:1px solid rgba(255,255,255,.05);
+  white-space:nowrap;
+}
+.bi strong{color:rgba(255,255,255,.78)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#f4f8f5,#e8f2ec);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:2.8rem;color:#080e0a;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#2a4030;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:190px;height:130px;background:#c0d8c8;border-radius:4px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:400;letter-spacing:.22em;text-transform:uppercase;color:#4caf82}
+.preview-msg{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.9rem;font-style:italic;font-weight:300;
+  color:#080e0a;text-align:center;max-width:420px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#1a3c34;color:#fff;
+  font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#4caf82;color:#080e0a;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-content{padding:0 1.5rem 3rem}
+  .hero-stats,.hero-bar,.hero-line{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-line"></div>
+
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Vente</a></li>
+      <li><a href="#">Location</a></li>
+      <li><a href="#">Estimation</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <a href="tel:{{TELEPHONE}}" class="nav-cta">📞 {{TELEPHONE}}</a>
+  </nav>
+
+  <div class="hero-content">
+    <div class="hero-tag">
+      <div class="tag-line"></div>
+      <span class="tag-text">Immobilier · {{VILLE}}</span>
+    </div>
+    <h1 class="hero-title">
+      <em>Trouver</em>
+      <strong>votre bien idéal</strong>
+      à {{VILLE}}.
+    </h1>
+    <div class="hero-divider">
+      <div class="div-line"></div>
+      <div class="div-diamond"></div>
+      <div class="div-line"></div>
+    </div>
+    <p class="hero-desc">
+      {{NOM_ENTREPRISE}} accompagne acheteurs, vendeurs
+      et investisseurs à {{VILLE}} avec expertise et
+      transparence. {{NB_BIENS}} — une référence locale.
+    </p>
+    <div class="hero-specialites">
+      <span class="spec">Vente</span>
+      <span class="spec">Location</span>
+      <span class="spec">Gestion locative</span>
+      <span class="spec">Estimation gratuite</span>
+    </div>
+    <div class="hero-ctas">
+      <a href="#" class="btn-main">Estimation gratuite</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-tel">
+        📞 {{TELEPHONE}}
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-block">
+      <span class="stat-num">{{NB_AVIS}}</span>
+      <span class="stat-label">Avis Google</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">4.8★</span>
+      <span class="stat-label">Note moyenne</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">{{NB_BIENS}}</span>
+      <span class="stat-label">Biens vendus</span>
+    </div>
+  </div>
+
+  <div class="hero-bar">
+    <div class="bi">📍 <strong>{{ADRESSE}}</strong>, {{VILLE}}</div>
+    <div class="bi">📞 <strong>{{TELEPHONE}}</strong></div>
+    <div class="bi">⭐ <strong>{{NB_AVIS}} avis</strong> Google</div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos biens disponibles</h2>
+    <p>Appartements, maisons, terrains, locaux commerciaux... Découvrez notre sélection exclusive à {{VILLE}}.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Votre bien idéal vous attend"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">
+      Estimation gratuite — {{TELEPHONE}}
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

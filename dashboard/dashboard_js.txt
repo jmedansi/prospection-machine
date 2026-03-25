@@ -1,0 +1,365 @@
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// NAVIGATION
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = {
+    dashboard: 'Dashboard',
+    scraper: 'Scraper ”” Collecte de leads',
+    audit: 'Audits',
+    emails: 'Emails ”” File d\'envoi',
+    rapports: 'Rapports PDF',
+    quotas: 'Quotas API',
+    settings: 'Paramètres'
+  };
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+}
+
+function showTab(id, el) {
+  const parent = el.closest('.page');
+  parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  parent.querySelectorAll('.tab-page').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const tp = document.getElementById(id);
+  if (tp) tp.classList.add('active');
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// UTILITAIRES
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+function pillPerf(score) {
+  score = parseInt(score) || 0;
+  const cls = score >= 70 ? 'pill-green' : score >= 50 ? 'pill-orange' : 'pill-red';
+  return `<span class="pill ${cls}">${score}</span>`;
+}
+
+function pillUrgence(score) {
+  score = parseFloat(score) || 0;
+  const cls = score >= 7 ? 'pill-red' : score >= 4 ? 'pill-orange' : 'pill-green';
+  return `<span class="pill ${cls}">${parseFloat(score).toFixed(0)}/10</span>`;
+}
+
+function setInner(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function markTime() {
+  const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  setText('lastUpdate', `Mis à jour à ${now}`);
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// FETCH /api/stats â†’ Pipeline + Métriques + Quotas
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    const d = await r.json();
+    if (d.error) { console.error('stats:', d.error); return; }
+
+    // Pipeline bar
+    setText('stat-scrapes',  d.leads_scrapes);
+    setText('stat-audites',  d.audites);
+    setText('stat-prets',    d.emails_prets);
+    setText('stat-envoyes',  d.envoyes);
+
+    // Métriques
+    setText('stat-score',         d.score_moyen + '/10');
+    setText('stat-prioritaires',  d.leads_prioritaires);
+    setText('stat-pdfs',          d.pdfs_generes);
+
+    // Badges sidebar
+    const elBadgeScraper = document.querySelector('#nav-scraper .nav-badge');
+    const elBadgeAudit   = document.querySelector('#nav-audit .nav-badge');
+    const elBadgeEmails  = document.querySelector('#nav-emails .nav-badge');
+    if (elBadgeScraper) elBadgeScraper.textContent = d.leads_scrapes;
+    if (elBadgeAudit)   elBadgeAudit.textContent   = d.leads_scrapes - d.audites;
+    if (elBadgeEmails)  elBadgeEmails.textContent   = d.emails_prets;
+
+    // Quotas mini (dashboard)
+    setText('quota-groq-val',    `${d.quotas.groq} / 14 400`);
+    setText('quota-brevo-val',   `${d.quotas.brevo} / 300`);
+    setText('quota-hunter-val',  `${d.quotas.hunter} / 75`);
+    const groqPct   = Math.min(100, Math.round(d.quotas.groq / 144));
+    const brevoPct  = Math.min(100, Math.round(d.quotas.brevo / 3));
+    const hunterPct = Math.min(100, Math.round(d.quotas.hunter / 0.75));
+    const qg = document.getElementById('quota-groq-fill');
+    const qb = document.getElementById('quota-brevo-fill');
+    const qh = document.getElementById('quota-hunter-fill');
+    if (qg) qg.style.width = groqPct + '%';
+    if (qb) qb.style.width = brevoPct + '%';
+    if (qh) qh.style.width = hunterPct + '%';
+
+    // Quotas page
+    setText('qpage-groq-used',   `${d.quotas.groq} utilisés`);
+    setText('qpage-brevo-used',  `${d.quotas.brevo} envoyés`);
+    setText('qpage-hunter-used', `${d.quotas.hunter} utilisés`);
+
+    markTime();
+  } catch(e) {
+    console.error('loadStats:', e);
+  }
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// FETCH /api/leads â†’ Tableau scraper + audits
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+async function loadLeads() {
+  try {
+    const r = await fetch('/api/leads?statut=tous');
+    const d = await r.json();
+    if (d.error || !d.leads) return;
+
+    const leads     = d.leads;
+    const enAttente = leads.filter(l => l.statut === 'en_attente');
+    const audites   = leads.filter(l => l.statut === 'audite');
+    const priorit   = audites.filter(l => (l.score_urgence || 0) >= 7);
+
+    // --- Tableau scraper ---
+    const rowsScraper = leads.map(l => `
+      <tr>
+        <td><input type="checkbox" data-nom="${escHtml(l.nom)}"></td>
+        <td><strong>${escHtml(l.nom)}</strong></td>
+        <td>${escHtml(l.ville)}</td>
+        <td>${escHtml(l.secteur)}</td>
+        <td>${l.note ? l.note + ' â­' : '””'}</td>
+        <td>${l.avis || '””'}</td>
+        <td><span class="pill ${l.a_site ? 'pill-green' : 'pill-red'}">${l.a_site ? 'Oui' : 'Non'}</span></td>
+        <td><span class="pill ${l.a_email ? 'pill-green' : 'pill-orange'}">${l.a_email ? 'Trouvé' : 'Non trouvé'}</span></td>
+        <td><span class="pill ${l.statut === 'audite' ? 'pill-blue' : 'pill-gray'}">${l.statut === 'audite' ? 'Audité' : 'En attente'}</span></td>
+        <td><button class="btn btn-secondary btn-sm">${l.statut === 'audite' ? 'Voir audit' : 'Auditer'}</button></td>
+      </tr>`).join('');
+    setInner('tbody-scraper', rowsScraper || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:1rem">Aucun lead ”” lancez un scraping</td></tr>');
+    setText('scraper-total', leads.length);
+
+    // --- En attente d'audit ---
+    const rowsPending = enAttente.map(l => `
+      <tr>
+        <td><input type="checkbox" checked data-nom="${escHtml(l.nom)}"></td>
+        <td><strong>${escHtml(l.nom)}</strong></td>
+        <td>${escHtml(l.ville)}</td>
+        <td>${escHtml(l.secteur)}</td>
+        <td><span class="pill ${l.a_site ? 'pill-green' : 'pill-red'}">${l.a_site ? 'âœ“' : 'âœ—'}</span></td>
+        <td><span class="pill ${l.a_email ? 'pill-green' : 'pill-red'}">${l.a_email ? 'âœ“' : 'âœ—'}</span></td>
+        <td><button class="btn btn-secondary btn-sm" onclick="auditLead('${escHtml(l.nom)}')">Auditer</button></td>
+      </tr>`).join('');
+    setInner('tbody-pending', rowsPending || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">Tous les leads sont audités âœ…</td></tr>');
+    setText('tab-pending-count', `En attente (${enAttente.length})`);
+
+    // --- Audités ---
+    const rowsDone = audites.map(l => `
+      <tr>
+        <td><strong>${escHtml(l.nom)}</strong><div style="font-size:10px;color:var(--muted)">${escHtml(l.secteur)} · ${escHtml(l.ville)}</div></td>
+        <td>${pillPerf(l.score_perf)}</td>
+        <td>${pillPerf(l.score_seo)}</td>
+        <td style="font-size:11px;color:var(--rouge)">${l.lcp || '””'}</td>
+        <td>${pillUrgence(l.score_urgence)}</td>
+        <td>””</td>
+        <td><span class="pill ${l.lien_rapport ? 'pill-green' : 'pill-gray'}">${l.lien_rapport ? 'âœ“' : '””'}</span></td>
+        <td><span class="pill ${l.email_corps ? 'pill-blue' : 'pill-gray'}">${l.email_corps ? 'â—' : 'â—‹'}</span></td>
+        <td><button class="btn btn-secondary btn-sm" onclick="showPage('emails', document.querySelectorAll('.nav-item')[3])">Email</button></td>
+      </tr>`).join('');
+    setInner('tbody-done', rowsDone || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:1rem">Aucun audit disponible</td></tr>');
+    setText('tab-done-count', `Audités (${audites.length})`);
+
+    // --- Prioritaires ---
+    const rowsPrio = priorit.map(l => `
+      <tr>
+        <td><strong>${escHtml(l.nom)}</strong><br><span style="font-size:10px;color:var(--muted)">${escHtml(l.secteur)} · ${escHtml(l.ville)}</span></td>
+        <td style="font-size:11px">Score performance ${l.score_perf || '?'} ”” LCP ${l.lcp || '?'}</td>
+        <td>${pillUrgence(l.score_urgence)}</td>
+        <td><span class="pill ${l.lien_rapport ? 'pill-green' : 'pill-gray'}">${l.lien_rapport ? 'Prêt' : '””'}</span></td>
+        <td><button class="btn btn-primary btn-sm" onclick="showPage('emails', document.querySelectorAll('.nav-item')[3])">Voir email</button></td>
+      </tr>`).join('');
+    setInner('tbody-prio', rowsPrio || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1rem">Aucun lead prioritaire pour l\'instant</td></tr>');
+    setText('tab-prio-count', `âš  Prioritaires (${priorit.length})`);
+
+    // --- Derniers audits (dashboard) ---
+    const rowsLast = audites.slice(0, 5).map(l => `
+      <tr>
+        <td><strong>${escHtml(l.nom)}</strong></td>
+        <td>${escHtml(l.secteur)}</td>
+        <td>${pillPerf(l.score_perf)}</td>
+        <td>${pillUrgence(l.score_urgence)}</td>
+        <td><span class="dot ${(l.score_urgence||0) >= 7 ? 'dot-r' : (l.score_urgence||0) >= 4 ? 'dot-o' : 'dot-g'}"></span></td>
+      </tr>`).join('');
+    setInner('tbody-last-audits', rowsLast || '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Aucun audit</td></tr>');
+
+  } catch(e) {
+    console.error('loadLeads:', e);
+  }
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// FETCH /api/emails â†’ File d'envoi
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+let _emailsData = [];
+
+async function loadEmails() {
+  try {
+    const r = await fetch('/api/emails');
+    const d = await r.json();
+    if (d.error) return;
+
+    _emailsData = d.emails || [];
+
+    const rows = _emailsData.map((e, i) => `
+      <tr style="cursor:pointer" onclick="showEmailPreview(${i})">
+        <td><strong>${escHtml(e.nom)}</strong><div style="font-size:10px;color:var(--muted)">${escHtml(e.email)}</div></td>
+        <td style="font-size:11px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(e.objet)}</td>
+        <td>${pillUrgence(e.score_urgence)}</td>
+        <td>
+          <div class="toggle-track ${e.approuve ? 'on' : ''}"
+               onclick="event.stopPropagation();toggleApprove(this,'${escHtml(e.nom)}')">
+            <div class="toggle-thumb"></div>
+          </div>
+        </td>
+        <td><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();showEmailPreview(${i})">Voir</button></td>
+      </tr>`).join('');
+
+    setInner('tbody-emails', rows || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1rem">Aucun email généré</td></tr>');
+    setText('emails-count', `File d\'envoi (${_emailsData.length} emails)`);
+
+    if (_emailsData.length > 0) showEmailPreview(0);
+
+  } catch(e) {
+    console.error('loadEmails:', e);
+  }
+}
+
+function showEmailPreview(i) {
+  const e = _emailsData[i];
+  if (!e) return;
+  setText('preview-to', e.nom);
+  setText('preview-email', e.email);
+  setText('preview-subject', 'Objet : ' + e.objet);
+  setText('preview-body', e.corps);
+}
+
+async function toggleApprove(el, nom) {
+  el.classList.toggle('on');
+  const approved = el.classList.contains('on');
+  try {
+    await fetch('/api/email/approve', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lead_id: nom, approved})
+    });
+  } catch(e) { console.error('approve:', e); }
+}
+
+async function sendApproved() {
+  const btn = document.getElementById('btn-send-approved');
+  if (btn) btn.textContent = 'Envoi en cours…';
+  try {
+    const r = await fetch('/api/email/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lead_ids: []})
+    });
+    const d = await r.json();
+    alert(`âœ… ${d.envoyes_ok} email(s) envoyé(s) sur ${d.total_traites} traités`);
+    refreshAll();
+  } catch(e) {
+    alert('âŒ Erreur envoi : ' + e.message);
+  } finally {
+    if (btn) btn.textContent = 'Envoyer approuvés';
+  }
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// SCRAPER
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+async function launchScraper() {
+  const kw    = document.getElementById('keyword').value.trim();
+  const city  = document.getElementById('city').value.trim();
+  const limit = document.getElementById('limit').value;
+
+  if (!kw || !city) { alert('Mot-clé et ville requis'); return; }
+
+  const logEl = document.getElementById('scraper-log');
+  if (logEl) { logEl.style.display = 'block'; logEl.textContent = 'Lancement en cours…\n'; }
+
+  try {
+    const r = await fetch('/api/scraper/launch', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({keyword: kw, city, limit: parseInt(limit)})
+    });
+    const d = await r.json();
+    if (d.error) { alert('âŒ ' + d.error); return; }
+    if (logEl) logEl.textContent = d.message + '\n';
+
+    // Polling du statut toutes les 2s
+    const pollId = setInterval(async () => {
+      try {
+        const rs = await fetch('/api/scraper/status');
+        const ds = await rs.json();
+        if (logEl) logEl.textContent = (ds.logs || []).join('\n');
+        if (!ds.running) {
+          clearInterval(pollId);
+          if (logEl) logEl.textContent += '\nâœ… Terminé (code ' + ds.returncode + ')';
+          refreshAll();
+        }
+      } catch(e) { clearInterval(pollId); }
+    }, 2000);
+
+  } catch(e) {
+    alert('âŒ Erreur scraper : ' + e.message);
+  }
+}
+
+async function auditLead(nom) {
+  try {
+    const r = await fetch('/api/audit/launch', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lead_ids: [nom]})
+    });
+    const d = await r.json();
+    alert(d.error ? 'âŒ ' + d.error : 'âœ… ' + d.message);
+  } catch(e) { alert('âŒ ' + e.message); }
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// UTILITAIRE
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// REFRESH GLOBAL
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+async function refreshAll() {
+  await Promise.all([loadStats(), loadLeads(), loadEmails()]);
+}
+
+// Auto-refresh toutes les 30 secondes
+setInterval(refreshAll, 30000);
+
+// Chargement initial
+document.addEventListener('DOMContentLoaded', refreshAll);

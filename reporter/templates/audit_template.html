@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Audit Digital - {{ company_name }}</title>
+    <style>
+        :root {
+            --primary: #065f46;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            background: white;
+            line-height: 1.5;
+        }
+        .container { padding: 40px; }
+        
+        /* Header */
+        header {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .header-left h1 { margin: 0; font-size: 24px; color: var(--primary); }
+        .header-left p { margin: 5px 0; color: #64748b; font-weight: 500; }
+        .header-right { text-align: right; }
+        
+        /* Bandeau Score */
+        .score-banner {
+            background: {{ score_couleur }};
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .score-box { text-align: center; }
+        .score-box big { font-size: 48px; font-weight: 800; display: block; line-height: 1; }
+        .score-info h2 { margin: 0; font-size: 22px; }
+        
+        /* Bloc Verdict */
+        .verdict {
+            background: #f1f5f9;
+            padding: 20px;
+            border-left: 5px solid {{ score_couleur }};
+            border-radius: 4px;
+            margin-bottom: 30px;
+            font-style: italic;
+            font-size: 110%;
+        }
+
+        /* Section */
+        section { margin-bottom: 40px; }
+        h3 { 
+            border-bottom: 1px solid #cbd5e1; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+        .insight {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Tableaux */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        th { text-align: left; background: #f8fafc; padding: 12px; font-size: 12px; color: #64748b; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .valeur { font-weight: 600; }
+        .statut { font-weight: bold; border-radius: 20px; padding: 4px 12px; font-size: 12px; }
+
+        /* Screenshot */
+        .screenshot-container {
+            width: 100%;
+            height: 250px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 20px;
+        }
+        .screenshot-container img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Error box (no site) */
+        .no-site {
+            background: #fff7ed;
+            color: #9a3412;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ffedd5;
+            text-align: center;
+        }
+
+        /* Opportunités */
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .card { 
+            background: white; 
+            border: 1px solid #e2e8f0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            font-size: 13px;
+        }
+
+        footer {
+            margin-top: 50px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>Audit de Présence Digitale</h1>
+                <p>{{ nom }} · {{ sector_label }}</p>
+                <small>{{ ville }} · {{ date_audit }}</small>
+            </div>
+            <div class="header-right">
+                <div style="font-weight: 800; color: #cbd5e1; font-size: 32px;">PREMIUM</div>
+            </div>
+        </header>
+
+        <div class="score-banner">
+            <div class="score-box">
+                <big>{{ score_priorite }}</big>
+                <small>/ 10</small>
+            </div>
+            <div class="score-info">
+                <h2>{{ score_label }}</h2>
+                <span>Indice d'urgence digitale par rapport au secteur {{ sector_label }}</span>
+            </div>
+        </div>
+
+        <div class="verdict">
+            "{{ probleme_principal }}"
+        </div>
+
+        {% if has_site %}
+        <section>
+            <h3>Performance Mobile & Technique</h3>
+            <div class="insight">💡 {{ insight_speed }}</div>
+            
+            <div class="screenshot-container">
+                <img src="{{ screenshot_path }}" alt="Capture du site web">
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Métrique</th>
+                        <th>Votre Site</th>
+                        <th>Référence {{ sector_label }}</th>
+                        <th>Écart</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Score Mobile (Lighthouse)</td>
+                        <td class="valeur">{{ metrics.mobile_score.valeur or 0 }}/100</td>
+                        <td>{{ metrics.mobile_score.ref_label }}</td>
+                        <td>{{ metrics.mobile_score.ecart }}</td>
+                        <td><span class="statut" style="background:{{ metrics.mobile_score.couleur }}20; color:{{ metrics.mobile_score.couleur }}">{{ metrics.mobile_score.statut }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Vitesse de chargement (LCP)</td>
+                        <td class="valeur">{{ metrics.lcp_ms.valeur or 0 }}ms</td>
+                        <td>{{ metrics.lcp_ms.ref_label }}</td>
+                        <td>{{ metrics.lcp_ms.ecart }}</td>
+                        <td><span class="statut" style="background:{{ metrics.lcp_ms.couleur }}20; color:{{ metrics.lcp_ms.couleur }}">{{ metrics.lcp_ms.statut }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Poids de la page</td>
+                        <td class="valeur">{{ metrics.page_size_kb.valeur or 0 }} Ko</td>
+                        <td>{{ metrics.page_size_kb.ref_label }}</td>
+                        <td>{{ metrics.page_size_kb.ecart }}</td>
+                        <td><span class="statut" style="background:{{ metrics.page_size_kb.couleur }}20; color:{{ metrics.page_size_kb.couleur }}">{{ metrics.page_size_kb.statut }}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h3>SEO & Structure Visibilité</h3>
+            <div class="insight">💡 {{ insight_seo }}</div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Élément de confiance</th>
+                        <th>État</th>
+                        <th>Référence</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, m in bool_metrics.items() %}
+                    <tr>
+                        <td>{{ m.label }}</td>
+                        <td class="valeur">{{ "Activé" if m.valeur else "Inactif" }}</td>
+                        <td>{{ m.ref_label }}</td>
+                        <td><span style="color:{{ m.couleur }}; font-weight:bold;">{{ m.statut }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% else %}
+        <section>
+            <div class="no-site">
+                <h2>⚠️ Aucun site web détecté pour votre entreprise.</h2>
+                <p>En {{ date_audit }}, plus de 85% des <strong>{{ sector_label }}s</strong> possédant un site web reçoivent jusqu'à <strong>3x plus de demandes</strong> que les entreprises sans présence en ligne.</p>
+                <p>L'absence de site est la principale opportunité manquée pour capter la clientèle de {{ ville }}.</p>
+            </div>
+        </section>
+        {% endif %}
+
+        <section>
+            <h3>Fiche Google Business Profile</h3>
+            <div class="insight">💡 {{ insight_gmb }}</div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Indicateur Maps</th>
+                        <th>Votre Fiche</th>
+                        <th>Référence {{ sector_label }}</th>
+                        <th>Écart</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Note Globale</td>
+                        <td class="valeur">{{ metrics.rating.valeur or 0 }}/5 ⭐</td>
+                        <td>{{ metrics.rating.ref_label }}</td>
+                        <td>{{ metrics.rating.ecart }}</td>
+                        <td><span class="statut" style="background:{{ metrics.rating.couleur }}20; color:{{ metrics.rating.couleur }}">{{ metrics.rating.statut }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Nombre d'avis clients</td>
+                        <td class="valeur">{{ metrics.reviews_count.valeur or 0 }} avis</td>
+                        <td>{{ metrics.reviews_count.ref_label }}</td>
+                        <td>{{ metrics.reviews_count.ecart }}</td>
+                        <td><span class="statut" style="background:{{ metrics.reviews_count.couleur }}20; color:{{ metrics.reviews_count.couleur }}">{{ metrics.reviews_count.statut }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Photos publiées</td>
+                        <td class="valeur">{{ metrics.photos_count.valeur or 0 }} photos</td>
+                        <td>{{ metrics.photos_count.ref_label }}</td>
+                        <td>{{ metrics.photos_count.ecart }}</td>
+                        <td><span class="statut" style="background:{{ metrics.photos_count.couleur }}20; color:{{ metrics.photos_count.couleur }}">{{ metrics.photos_count.statut }}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>
+        <strong>Jean-Marc DANSI</strong> · jmedansi@incidenx.com · incidenx.com<br>
+        Document d'audit confidentiel conçu pour <strong>{{ nom }}</strong><br>
+            <small>Données compilées via Google PageSpeed Insights & Google Maps. Benchmarks {{ sector_label }} 2025.</small>
+        </footer>
+    </div>
+</body>
+</html>

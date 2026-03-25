@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Proposition Web - {{ nom }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 0;
+            @bottom-right {
+                content: counter(page) " / " counter(pages);
+                font-family: 'Inter', sans-serif;
+                font-size: 10pt;
+                color: #94a3b8;
+                padding-bottom: 10mm;
+                padding-right: 15mm;
+            }
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            line-height: 1.5;
+        }
+
+        /* PAGE 1 - HERO MOCKUP */
+        .page-cover {
+            width: 210mm;
+            height: 297mm;
+            padding: 15mm;
+            box-sizing: border-box;
+            background: white;
+            position: relative;
+            break-after: page;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header-title {
+            color: #64748b;
+            font-size: 11pt;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 28pt;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 10px 0;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 14pt;
+            color: #3b82f6;
+            font-weight: 600;
+            margin-bottom: 40px;
+        }
+
+        .mockup-container {
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .desktop-mockup {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .mobile-mockup {
+            position: absolute;
+            bottom: -30px;
+            right: 20px;
+            width: 140px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            border: 4px solid white;
+        }
+
+        /* PAGE 2 - ARGUMENTS BUSINESS */
+        .page-content {
+            width: 210mm;
+            height: 297mm;
+            padding: 20mm 15mm;
+            box-sizing: border-box;
+            background: white;
+        }
+
+        h2 {
+            font-size: 22pt;
+            color: #0f172a;
+            margin-bottom: 30px;
+        }
+
+        .gmb-box {
+            background-color: #f1f5f9;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 40px;
+        }
+
+        .gmb-note {
+            font-size: 16pt;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .gmb-text {
+            color: #64748b;
+            font-size: 11pt;
+        }
+
+        .arguments-box {
+            margin-bottom: 50px;
+        }
+
+        .arg-content {
+            font-size: 12pt;
+            color: #334155;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .cta-box {
+            background-color: #0f172a;
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .cta-box h3 {
+            margin: 0 0 15px 0;
+            color: #60a5fa;
+            font-size: 16pt;
+        }
+
+        .cta-box p {
+            margin: 0;
+            font-size: 12pt;
+            opacity: 0.9;
+        }
+        
+        .footer-signature {
+            margin-top: 40px;
+            text-align: right;
+            font-size: 11pt;
+            color: #64748b;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1 : MOCKUP -->
+    <div class="page-cover">
+        <div class="header">
+            <span class="header-title">Audit Digital · PROSPECTION</span>
+            <span class="header-title">{{ date }}</span>
+        </div>
+
+        <h1>Voici votre futur site,<br>{{ nom }}</h1>
+        <div class="subtitle">{{ ville }} · 4,9/5 ⭐ · 2345 avis Google</div>
+
+        <div class="mockup-container">
+            {% if screenshot_desktop %}
+            <img class="desktop-mockup" src="file://{{ screenshot_desktop }}" alt="Maquette Desktop">
+            {% endif %}
+            
+            {% if screenshot_mobile %}
+            <img class="mobile-mockup" src="file://{{ screenshot_mobile }}" alt="Maquette Mobile">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- PAGE 2 : BUSINESS & GMB -->
+    <div class="page-content">
+        <h2>Pendant ce temps, vos concurrents...</h2>
+
+        <div class="gmb-box">
+            <div class="gmb-note">Votre note : 4,9/5 · 2345 avis</div>
+            <div class="gmb-text">
+                Sur Google Maps, les 3 premiers résultats de votre secteur à <strong>{{ ville }}</strong> attirent la grande majorité des clients.
+                {% if probleme_principal %}
+                <br><br><strong>Diagnostic :</strong> {{ probleme_principal }}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="arguments-box">
+            <h2>Pourquoi vous avez besoin d'un site web</h2>
+            <div class="arg-content">{{ arguments }}</div>
+        </div>
+
+        <div class="cta-box">
+            <h3>Cette maquette peut devenir votre site en 3 semaines.</h3>
+            <p>Disponible pour 15 minutes d'échange téléphonique cette semaine ?</p>
+        </div>
+        
+        <div class="footer-signature">
+            Jean-Marc DANSI · jmedansi@incidenx.com
+        </div>
+    </div>
+
+</body>
+</html>

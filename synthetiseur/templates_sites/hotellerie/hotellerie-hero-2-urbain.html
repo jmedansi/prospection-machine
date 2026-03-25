@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT HÔTELLERIE 2 : #e9c46a (sable doré)
+  Python remplace '#e9c46a'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}} {{NB_CHAMBRES}}
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  overflow:hidden;
+}
+
+/* Moitié gauche — contenu */
+.hero-left{
+  position:relative;z-index:5;
+  background:linear-gradient(135deg,#0a0a0a 0%,#1a1205 100%);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:0;overflow:hidden;
+}
+
+/* Texture subtile */
+.hero-left::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top left,rgba(233,196,106,.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* Moitié droite — image */
+.hero-right{
+  position:relative;overflow:hidden;
+}
+.hero-img{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=1200&q=90') center/cover no-repeat;
+  animation:slow-zoom 10s ease-out forwards;
+}
+@keyframes slow-zoom{from{transform:scale(1.06)}to{transform:scale(1)}}
+
+.hero-img-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to left,transparent 60%,rgba(10,10,10,.3) 100%);
+}
+
+/* ── NAV ── */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:2rem 2.5rem;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  position:relative;z-index:1;
+}
+
+.nav-logo-img{height:34px;max-width:180px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Syne',sans-serif;
+  font-size:1.1rem;font-weight:800;color:#fff;
+  text-decoration:none;letter-spacing:.04em;text-transform:uppercase;
+  max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-logo-text span{color:#e9c46a}
+
+.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links a{
+  font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#e9c46a}
+
+/* ── CONTENU CENTRAL ── */
+.hero-body{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:2rem 2.5rem;position:relative;z-index:1;
+}
+
+.hero-chip{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(233,196,106,.1);border:1px solid rgba(233,196,106,.25);
+  padding:.35rem .875rem;border-radius:20px;
+  font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:#e9c46a;margin-bottom:1.75rem;width:fit-content;
+}
+
+.hero-title{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2rem,4.5vw,3.8rem);
+  font-weight:800;line-height:1.05;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 16px rgba(0,0,0,.4);
+  letter-spacing:-.01em;
+  max-width:100%;word-wrap:break-word;overflow:hidden;
+}
+.hero-title em{
+  font-style:italic;font-family:'Inter',sans-serif;
+  font-weight:300;color:#e9c46a;display:block;
+  font-size:clamp(1.6rem,3vw,2.6rem);
+}
+
+.hero-desc{
+  font-size:.9rem;font-weight:300;
+  color:rgba(255,255,255,.60);
+  line-height:1.9;max-width:380px;
+  margin-bottom:2rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.4);
+}
+
+.hero-ctas{display:flex;gap:.875rem;flex-wrap:wrap;margin-bottom:1.75rem}
+
+.btn-main{
+  display:inline-block;
+  padding:.875rem 1.75rem;
+  background:#e9c46a;color:#0a0a0a;
+  font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;
+  transition:all .25s;box-shadow:0 4px 16px rgba(233,196,106,.3);
+}
+.btn-main:hover{background:#fff;color:#0a0a0a;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.875rem 1.5rem;
+  border:1.5px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.75);
+  font-size:.72rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.btn-ghost:hover{border-color:#fff;color:#fff}
+
+/* Rating */
+.hero-rating{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.875rem 1.25rem;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:4px;width:fit-content;
+}
+.rating-stars{color:#e9c46a;letter-spacing:.08em}
+.rating-text{font-size:.78rem;color:rgba(255,255,255,.65)}
+.rating-text strong{color:#fff}
+
+/* Barre bas gauche */
+.hero-footer{
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.07);
+  position:relative;z-index:1;
+}
+.hf-item{
+  flex:1;padding:.875rem 1.5rem;
+  border-right:1px solid rgba(255,255,255,.06);
+  font-size:.68rem;
+}
+.hf-item:last-child{border-right:none}
+.hf-strong{display:block;color:rgba(255,255,255,.78);font-weight:600;font-size:.72rem}
+.hf-small{color:rgba(255,255,255,.38);margin-top:1px}
+
+/* Stats sur image */
+.img-stats{
+  position:absolute;bottom:2rem;left:2rem;z-index:5;
+  display:flex;gap:1rem;
+}
+.img-stat{
+  background:rgba(10,10,10,.6);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:4px;
+  padding:.75rem 1.25rem;text-align:center;
+}
+.is-num{
+  font-family:'Syne',sans-serif;
+  font-size:1.5rem;font-weight:800;color:#fff;
+  display:block;line-height:1;
+}
+.is-label{
+  font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.45);display:block;margin-top:.25rem;
+}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#faf8f2,#f0e8d8);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Syne',sans-serif;
+  font-size:2.6rem;font-weight:800;color:#0a0a0a;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#3a3020;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:190px;height:120px;background:#e0d8c0;border-radius:4px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#e9c46a}
+.preview-msg{
+  font-family:'Syne',sans-serif;
+  font-size:1.7rem;font-weight:700;
+  color:#0a0a0a;text-align:center;max-width:400px;line-height:1.3;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#0a0a0a;color:#fff;
+  font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#e9c46a;color:#0a0a0a;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  .hero{grid-template-columns:1fr;grid-template-rows:1fr}
+  .hero-right{display:none}
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-body{padding:2rem 1.5rem}
+  .hero-footer{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <!-- Gauche — contenu -->
+  <div class="hero-left">
+    <nav>
+      <div style="display:flex;align-items:center;gap:.875rem">
+        <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+        <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#">Chambres</a></li>
+        <li><a href="#">Services</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </nav>
+
+    <div class="hero-body">
+      <div class="hero-chip">✦ {{VILLE}} · Hôtel</div>
+      <h1 class="hero-title">
+        Bienvenue<br>
+        chez vous,
+        <em>à {{VILLE}}.</em>
+      </h1>
+      <p class="hero-desc">
+        {{NOM_ENTREPRISE}} repense l'hospitalité moderne.
+        Design soigné, service attentionné, emplacement idéal —
+        tout pour que vous vous sentiez chez vous.
+      </p>
+      <div class="hero-ctas">
+        <a href="#" class="btn-main">Réserver maintenant</a>
+        <a href="tel:{{TELEPHONE}}" class="btn-ghost">📞 {{TELEPHONE}}</a>
+      </div>
+      <div class="hero-rating">
+        <span class="rating-stars">★★★★★</span>
+        <span class="rating-text"><strong>{{NB_AVIS}} voyageurs</strong> recommandent · 4.8/5</span>
+      </div>
+    </div>
+
+    <div class="hero-footer">
+      <div class="hf-item">
+        <span class="hf-strong">{{ADRESSE}}</span>
+        <span class="hf-small">{{VILLE}}</span>
+      </div>
+      <div class="hf-item">
+        <span class="hf-strong">{{TELEPHONE}}</span>
+        <span class="hf-small">Réservation directe</span>
+      </div>
+      <div class="hf-item">
+        <span class="hf-strong">Check-in 14h</span>
+        <span class="hf-small">Check-out 12h</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Droite — image -->
+  <div class="hero-right">
+    <div class="hero-img"></div>
+    <div class="hero-img-overlay"></div>
+    <div class="img-stats">
+      <div class="img-stat">
+        <span class="is-num">{{NB_CHAMBRES}}</span>
+        <span class="is-label">Chambres</span>
+      </div>
+      <div class="img-stat">
+        <span class="is-num">4.8★</span>
+        <span class="is-label">Google</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos chambres &amp; suites</h2>
+    <p>Du standard au luxe, chaque chambre est pensée pour votre confort et votre plaisir.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">Découvrez nos chambres &amp; offres spéciales</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Réserver — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

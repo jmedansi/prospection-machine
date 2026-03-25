@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT HÔTELLERIE 1 : #b5924c (or hôtelier)
+  Python remplace '#b5924c'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}} {{NB_CHAMBRES}}
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Jost',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;align-items:center;overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1600&q=90') center/cover no-repeat;
+  animation:slow-zoom 12s ease-out forwards;
+}
+@keyframes slow-zoom{from{transform:scale(1.08)}to{transform:scale(1)}}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(5,8,15,.97) 0%,
+      rgba(5,8,15,.85) 38%,
+      rgba(5,8,15,.50) 62%,
+      rgba(5,8,15,.15) 100%
+    ),
+    linear-gradient(
+      to top,
+      rgba(5,8,15,.6) 0%,
+      transparent 45%
+    );
+}
+
+/* Ligne dorée verticale */
+.gold-line{
+  position:absolute;left:3rem;top:0;bottom:0;z-index:5;
+  width:1px;
+  background:linear-gradient(to bottom,transparent 0%,#b5924c 30%,#b5924c 70%,transparent 100%);
+  opacity:.4;
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:2rem 4rem;
+}
+
+.nav-logo-img{height:38px;width:auto;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Cormorant',serif;
+  font-size:1.5rem;font-weight:300;color:#fff;
+  text-decoration:none;letter-spacing:.08em;text-transform:uppercase;
+}
+.nav-logo-text span{color:#b5924c}
+
+.nav-center{display:flex;gap:2.5rem;list-style:none}
+.nav-center a{
+  font-size:.72rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);text-decoration:none;transition:color .25s;
+}
+.nav-center a:hover{color:#b5924c}
+
+.nav-right{display:flex;align-items:center;gap:1.5rem}
+.nav-tel{
+  font-size:.75rem;font-weight:300;letter-spacing:.12em;
+  color:rgba(255,255,255,.65);
+}
+.nav-book{
+  display:inline-block;
+  padding:.58rem 1.5rem;
+  border:1px solid rgba(181,146,76,.5);
+  color:#b5924c;
+  font-size:.7rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;border-radius:1px;
+}
+.nav-book:hover{background:#b5924c;color:#05080f;border-color:#b5924c}
+
+/* ── CONTENU ── */
+.hero-inner{
+  position:relative;z-index:5;
+  padding:0 4rem 0 5rem;
+  max-width:700px;
+}
+
+.hero-pre{
+  display:flex;align-items:center;gap:1rem;margin-bottom:2rem;
+}
+.pre-ornament{
+  font-family:'Cormorant',serif;
+  font-size:1rem;color:#b5924c;letter-spacing:.1em;opacity:.8;
+}
+.pre-text{
+  font-size:.65rem;font-weight:400;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,255,255,.38);
+}
+
+.hero-title{
+  font-family:'Cormorant',serif;
+  font-size:clamp(3rem,6vw,5.5rem);
+  font-weight:300;line-height:1.05;
+  color:#fff;letter-spacing:.02em;
+  margin-bottom:1.25rem;
+  text-shadow:0 2px 20px rgba(0,0,0,.5);
+}
+.hero-title em{font-style:italic;color:#b5924c}
+
+.hero-rule{
+  display:flex;align-items:center;gap:1.25rem;
+  margin:1.75rem 0;
+}
+.rule-line{flex:1;height:1px;background:rgba(255,255,255,.1)}
+.rule-mark{
+  font-family:'Cormorant',serif;
+  font-size:1rem;color:#b5924c;letter-spacing:.05em;
+}
+
+.hero-desc{
+  font-size:.92rem;font-weight:300;
+  color:rgba(255,255,255,.60);
+  line-height:2;max-width:460px;
+  margin-bottom:2.5rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-ctas{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
+
+.btn-reserve{
+  display:inline-block;
+  padding:.9rem 2.5rem;
+  background:#b5924c;color:#05080f;
+  font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;
+  box-shadow:0 4px 20px rgba(181,146,76,.3);
+}
+.btn-reserve:hover{background:#fff;color:#05080f;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+
+.btn-discover{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.72rem;font-weight:400;letter-spacing:.15em;text-transform:uppercase;
+  color:rgba(255,255,255,.65);text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:2px;
+  transition:all .2s;
+}
+.btn-discover:hover{color:#fff;border-bottom-color:#fff}
+
+/* Panel droite */
+.hero-panel{
+  position:absolute;right:0;top:0;bottom:0;z-index:5;
+  width:180px;
+  background:rgba(181,146,76,.06);
+  border-left:1px solid rgba(181,146,76,.15);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem;
+  padding:2rem 1.5rem;
+}
+.panel-item{text-align:center}
+.panel-num{
+  font-family:'Cormorant',serif;
+  font-size:2.2rem;font-weight:300;color:#fff;
+  display:block;line-height:1;
+}
+.panel-label{
+  font-size:.6rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);display:block;margin-top:.4rem;
+}
+.panel-sep{width:24px;height:1px;background:rgba(181,146,76,.3)}
+
+/* Barre bas */
+.hero-bottom{
+  position:absolute;bottom:0;left:0;right:180px;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.bi{
+  flex:1;padding:.875rem 1.5rem;
+  display:flex;align-items:center;gap:.625rem;
+  border-right:1px solid rgba(255,255,255,.05);
+  font-size:.7rem;color:rgba(255,255,255,.45);
+}
+.bi:last-child{border-right:none}
+.bi strong{color:rgba(255,255,255,.75)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#f8f6f0,#ede8dc);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Cormorant',serif;
+  font-size:2.8rem;color:#1a1610;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#4a4030;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:200px;height:130px;background:#ddd8c8;border-radius:3px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{
+  font-size:.65rem;font-weight:400;letter-spacing:.28em;text-transform:uppercase;color:#b5924c;
+}
+.preview-msg{
+  font-family:'Cormorant',serif;
+  font-size:2rem;font-style:italic;font-weight:300;
+  color:#1a1610;text-align:center;max-width:420px;line-height:1.3;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#1a1610;color:#fff;
+  font-size:.7rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#b5924c;color:#05080f;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-center,.nav-tel{display:none}
+  .hero-inner{padding:0 1.5rem}
+  .hero-panel,.hero-bottom{display:none}
+  .gold-line{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="gold-line"></div>
+
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+    </div>
+    <ul class="nav-center">
+      <li><a href="#">Chambres</a></li>
+      <li><a href="#">Expériences</a></li>
+      <li><a href="#">Restaurant</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-tel">{{TELEPHONE}}</span>
+      <a href="#" class="nav-book">Réserver</a>
+    </div>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-pre">
+      <span class="pre-ornament">✦</span>
+      <span class="pre-text">{{VILLE}} · Hôtel</span>
+    </div>
+    <h1 class="hero-title">
+      L'art de<br>
+      <em>l'hospitalité</em><br>
+      à {{VILLE}}.
+    </h1>
+    <div class="hero-rule">
+      <div class="rule-line"></div>
+      <div class="rule-mark">✦</div>
+      <div class="rule-line"></div>
+    </div>
+    <p class="hero-desc">
+      {{NOM_ENTREPRISE}} vous accueille dans un cadre d'exception.
+      Chaque séjour est une invitation à la détente absolue,
+      au cœur de {{VILLE}}.
+    </p>
+    <div class="hero-ctas">
+      <a href="#" class="btn-reserve">Réserver votre séjour</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-discover">📞 {{TELEPHONE}}</a>
+    </div>
+  </div>
+
+  <div class="hero-panel">
+    <div class="panel-item">
+      <span class="panel-num">{{NB_AVIS}}</span>
+      <span class="panel-label">Avis Google</span>
+    </div>
+    <div class="panel-sep"></div>
+    <div class="panel-item">
+      <span class="panel-num">4.8</span>
+      <span class="panel-label">Note · /5</span>
+    </div>
+    <div class="panel-sep"></div>
+    <div class="panel-item">
+      <span class="panel-num">{{NB_CHAMBRES}}</span>
+      <span class="panel-label">Chambres</span>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="bi">📍 <strong>{{ADRESSE}}</strong>, {{VILLE}}</div>
+    <div class="bi">📞 <strong>{{TELEPHONE}}</strong></div>
+    <div class="bi">⭐ <strong>{{NB_AVIS}} avis</strong> · Note 4.8</div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos chambres & suites</h2>
+    <p>Du confort raffiné à l'exception absolue, découvrez nos espaces pensés pour votre bien-être.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Votre séjour d'exception commence ici"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Réserver — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

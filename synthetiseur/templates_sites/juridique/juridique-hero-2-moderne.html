@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT JURIDIQUE 2 : #2d6a4f (vert émeraude sobre)
+  Python remplace '#2d6a4f'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}} {{SPECIALITE}}
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&q=90') center/cover no-repeat;
+}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to top,
+      rgba(5,20,12,.97) 0%,
+      rgba(5,20,12,.88) 35%,
+      rgba(5,20,12,.60) 58%,
+      rgba(5,20,12,.25) 78%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(5,20,12,.5) 0%,
+      transparent 55%
+    );
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3rem;
+}
+
+.nav-left{display:flex;align-items:center;gap:.875rem}
+.nav-logo-img{height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Libre Baskerville',serif;
+  font-size:1.2rem;font-weight:700;color:#fff;
+  text-decoration:none;letter-spacing:.01em;
+}
+.nav-logo-text span{color:#2d6a4f}
+
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-size:.72rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.65);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#fff}
+
+.nav-cta{
+  display:inline-block;
+  padding:.6rem 1.5rem;
+  background:#2d6a4f;color:#fff;
+  font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .2s;
+}
+.nav-cta:hover{background:#fff;color:#0a1f14}
+
+/* ── CONTENU ── */
+.hero-content{
+  position:relative;z-index:5;
+  padding:0 3rem 5rem;
+  display:grid;grid-template-columns:1fr auto;
+  gap:3rem;align-items:end;max-width:1200px;
+}
+
+.hero-left{max-width:680px}
+
+.hero-kicker{
+  display:inline-flex;align-items:center;gap:.6rem;
+  font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:#2d6a4f;margin-bottom:1.5rem;
+  background:rgba(45,106,79,.15);
+  padding:.35rem .875rem;border-radius:2px;
+}
+.hero-kicker::before{content:'▸';font-size:.6rem}
+
+.hero-title{
+  font-family:'Libre Baskerville',serif;
+  font-size:clamp(2.6rem,5.5vw,4.5rem);
+  font-weight:700;line-height:1.1;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 20px rgba(0,0,0,.5);
+}
+.hero-title em{
+  font-style:italic;font-weight:400;
+  color:rgba(255,255,255,.75);display:block;
+}
+
+.hero-desc{
+  font-size:.95rem;font-weight:300;
+  color:rgba(255,255,255,.70);
+  line-height:1.9;max-width:500px;
+  margin-bottom:2.25rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-ctas{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+
+.btn-main{
+  display:inline-block;
+  padding:.9rem 2rem;
+  background:#2d6a4f;color:#fff;
+  font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;
+  transition:all .25s;
+  box-shadow:0 4px 16px rgba(45,106,79,.4);
+}
+.btn-main:hover{background:#fff;color:#0a1f14;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.9rem 1.75rem;
+  border:1.5px solid rgba(255,255,255,.25);
+  color:rgba(255,255,255,.82);
+  font-size:.75rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.btn-ghost:hover{border-color:#fff;color:#fff}
+
+/* Card droite */
+.hero-card{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(12px);
+  border-radius:6px;
+  padding:1.75rem 1.5rem;
+  min-width:220px;
+  display:flex;flex-direction:column;gap:1.25rem;
+}
+.card-item{display:flex;align-items:center;gap:.875rem}
+.card-icon{
+  width:36px;height:36px;
+  background:rgba(45,106,79,.2);
+  border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;
+}
+.card-strong{display:block;font-size:.82rem;font-weight:600;color:#fff}
+.card-small{display:block;font-size:.7rem;color:rgba(255,255,255,.45);margin-top:1px}
+.card-sep{height:1px;background:rgba(255,255,255,.08)}
+
+/* Barre stats bas */
+.hero-stats{
+  position:absolute;bottom:0;left:0;right:0;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(5,20,12,.6);
+  backdrop-filter:blur(8px);
+}
+.stat-item{
+  flex:1;padding:.875rem 2rem;
+  display:flex;align-items:center;justify-content:center;gap:.875rem;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.stat-item:last-child{border-right:none}
+.stat-num{
+  font-family:'Libre Baskerville',serif;
+  font-size:1.6rem;font-weight:700;color:#fff;line-height:1;
+}
+.stat-label{font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#f5f3ef,#eae5dc);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Libre Baskerville',serif;
+  font-size:2.6rem;color:#1a1810;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#4a4030;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:180px;height:110px;background:#ddd8ce;border-radius:4px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#2d6a4f}
+.preview-msg{
+  font-family:'Libre Baskerville',serif;
+  font-size:1.7rem;font-style:italic;
+  color:#1a1810;text-align:center;max-width:400px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#0a1f14;color:#fff;
+  font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#2d6a4f;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-content{grid-template-columns:1fr;padding:0 1.5rem 3rem}
+  .hero-card,.hero-stats{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+
+  <nav>
+    <div class="nav-left">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Expertises</a></li>
+      <li><a href="#">Le cabinet</a></li>
+      <li><a href="#">Tarifs</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <a href="#" class="nav-cta">Prendre RDV</a>
+  </nav>
+
+  <div class="hero-content">
+    <div class="hero-left">
+      <div class="hero-kicker">Cabinet Juridique · {{VILLE}}</div>
+      <h1 class="hero-title">
+        Des avocats<br>
+        <em>à vos côtés,</em>
+        quand ça compte vraiment.
+      </h1>
+      <p class="hero-desc">
+        Chez {{NOM_ENTREPRISE}}, nous croyons que chaque client
+        mérite une écoute sincère et une stratégie sur mesure.
+        Pas de jargon — des réponses claires et des résultats concrets.
+      </p>
+      <div class="hero-ctas">
+        <a href="#" class="btn-main">Consultation gratuite</a>
+        <a href="tel:{{TELEPHONE}}" class="btn-ghost">📞 {{TELEPHONE}}</a>
+      </div>
+    </div>
+
+    <div class="hero-card">
+      <div class="card-item">
+        <div class="card-icon">⭐</div>
+        <div>
+          <span class="card-strong">{{NB_AVIS}} avis</span>
+          <span class="card-small">Note 4.8/5 Google</span>
+        </div>
+      </div>
+      <div class="card-sep"></div>
+      <div class="card-item">
+        <div class="card-icon">🔒</div>
+        <div>
+          <span class="card-strong">Confidentialité</span>
+          <span class="card-small">Secret professionnel</span>
+        </div>
+      </div>
+      <div class="card-sep"></div>
+      <div class="card-item">
+        <div class="card-icon">📞</div>
+        <div>
+          <span class="card-strong">Réponse 24h</span>
+          <span class="card-small">{{TELEPHONE}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div>
+        <div class="stat-num">{{NB_AVIS}}+</div>
+        <div class="stat-label">Clients accompagnés</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div>
+        <div class="stat-num">4.8★</div>
+        <div class="stat-label">Note Google</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div>
+        <div class="stat-num">1ère</div>
+        <div class="stat-label">Consultation offerte</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos domaines d'expertise</h2>
+    <p>Droit des affaires, droit de la famille, droit immobilier... Chaque situation est unique, notre approche aussi.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Votre situation mérite une vraie écoute"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Consultation gratuite — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

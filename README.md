@@ -1,15 +1,38 @@
-# Module Config Manager & Sheets
+# Prospection Machine AI 🚀
 
-Ce module gère la configuration des clés API et les quotas via Google Sheets.
+Système automatisé de scraping Google Maps et d'audit technique pour la génération de prospects ultra-qualifiés.
 
-## Installation
-1. `pip install -r requirements.txt`
-2. Copiez `.env.example` en `.env` et remplissez `GOOGLE_SHEETS_ID` et `GOOGLE_SERVICE_ACCOUNT_JSON`.
-3. Lancez `python setup_sheets.py` pour initialiser le document Google Sheets.
+## Installation rapide
 
-## Test
-Lancer `python test_config.py` pour vérifier la configuration active et l'état des limites.
+```powershell
+pip install -r requirements.txt
+playwright install chromium
+```
 
-## Module Gemini Maps
-Un module `gemini_maps.py` est inclus pour effectuer des recherches de prospects géolocalisés (via l'outil natif Google Maps de Gemini).
-Vous pouvez le tester avec : `python gemini_maps.py`. Il lira automatiquement `google_api_key` depuis vos configurations Sheets.
+## Utilisation Autonome
+
+Pour lancer une session de prospection complète (Scraping + Audit) sans aide extérieure :
+
+```powershell
+# Commande magique
+python run_machine.py --keyword "VOTRE_METIER" --city "VOTRE_VILLE" --limit 10
+```
+
+### Paramètres disponibles :
+- `--keyword`: Le métier recherché (ex: "restaurant").
+- `--city`: La ville cible (ex: "Cotonou").
+- `--limit`: Nombre maximum de leads à collecter (défaut: 10).
+- `--dry-run`: Pour tester sans écrire dans Google Sheets.
+
+## Architecture
+
+1. **Scrapper** (`scraper/main.py`) : Utilise Playwright pour trouver les entreprises et extraire emails/téléphones. Stocke un "JSON Complet" pour plus de fiabilité.
+2. **Auditeur** (`auditeur/main.py`) : Analyse la vitesse (PageSpeed), le SEO et la fiche Google Business.
+3. **Copywriter (Jean-Marc)** : Rédige un e-mail personnalisé basé sur UN SEUL problème prioritaire.
+
+## Résultats
+- `leads_bruts` : Liste brute extraite avec le JSON complet.
+- `leads_audites` : Audit technique détaillé et brouillon d'e-mail.
+
+---
+*Machine de prospection développée avec Antigravity.*

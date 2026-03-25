@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT SANTÉ 1 : #0077b6 (bleu médical confiance)
+  Python remplace '#0077b6'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}}
+              {{SPECIALITE_MEDICALE}} ex: "Médecine générale · Pédiatrie"
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Nunito',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;align-items:center;overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1600&q=90') center/cover no-repeat;
+}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(0,20,50,.97) 0%,
+      rgba(0,20,50,.88) 40%,
+      rgba(0,20,50,.55) 65%,
+      rgba(0,20,50,.18) 100%
+    ),
+    linear-gradient(
+      to top,
+      rgba(0,20,50,.7) 0%,
+      transparent 50%
+    );
+}
+
+/* Motif croix médicale subtil */
+.hero-pattern{
+  position:absolute;right:2rem;top:50%;transform:translateY(-50%);
+  z-index:2;opacity:.04;
+  font-size:20rem;color:#fff;
+  font-weight:700;line-height:1;
+  user-select:none;pointer-events:none;
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.5rem 3rem;
+  background:rgba(0,20,50,.3);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.nav-brand{display:flex;align-items:center;gap:.875rem}
+.nav-logo-img{height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:none}
+.nav-brand-text{}
+.nav-name{
+  font-family:'Merriweather',serif;
+  font-size:1.1rem;font-weight:700;color:#fff;
+  text-decoration:none;display:block;
+}
+.nav-specialty{
+  font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:#0077b6;display:block;margin-top:2px;
+}
+
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#fff}
+
+.nav-rdv{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.4rem;
+  background:#0077b6;color:#fff;
+  font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:20px;text-decoration:none;transition:all .2s;
+  white-space:nowrap;
+}
+.nav-rdv:hover{background:#fff;color:#001432}
+
+/* ── CONTENU ── */
+.hero-inner{
+  position:relative;z-index:5;
+  padding:0 3rem;max-width:680px;
+}
+
+.hero-badge-top{
+  display:inline-flex;align-items:center;gap:.6rem;
+  background:rgba(0,119,182,.2);
+  border:1px solid rgba(0,119,182,.4);
+  padding:.45rem 1rem;border-radius:20px;
+  font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:#90e0ef;margin-bottom:1.75rem;
+}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:#0077b6;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+.hero-title{
+  font-family:'Merriweather',serif;
+  font-size:clamp(2.5rem,5vw,4.2rem);
+  font-weight:300;line-height:1.15;
+  color:#fff;margin-bottom:1.5rem;
+  text-shadow:0 2px 20px rgba(0,0,0,.5);
+}
+.hero-title strong{font-weight:700;display:block}
+.hero-title em{font-style:italic;color:#90e0ef}
+
+.hero-desc{
+  font-size:.95rem;font-weight:300;
+  color:rgba(255,255,255,.70);
+  line-height:1.9;max-width:480px;
+  margin-bottom:2rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-specialites{
+  display:flex;gap:.625rem;flex-wrap:wrap;margin-bottom:2.25rem;
+}
+.spec{
+  font-size:.68rem;font-weight:600;letter-spacing:.08em;
+  padding:.3rem .875rem;
+  background:rgba(0,119,182,.15);
+  border:1px solid rgba(0,119,182,.3);
+  color:rgba(255,255,255,.75);border-radius:20px;
+}
+
+.hero-ctas{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+
+.btn-rdv{
+  display:inline-block;
+  padding:.9rem 2rem;
+  background:#0077b6;color:#fff;
+  font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  border-radius:25px;text-decoration:none;
+  transition:all .25s;
+  box-shadow:0 4px 16px rgba(0,119,182,.4);
+}
+.btn-rdv:hover{background:#fff;color:#001432;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+
+.btn-tel{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.82rem;font-weight:500;
+  color:rgba(255,255,255,.8);text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:1px;
+  transition:color .2s;
+}
+.btn-tel:hover{color:#fff;border-bottom-color:#fff}
+
+/* Cards flottantes droite */
+.hero-cards{
+  position:absolute;right:3rem;top:50%;transform:translateY(-50%);
+  z-index:5;display:flex;flex-direction:column;gap:.875rem;
+}
+.hcard{
+  display:flex;align-items:center;gap:.875rem;
+  padding:1rem 1.25rem;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(10px);
+  border-radius:8px;min-width:220px;
+  transition:background .2s;
+}
+.hcard:hover{background:rgba(255,255,255,.12)}
+.hcard-icon{
+  width:38px;height:38px;border-radius:8px;
+  background:rgba(0,119,182,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;flex-shrink:0;
+}
+.hcard-strong{display:block;font-size:.8rem;font-weight:700;color:#fff}
+.hcard-small{display:block;font-size:.68rem;color:rgba(255,255,255,.5);margin-top:1px}
+
+/* Barre bas */
+.hero-bottom{
+  position:absolute;bottom:0;left:0;right:0;z-index:5;
+  display:flex;border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(0,20,50,.5);backdrop-filter:blur(6px);
+}
+.bottom-item{
+  flex:1;padding:.875rem 1.75rem;
+  display:flex;align-items:center;gap:.75rem;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.bottom-item:last-child{border-right:none}
+.bi-icon{font-size:.9rem;opacity:.7}
+.bi-strong{display:block;font-size:.78rem;font-weight:600;color:rgba(255,255,255,.85)}
+.bi-small{font-size:.68rem;color:rgba(255,255,255,.4)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#f0f7ff,#e3f0fa);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.3;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Merriweather',serif;
+  font-size:2.5rem;color:#001432;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#2a4060;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:180px;height:110px;background:#c8dff0;border-radius:8px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#0077b6}
+.preview-msg{
+  font-family:'Merriweather',serif;
+  font-size:1.6rem;font-weight:300;font-style:italic;
+  color:#001432;text-align:center;max-width:420px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#0077b6;color:#fff;
+  font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:25px;text-decoration:none;transition:all .25s;
+  box-shadow:0 4px 16px rgba(0,119,182,.3);
+}
+.preview-cta:hover{background:#001432;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-inner{padding:0 1.5rem}
+  .hero-cards,.hero-bottom{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-pattern">+</div>
+
+  <nav>
+    <div class="nav-brand">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <div class="nav-brand-text">
+        <a href="#" class="nav-name">{{NOM_ENTREPRISE}}</a>
+        <span class="nav-specialty">{{SPECIALITE_MEDICALE}}</span>
+      </div>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Spécialités</a></li>
+      <li><a href="#">L'équipe</a></li>
+      <li><a href="#">Patients</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <a href="#" class="nav-rdv">Prendre RDV</a>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-badge-top">
+      <div class="badge-dot"></div>
+      Disponible · {{VILLE}}
+    </div>
+    <h1 class="hero-title">
+      <strong>Votre santé,</strong>
+      entre des mains<br>
+      <em>expertes et bienveillantes.</em>
+    </h1>
+    <p class="hero-desc">
+      {{NOM_ENTREPRISE}} vous accueille dans un cadre
+      rassurant et moderne. Une équipe à votre écoute,
+      des soins de qualité, une prise en charge rapide.
+    </p>
+    <div class="hero-specialites">
+      <span class="spec">{{SPECIALITE_MEDICALE}}</span>
+      <span class="spec">Urgences sur RDV</span>
+      <span class="spec">Téléconsultation</span>
+    </div>
+    <div class="hero-ctas">
+      <a href="#" class="btn-rdv">Prendre rendez-vous</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-tel">📞 {{TELEPHONE}}</a>
+    </div>
+  </div>
+
+  <div class="hero-cards">
+    <div class="hcard">
+      <div class="hcard-icon">⭐</div>
+      <div>
+        <span class="hcard-strong">{{NB_AVIS}} avis patients</span>
+        <span class="hcard-small">Note 4.8/5 · Google</span>
+      </div>
+    </div>
+    <div class="hcard">
+      <div class="hcard-icon">📅</div>
+      <div>
+        <span class="hcard-strong">RDV en ligne 24h/24</span>
+        <span class="hcard-small">Confirmation immédiate</span>
+      </div>
+    </div>
+    <div class="hcard">
+      <div class="hcard-icon">🏥</div>
+      <div>
+        <span class="hcard-strong">Tiers payant accepté</span>
+        <span class="hcard-small">Toutes mutuelles</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="bottom-item">
+      <span class="bi-icon">📍</span>
+      <div>
+        <span class="bi-strong">{{ADRESSE}}</span>
+        <span class="bi-small">{{VILLE}}</span>
+      </div>
+    </div>
+    <div class="bottom-item">
+      <span class="bi-icon">🕐</span>
+      <div>
+        <span class="bi-strong">Lun–Sam 8h–19h</span>
+        <span class="bi-small">Sans interruption</span>
+      </div>
+    </div>
+    <div class="bottom-item">
+      <span class="bi-icon">📞</span>
+      <div>
+        <span class="bi-strong">{{TELEPHONE}}</span>
+        <span class="bi-small">Prise en charge rapide</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos spécialités médicales</h2>
+    <p>Une équipe pluridisciplinaire pour répondre à tous vos besoins de santé, avec des technologies de pointe.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Votre santé mérite les meilleurs soins"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Prendre RDV — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

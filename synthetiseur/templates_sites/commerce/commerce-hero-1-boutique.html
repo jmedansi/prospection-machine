@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT COMMERCE 1 : #e76f51 (terracotta chaleureux)
+  Python remplace '#e76f51'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}} {{TYPE_COMMERCE}}
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;align-items:flex-end;overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=90') center/cover no-repeat;
+}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to top,
+      rgba(15,8,4,.97) 0%,
+      rgba(15,8,4,.85) 30%,
+      rgba(15,8,4,.55) 55%,
+      rgba(15,8,4,.20) 75%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(15,8,4,.45) 0%,
+      transparent 55%
+    );
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3rem;
+}
+
+.nav-logo-img{height:36px;width:auto;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Fraunces',serif;
+  font-size:1.4rem;font-weight:700;color:#fff;
+  text-decoration:none;letter-spacing:.02em;
+}
+.nav-logo-text span{color:#e76f51}
+
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.62);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#fff}
+
+.nav-btn{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.4rem;
+  background:#e76f51;color:#fff;
+  font-size:.72rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .2s;
+}
+.nav-btn:hover{background:#fff;color:#0f0804}
+
+/* ── CONTENU ── */
+.hero-content{
+  position:relative;z-index:5;
+  padding:0 3rem 5rem;max-width:720px;
+}
+
+.hero-label{
+  display:flex;align-items:center;gap:.75rem;
+  margin-bottom:1.5rem;
+}
+.label-dot{width:8px;height:8px;border-radius:50%;background:#e76f51;flex-shrink:0}
+.label-text{
+  font-size:.7rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+  color:#e76f51;
+}
+
+.hero-title{
+  font-family:'Fraunces',serif;
+  font-size:clamp(3rem,6.5vw,5.5rem);
+  font-weight:300;line-height:1.0;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 20px rgba(0,0,0,.5);
+}
+.hero-title em{font-style:italic;color:#e76f51}
+.hero-title strong{font-weight:700;display:block}
+
+.hero-desc{
+  font-size:.95rem;font-weight:300;
+  color:rgba(255,255,255,.68);
+  line-height:1.9;max-width:480px;
+  margin-bottom:2.25rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-tags{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:2.25rem}
+.htag{
+  font-size:.68rem;font-weight:500;letter-spacing:.08em;
+  padding:.3rem .875rem;
+  border:1px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.72);border-radius:20px;
+}
+
+.hero-ctas{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+
+.btn-main{
+  display:inline-block;
+  padding:.9rem 2.25rem;
+  background:#e76f51;color:#fff;
+  font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;
+  transition:all .25s;box-shadow:0 4px 20px rgba(231,111,81,.35);
+}
+.btn-main:hover{background:#fff;color:#0f0804;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3)}
+
+.btn-tel{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.85rem;font-weight:400;
+  color:rgba(255,255,255,.78);text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:1px;
+  transition:color .2s;
+}
+.btn-tel:hover{color:#fff;border-bottom-color:#fff}
+
+/* Stats */
+.hero-stats{
+  position:absolute;bottom:0;right:0;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.1);
+  border-left:1px solid rgba(255,255,255,.1);
+}
+.stat-block{
+  padding:1rem 1.75rem;text-align:center;
+  border-right:1px solid rgba(255,255,255,.08);
+}
+.stat-block:last-child{border-right:none}
+.stat-num{
+  font-family:'Fraunces',serif;
+  font-size:1.7rem;font-weight:400;color:#fff;
+  display:block;line-height:1;
+}
+.stat-label{
+  font-size:.62rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.4);display:block;margin-top:.3rem;
+}
+
+/* Barre infos bas */
+.hero-bar{
+  position:absolute;bottom:0;left:0;z-index:5;
+  display:flex;border-top:1px solid rgba(255,255,255,.08);
+}
+.bar-item{
+  padding:.875rem 1.75rem;
+  display:flex;align-items:center;gap:.625rem;
+  border-right:1px solid rgba(255,255,255,.06);
+  font-size:.72rem;color:rgba(255,255,255,.55);
+  white-space:nowrap;
+}
+.bar-item strong{color:rgba(255,255,255,.82)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#fdf8f4,#f5ede4);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.3;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Fraunces',serif;
+  font-size:2.6rem;color:#1a0f08;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#5a3a28;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-grid{display:grid;grid-template-columns:repeat(3,160px);gap:1rem;margin-top:2rem;justify-content:center}
+.preview-card{height:120px;background:#e8d8c8;border-radius:4px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:#e76f51}
+.preview-msg{
+  font-family:'Fraunces',serif;
+  font-size:1.7rem;font-style:italic;
+  color:#1a0f08;text-align:center;max-width:400px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#1a0f08;color:#fff;
+  font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#e76f51;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-content{padding:0 1.5rem 3rem}
+  .hero-stats,.hero-bar{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Produits</a></li>
+      <li><a href="#">Notre histoire</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <a href="tel:{{TELEPHONE}}" class="nav-btn">📞 {{TELEPHONE}}</a>
+  </nav>
+
+  <div class="hero-content">
+    <div class="hero-label">
+      <div class="label-dot"></div>
+      <span class="label-text">{{TYPE_COMMERCE}} · {{VILLE}}</span>
+    </div>
+    <h1 class="hero-title">
+      <strong>{{NOM_ENTREPRISE}}</strong>
+      <em>au cœur</em>
+      de {{VILLE}}.
+    </h1>
+    <p class="hero-desc">
+      Une sélection soigneuse, un accueil chaleureux,
+      une adresse qui fait partie du quotidien de {{VILLE}}.
+      Venez découvrir ce qui nous rend unique.
+    </p>
+    <div class="hero-tags">
+      <span class="htag">Ouvert 7j/7</span>
+      <span class="htag">{{VILLE}}</span>
+      <span class="htag">{{NB_AVIS}} avis ⭐</span>
+    </div>
+    <div class="hero-ctas">
+      <a href="#" class="btn-main">Découvrir la boutique</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-tel">📞 {{TELEPHONE}}</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-block">
+      <span class="stat-num">{{NB_AVIS}}</span>
+      <span class="stat-label">Avis Google</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">4.8★</span>
+      <span class="stat-label">Note moyenne</span>
+    </div>
+  </div>
+
+  <div class="hero-bar">
+    <div class="bar-item">📍 <strong>{{ADRESSE}}</strong></div>
+    <div class="bar-item">🕐 Ouvert <strong>7j/7</strong></div>
+    <div class="bar-item">📞 <strong>{{TELEPHONE}}</strong></div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Notre sélection</h2>
+    <p>Des produits soigneusement choisis, des marques locales et internationales, pour tous les goûts.</p>
+    <div class="preview-grid">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Découvrez toute notre sélection"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Nous contacter — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

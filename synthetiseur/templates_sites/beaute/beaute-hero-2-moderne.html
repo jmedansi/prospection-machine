@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT BEAUTÉ 2 : #f4a261 (orange cuivré moderne)
+  Python remplace '#f4a261'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}} {{TYPE_SALON}}
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:grid;grid-template-columns:55% 45%;
+  overflow:hidden;
+}
+
+/* Gauche — image */
+.hero-left{
+  position:relative;overflow:hidden;
+}
+.hero-img{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1200&q=90') center/cover no-repeat;
+  animation:zoomin 10s ease-out forwards;
+}
+@keyframes zoomin{from{transform:scale(1.06)}to{transform:scale(1)}}
+.hero-img-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to right,transparent 50%,rgba(10,10,10,.5) 100%);
+}
+
+/* Numéro décoratif */
+.hero-num{
+  position:absolute;bottom:2rem;left:2rem;z-index:5;
+  font-family:'Anton',sans-serif;
+  font-size:8rem;line-height:.8;
+  color:rgba(255,255,255,.05);
+  pointer-events:none;user-select:none;
+}
+
+/* Droite — contenu noir */
+.hero-right{
+  background:#0a0a0a;
+  display:flex;flex-direction:column;
+  justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+
+/* Ligne accent verticale */
+.hero-right::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;
+  width:3px;
+  background:linear-gradient(to bottom,transparent,#f4a261,transparent);
+}
+
+/* ── NAV ── */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 2.5rem;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  grid-column:1/-1;
+  position:absolute;top:0;left:0;right:0;z-index:10;
+}
+
+.nav-logo-img{height:34px;width:auto;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Anton',sans-serif;
+  font-size:1.2rem;color:#fff;
+  text-decoration:none;letter-spacing:.06em;text-transform:uppercase;
+}
+.nav-logo-text span{color:#f4a261}
+
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-size:.7rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#f4a261}
+
+.nav-btn{
+  display:inline-block;
+  padding:.58rem 1.5rem;
+  background:#f4a261;color:#0a0a0a;
+  font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;transition:all .2s;
+}
+.nav-btn:hover{background:#fff;color:#0a0a0a}
+
+/* ── CONTENU DROITE ── */
+.hero-content{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:2rem 2.5rem;
+  margin-top:72px;
+}
+
+.hero-kicker{
+  font-size:.68rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+  color:#f4a261;margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:.625rem;
+}
+.kicker-bar{width:20px;height:2px;background:#f4a261;flex-shrink:0}
+
+.hero-title{
+  font-family:'Anton',sans-serif;
+  font-size:clamp(2.4rem,4.5vw,3.8rem);
+  line-height:1.0;color:#fff;
+  text-transform:uppercase;letter-spacing:.02em;
+  margin-bottom:1rem;
+  text-shadow:0 2px 16px rgba(0,0,0,.3);
+}
+.hero-title span{color:#f4a261;display:block}
+
+.hero-desc{
+  font-size:.88rem;font-weight:300;
+  color:rgba(255,255,255,.58);
+  line-height:1.9;margin-bottom:2rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.3);
+}
+
+.hero-list{
+  display:flex;flex-direction:column;gap:.625rem;
+  margin-bottom:2rem;
+}
+.hli{
+  display:flex;align-items:center;gap:.75rem;
+  font-size:.8rem;color:rgba(255,255,255,.68);
+}
+.hli-arrow{
+  color:#f4a261;font-size:.7rem;flex-shrink:0;
+}
+
+.hero-ctas{display:flex;gap:.875rem;flex-wrap:wrap}
+
+.btn-book{
+  display:inline-block;
+  padding:.9rem 2rem;
+  background:#f4a261;color:#0a0a0a;
+  font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;
+  transition:all .25s;box-shadow:0 4px 16px rgba(244,162,97,.3);
+}
+.btn-book:hover{background:#fff;color:#0a0a0a;transform:translateY(-2px)}
+
+.btn-call{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.9rem 1.5rem;
+  border:1.5px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.75);
+  font-size:.72rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;transition:all .25s;
+}
+.btn-call:hover{border-color:#fff;color:#fff}
+
+/* Footer bas droite */
+.hero-footer{
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.hf{
+  flex:1;padding:.875rem 1.5rem;
+  border-right:1px solid rgba(255,255,255,.05);
+  font-size:.68rem;
+}
+.hf:last-child{border-right:none}
+.hf strong{display:block;color:rgba(255,255,255,.75);font-size:.72rem;margin-bottom:1px}
+.hf span{color:rgba(255,255,255,.35)}
+
+/* Avis flottant sur image */
+.img-badge{
+  position:absolute;bottom:2rem;right:2rem;z-index:5;
+  background:rgba(10,10,10,.75);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.1);
+  border-left:3px solid #f4a261;
+  border-radius:3px;
+  padding:1rem 1.25rem;
+}
+.ib-stars{color:#f4a261;font-size:.9rem;letter-spacing:.1em;margin-bottom:.25rem}
+.ib-num{
+  font-family:'Anton',sans-serif;
+  font-size:1.5rem;color:#fff;line-height:1;
+}
+.ib-label{font-size:.65rem;color:rgba(255,255,255,.45);letter-spacing:.08em;margin-top:2px}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#0a0a0a,#1a1010);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.2;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Anton',sans-serif;
+  font-size:2.8rem;color:#fff;margin-bottom:1rem;text-transform:uppercase;
+}
+.preview-blur p{font-size:.9rem;color:rgba(255,255,255,.5);line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:180px;height:120px;background:#2a1810;border-radius:3px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#f4a261}
+.preview-msg{
+  font-family:'Anton',sans-serif;
+  font-size:2rem;color:#fff;text-align:center;max-width:380px;
+  line-height:1.15;text-transform:uppercase;letter-spacing:.02em;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#f4a261;color:#0a0a0a;
+  font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  border-radius:2px;text-decoration:none;transition:all .25s;
+  box-shadow:0 4px 16px rgba(244,162,97,.3);
+}
+.preview-cta:hover{background:#fff;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  .hero{grid-template-columns:1fr}
+  .hero-left{display:none}
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-content{padding:2rem 1.5rem;margin-top:60px}
+  .hero-footer{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <!-- Navigation pleine largeur -->
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Services</a></li>
+      <li><a href="#">Équipe</a></li>
+      <li><a href="#">Tarifs</a></li>
+    </ul>
+    <a href="#" class="nav-btn">Book now</a>
+  </nav>
+
+  <!-- Image gauche -->
+  <div class="hero-left">
+    <div class="hero-img"></div>
+    <div class="hero-img-overlay"></div>
+    <div class="hero-num">01</div>
+    <div class="img-badge">
+      <div class="ib-stars">★★★★★</div>
+      <div class="ib-num">{{NB_AVIS}}</div>
+      <div class="ib-label">Avis Google</div>
+    </div>
+  </div>
+
+  <!-- Contenu droite -->
+  <div class="hero-right">
+    <div class="hero-content">
+      <div class="hero-kicker">
+        <div class="kicker-bar"></div>
+        {{TYPE_SALON}} · {{VILLE}}
+      </div>
+      <h1 class="hero-title">
+        Your best<br>
+        <span>look ever.</span>
+      </h1>
+      <p class="hero-desc">
+        {{NOM_ENTREPRISE}} — l'endroit où votre style
+        prend vie. Nos experts créent votre look signature,
+        à {{VILLE}}.
+      </p>
+      <div class="hero-list">
+        <div class="hli"><span class="hli-arrow">▸</span> Coupe & Coiffure premium</div>
+        <div class="hli"><span class="hli-arrow">▸</span> Barbe & Rasage traditionnel</div>
+        <div class="hli"><span class="hli-arrow">▸</span> Soins & Traitements capillaires</div>
+        <div class="hli"><span class="hli-arrow">▸</span> Coloration & Mèches tendance</div>
+      </div>
+      <div class="hero-ctas">
+        <a href="#" class="btn-book">Réserver</a>
+        <a href="tel:{{TELEPHONE}}" class="btn-call">📞 {{TELEPHONE}}</a>
+      </div>
+    </div>
+    <div class="hero-footer">
+      <div class="hf">
+        <strong>{{ADRESSE}}</strong>
+        <span>{{VILLE}}</span>
+      </div>
+      <div class="hf">
+        <strong>7j/7 · 9h–20h</strong>
+        <span>Sans rendez-vous possible</span>
+      </div>
+      <div class="hf">
+        <strong>{{TELEPHONE}}</strong>
+        <span>Réservation directe</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos services</h2>
+    <p>Coupe, barbe, coloration, soins... Découvrez tout ce que nous faisons pour sublimer votre style.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">Découvrez nos services & tarifs</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Réserver — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

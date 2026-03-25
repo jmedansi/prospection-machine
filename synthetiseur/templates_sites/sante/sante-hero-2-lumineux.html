@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT SANTÉ 2 : #00b4d8 (bleu clair lumineux)
+  Python remplace '#00b4d8'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}} {{SPECIALITE_MEDICALE}}
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&q=90') center/cover no-repeat;
+}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to top,
+      rgba(0,15,35,.98) 0%,
+      rgba(0,15,35,.88) 32%,
+      rgba(0,15,35,.62) 55%,
+      rgba(0,15,35,.28) 75%,
+      rgba(0,15,35,.08) 92%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(0,15,35,.4) 0%,
+      transparent 60%
+    );
+}
+
+/* Arc lumineux décoratif */
+.hero-arc{
+  position:absolute;right:-200px;top:-200px;
+  width:700px;height:700px;
+  border:1px solid rgba(0,180,216,.08);
+  border-radius:50%;z-index:2;pointer-events:none;
+}
+.hero-arc2{
+  position:absolute;right:-100px;top:-100px;
+  width:500px;height:500px;
+  border:1px solid rgba(0,180,216,.05);
+  border-radius:50%;z-index:2;pointer-events:none;
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3rem;
+}
+
+.nav-logo-img{height:36px;max-width:180px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'DM Serif Display',serif;
+  font-size:1.3rem;color:#fff;
+  text-decoration:none;letter-spacing:.02em;
+  max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-logo-text em{font-style:italic;color:#00b4d8}
+
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{
+  font-size:.7rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#00b4d8}
+
+.nav-right{display:flex;align-items:center;gap:1rem}
+.nav-tel-text{
+  font-size:.8rem;font-weight:500;color:rgba(255,255,255,.7);
+}
+.nav-btn{
+  display:inline-block;
+  padding:.58rem 1.4rem;
+  border:1.5px solid #00b4d8;
+  color:#00b4d8;
+  font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;transition:all .2s;
+}
+.nav-btn:hover{background:#00b4d8;color:#000f23}
+
+/* ── CONTENU ── */
+.hero-content{
+  position:relative;z-index:5;
+  padding:0 3rem 5rem;max-width:820px;
+}
+
+.hero-tag{
+  display:inline-flex;align-items:center;gap:.625rem;
+  font-size:.68rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:#00b4d8;margin-bottom:1.5rem;
+}
+.tag-line{width:24px;height:1.5px;background:#00b4d8;flex-shrink:0}
+
+.hero-title{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(2.5rem,6vw,5rem);
+  line-height:1.05;color:#fff;
+  margin-bottom:1.5rem;
+  text-shadow:0 2px 20px rgba(0,0,0,.5);
+  max-width:100%;word-wrap:break-word;overflow:hidden;
+}
+.hero-title em{font-style:italic;color:#90e0ef}
+
+.hero-desc{
+  font-size:.95rem;font-weight:300;
+  color:rgba(255,255,255,.68);
+  line-height:1.9;max-width:520px;
+  margin-bottom:2.25rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+/* Rating inline */
+.hero-rating{
+  display:flex;align-items:center;gap:.875rem;
+  margin-bottom:2.25rem;
+}
+.rating-stars{color:#00b4d8;font-size:1rem;letter-spacing:.1em}
+.rating-text{font-size:.82rem;color:rgba(255,255,255,.7)}
+.rating-text strong{color:#fff}
+
+.hero-ctas{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+
+.btn-primary{
+  display:inline-block;
+  padding:.9rem 2rem;
+  background:#00b4d8;color:#000f23;
+  font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;transition:all .25s;
+  box-shadow:0 4px 20px rgba(0,180,216,.35);
+}
+.btn-primary:hover{background:#fff;color:#000f23;transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+
+.btn-secondary{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.9rem 1.75rem;
+  border:1.5px solid rgba(255,255,255,.22);
+  color:rgba(255,255,255,.82);
+  font-size:.75rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;transition:all .25s;
+}
+.btn-secondary:hover{border-color:#fff;color:#fff}
+
+/* Stats coins */
+.hero-stats{
+  position:absolute;bottom:0;right:0;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.1);
+  border-left:1px solid rgba(255,255,255,.1);
+}
+.stat-block{
+  padding:1rem 1.75rem;text-align:center;
+  border-right:1px solid rgba(255,255,255,.08);
+}
+.stat-block:last-child{border-right:none}
+.stat-num{
+  font-family:'DM Serif Display',serif;
+  font-size:1.8rem;color:#fff;display:block;line-height:1;
+}
+.stat-label{
+  font-size:.62rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.4);display:block;margin-top:.3rem;
+}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#f0f8fc,#ddeef8);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'DM Serif Display',serif;
+  font-size:2.6rem;color:#001020;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#2a4050;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:180px;height:110px;background:#b8d8e8;border-radius:8px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#00b4d8}
+.preview-msg{
+  font-family:'DM Serif Display',serif;
+  font-size:1.7rem;font-style:italic;
+  color:#001020;text-align:center;max-width:400px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#00b4d8;color:#000f23;
+  font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:4px;text-decoration:none;transition:all .25s;
+  box-shadow:0 4px 16px rgba(0,180,216,.3);
+}
+.preview-cta:hover{background:#001432;color:#fff;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links,.nav-tel-text{display:none}
+  .hero-content{padding:0 1.5rem 3rem}
+  .hero-stats{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-arc"></div>
+  <div class="hero-arc2"></div>
+
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<em>.</em></a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Spécialités</a></li>
+      <li><a href="#">L'équipe</a></li>
+      <li><a href="#">Tarifs</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-tel-text">{{TELEPHONE}}</span>
+      <a href="#" class="nav-btn">Prendre RDV</a>
+    </div>
+  </nav>
+
+  <div class="hero-content">
+    <div class="hero-tag">
+      <div class="tag-line"></div>
+      {{SPECIALITE_MEDICALE}} · {{VILLE}}
+    </div>
+    <h1 class="hero-title">
+      Des soins d'excellence,<br>
+      <em>proches de vous.</em>
+    </h1>
+    <p class="hero-desc">
+      {{NOM_ENTREPRISE}} réunit des praticiens expérimentés
+      dans un environnement moderne et accueillant.
+      Votre confort et votre santé sont notre priorité absolue.
+    </p>
+    <div class="hero-rating">
+      <span class="rating-stars">★★★★★</span>
+      <span class="rating-text"><strong>{{NB_AVIS}} patients</strong> nous font confiance · Note 4.8/5</span>
+    </div>
+    <div class="hero-ctas">
+      <a href="#" class="btn-primary">Prendre rendez-vous</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-secondary">📞 {{TELEPHONE}}</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-block">
+      <span class="stat-num">{{NB_AVIS}}</span>
+      <span class="stat-label">Patients</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">4.8★</span>
+      <span class="stat-label">Note Google</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">24h</span>
+      <span class="stat-label">Réponse RDV</span>
+    </div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos spécialités</h2>
+    <p>Une équipe pluridisciplinaire, des équipements de dernière génération pour prendre soin de vous.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Découvrez tous nos soins et spécialités"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Prendre RDV — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>

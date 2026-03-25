@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Raleway:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT BIJOUTERIE 1 : #d4af37 (or classique)
+  Python remplace '#d4af37'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}}
+              {{TYPE_BIJOUTERIE}} ex: "Bijoux · Montres · Joaillerie"
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Raleway',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;align-items:center;overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1600&q=90') center/cover no-repeat;
+  filter:brightness(.85);
+  animation:zoomin 12s ease-out forwards;
+}
+@keyframes zoomin{from{transform:scale(1.06)}to{transform:scale(1)}}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(5,4,2,.97) 0%,
+      rgba(5,4,2,.88) 38%,
+      rgba(5,4,2,.55) 62%,
+      rgba(5,4,2,.18) 100%
+    ),
+    linear-gradient(
+      to top,
+      rgba(5,4,2,.55) 0%,
+      transparent 45%
+    );
+}
+
+/* Bordure or haut */
+.hero-border-top{
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(to right,transparent,#d4af37,transparent);
+  z-index:6;opacity:.6;
+}
+.hero-border-bot{
+  position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(to right,transparent,#d4af37,transparent);
+  z-index:6;opacity:.4;
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:2rem 4rem;
+}
+
+.nav-logo-img{height:38px;width:auto;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Cinzel',serif;
+  font-size:1.1rem;font-weight:500;color:#fff;
+  text-decoration:none;letter-spacing:.2em;text-transform:uppercase;
+}
+.nav-logo-text span{color:#d4af37}
+
+.nav-center{display:flex;gap:3rem;list-style:none}
+.nav-center a{
+  font-family:'Raleway',sans-serif;
+  font-size:.68rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);text-decoration:none;transition:color .25s;
+}
+.nav-center a:hover{color:#d4af37}
+
+.nav-right{display:flex;align-items:center;gap:1.5rem}
+.nav-tel{
+  font-size:.7rem;font-weight:300;letter-spacing:.14em;
+  color:rgba(255,255,255,.55);
+}
+.nav-appt{
+  display:inline-block;
+  padding:.58rem 1.5rem;
+  border:1px solid rgba(212,175,55,.4);
+  color:#d4af37;
+  font-size:.65rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;border-radius:1px;
+}
+.nav-appt:hover{background:#d4af37;color:#050402;border-color:#d4af37}
+
+/* ── CONTENU ── */
+.hero-inner{
+  position:relative;z-index:5;
+  padding:0 4rem 0 4.5rem;
+  max-width:680px;
+}
+
+.hero-pre{
+  display:flex;align-items:center;gap:1.25rem;
+  margin-bottom:2.5rem;
+}
+.pre-line{width:40px;height:1px;background:#d4af37;opacity:.7}
+.pre-text{
+  font-size:.62rem;font-weight:400;letter-spacing:.3em;text-transform:uppercase;
+  color:rgba(255,255,255,.38);
+}
+
+.hero-title{
+  font-family:'Cinzel',serif;
+  font-size:clamp(2.2rem,4.5vw,4rem);
+  font-weight:400;line-height:1.2;
+  color:#fff;letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:1rem;
+  text-shadow:0 2px 20px rgba(0,0,0,.5);
+}
+.hero-title-italic{
+  font-family:'Raleway',serif;
+  font-size:clamp(1.8rem,3.5vw,3rem);
+  font-weight:300;font-style:italic;
+  color:#d4af37;display:block;letter-spacing:.04em;
+  text-transform:none;
+  margin-top:.25rem;
+  text-shadow:0 2px 16px rgba(0,0,0,.4);
+}
+
+.hero-ornament{
+  display:flex;align-items:center;gap:1rem;
+  margin:2rem 0;
+}
+.orn-line{flex:1;height:1px;background:rgba(212,175,55,.25);max-width:50px}
+.orn-mark{
+  font-size:.9rem;color:#d4af37;opacity:.7;letter-spacing:.2em;
+}
+
+.hero-desc{
+  font-size:.88rem;font-weight:300;font-style:italic;
+  color:rgba(255,255,255,.58);
+  line-height:2;max-width:440px;
+  margin-bottom:2.5rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-ctas{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
+
+.btn-visit{
+  display:inline-block;
+  padding:.9rem 2.5rem;
+  background:transparent;color:#d4af37;
+  border:1px solid #d4af37;
+  font-size:.7rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;
+}
+.btn-visit:hover{background:#d4af37;color:#050402;transform:translateY(-2px);box-shadow:0 8px 24px rgba(212,175,55,.3)}
+
+.btn-tel{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.78rem;font-weight:300;letter-spacing:.1em;
+  color:rgba(255,255,255,.65);text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.18);padding-bottom:1px;
+  transition:color .2s;
+}
+.btn-tel:hover{color:#fff}
+
+/* Panel droite */
+.hero-panel{
+  position:absolute;right:0;top:0;bottom:0;z-index:5;
+  width:200px;
+  border-left:1px solid rgba(212,175,55,.12);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2.5rem;padding:2rem;
+}
+.panel-item{text-align:center}
+.panel-num{
+  font-family:'Cinzel',serif;
+  font-size:2rem;font-weight:500;color:#fff;
+  display:block;line-height:1;letter-spacing:.04em;
+}
+.panel-label{
+  font-size:.58rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);display:block;margin-top:.4rem;
+}
+.panel-sep{
+  width:20px;height:1px;background:rgba(212,175,55,.3);
+}
+
+/* Barre bas */
+.hero-bottom{
+  position:absolute;bottom:0;left:0;right:200px;z-index:5;
+  display:flex;border-top:1px solid rgba(255,255,255,.07);
+}
+.bi{
+  flex:1;padding:.875rem 2rem;
+  font-size:.68rem;color:rgba(255,255,255,.4);
+  display:flex;align-items:center;gap:.625rem;
+  border-right:1px solid rgba(255,255,255,.05);
+}
+.bi:last-child{border-right:none}
+.bi strong{color:rgba(255,255,255,.7)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#0e0c08,#1a1408);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.2;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Cinzel',serif;
+  font-size:2.2rem;color:#fff;margin-bottom:1rem;letter-spacing:.1em;text-transform:uppercase;
+}
+.preview-blur p{font-size:.9rem;color:rgba(255,255,255,.4);line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:170px;height:130px;background:#2a2010;border-radius:3px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.75rem;
+}
+.preview-tag{
+  font-size:.62rem;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:#d4af37;
+}
+.preview-msg{
+  font-family:'Cinzel',serif;
+  font-size:1.6rem;color:#fff;text-align:center;max-width:420px;
+  line-height:1.4;letter-spacing:.04em;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;border:1px solid #d4af37;color:#d4af37;
+  font-size:.68rem;font-weight:400;letter-spacing:.2em;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#d4af37;color:#050402;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-center,.nav-tel{display:none}
+  .hero-inner{padding:0 1.5rem}
+  .hero-panel,.hero-bottom{display:none}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-border-top"></div>
+  <div class="hero-border-bot"></div>
+
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+    </div>
+    <ul class="nav-center">
+      <li><a href="#">Collections</a></li>
+      <li><a href="#">Joaillerie</a></li>
+      <li><a href="#">Sur mesure</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-tel">{{TELEPHONE}}</span>
+      <a href="#" class="nav-appt">Prendre RDV</a>
+    </div>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-pre">
+      <div class="pre-line"></div>
+      <span class="pre-text">Bijouterie · {{VILLE}}</span>
+    </div>
+    <h1 class="hero-title">
+      L'excellence<br>de la
+      <span class="hero-title-italic">joaillerie.</span>
+    </h1>
+    <div class="hero-ornament">
+      <div class="orn-line"></div>
+      <span class="orn-mark">✦ ✦ ✦</span>
+      <div class="orn-line"></div>
+    </div>
+    <p class="hero-desc">
+      Chez {{NOM_ENTREPRISE}}, chaque pièce raconte une histoire.
+      Des créations d'exception, sélectionnées avec passion
+      pour sublimer les moments qui comptent.
+    </p>
+    <div class="hero-ctas">
+      <a href="#" class="btn-visit">Découvrir la collection</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-tel">📞 {{TELEPHONE}}</a>
+    </div>
+  </div>
+
+  <div class="hero-panel">
+    <div class="panel-item">
+      <span class="panel-num">{{NB_AVIS}}</span>
+      <span class="panel-label">Avis Google</span>
+    </div>
+    <div class="panel-sep"></div>
+    <div class="panel-item">
+      <span class="panel-num">4.9★</span>
+      <span class="panel-label">Note moyenne</span>
+    </div>
+    <div class="panel-sep"></div>
+    <div class="panel-item">
+      <span class="panel-num">Sur<br>mesure</span>
+      <span class="panel-label">Disponible</span>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="bi">📍 <strong>{{ADRESSE}}</strong>, {{VILLE}}</div>
+    <div class="bi">🕐 <strong>Lun–Sam</strong> · 10h–19h</div>
+    <div class="bi">📞 <strong>{{TELEPHONE}}</strong></div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos Collections</h2>
+    <p>Bagues, colliers, bracelets, montres... Des pièces uniques pour chaque occasion et chaque personnalité.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">Découvrez nos collections exclusives</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">Nous contacter — {{TELEPHONE}}</a>
+  </div>
+</div>
+
+</body>
+</html>
