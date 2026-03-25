@@ -90,7 +90,8 @@ async function launchScraper() {
     if (limit < 1 || limit > 500) return alert('Le nombre de leads doit être entre 1 et 500');
     if (minEmails && (minEmails < 1 || minEmails > 500)) return alert('Le nombre min d\'emails doit être entre 1 et 500');
 
-    const campaignName = `${kw.charAt(0).toUpperCase() + kw.slice(1)} ${city}`;
+    const today = new Date().toISOString().split('T')[0];
+    const campaignName = `${kw.charAt(0).toUpperCase() + kw.slice(1)} ${city} ${today}`;
 
     let logEl = document.getElementById('scraper-log');
     if (!logEl) {
