@@ -316,6 +316,7 @@ def insert_lead(lead: dict) -> int | None:
                 'ville':        lead.get('ville', ''),
                 'lien_maps':    lead.get('lien_maps', ''),
             })
+            conn.commit()
             return cur.lastrowid
     except Exception as e:
         logger.error(f"insert_lead → {e}")
@@ -386,6 +387,7 @@ def update_lead_statut(lead_id: int, statut: str):
                 "UPDATE leads_bruts SET statut=? WHERE id=?",
                 (statut, lead_id)
             )
+            conn.commit()
     except Exception as e:
         logger.error(f"update_lead_statut({lead_id}, {statut}) → {e}")
 
@@ -439,6 +441,7 @@ def update_lead(lead_id: int, data: dict):
         update_data['id'] = lead_id
         with get_conn() as conn:
             conn.execute(f"UPDATE leads_bruts SET {sets} WHERE id=:id", update_data)
+            conn.commit()
     except Exception as e:
         logger.error(f"update_lead({lead_id}) → {e}")
         raise
@@ -534,6 +537,7 @@ def insert_audit(audit: dict) -> int | None:
                      :arguments, :rapport_resume, :email_objet, :email_corps,
                      :approuve, :lien_rapport, :lien_pdf, :template_used, :nb_avis)
                 """, _build_audit_params(audit))
+                conn.commit()
                 return cur.lastrowid
     except Exception as e:
         logger.error(f"insert_audit → {e}")
