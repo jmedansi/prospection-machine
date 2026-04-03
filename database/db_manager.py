@@ -54,25 +54,40 @@ def migrate_db():
                 ("bounce", "INTEGER DEFAULT 0"),
                 ("spam", "INTEGER DEFAULT 0"),
                 ("message_id_resend", "TEXT"),
+                ("template_variant", "TEXT DEFAULT 'v1'"),
             ]
             for col_name, col_def in migrations:
                 if col_name not in cols:
                     try:
                         conn.execute(f"ALTER TABLE emails_envoyes ADD COLUMN {col_name} {col_def}")
                         print(f"  [MIGRATION] Colonne ajoutée: emails_envoyes.{col_name}")
-                    except Exception as e:
+                    except Exception:
                         pass
-        
+
+        # Ajout : champs critiques phase 1
+        migrate_emails_envoyes_critical_fields()
+
         if 'leads_bruts' in table_names:
             cols = [r[1] for r in conn.execute("PRAGMA table_info(leads_bruts)").fetchall()]
             if 'email_valide' not in cols:
                 try:
                     conn.execute("ALTER TABLE leads_bruts ADD COLUMN email_valide TEXT DEFAULT ''")
-                except: pass
+                except Exception:
+                    pass
             if 'campaign_id' not in cols:
                 try:
                     conn.execute("ALTER TABLE leads_bruts ADD COLUMN campaign_id INTEGER REFERENCES campagnes(id) ON DELETE SET NULL")
-                except: pass
+                except Exception:
+                    pass
+
+        if 'leads_audites' in table_names:
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(leads_audites)").fetchall()]
+            if 'template_variant' not in cols:
+                try:
+                    conn.execute("ALTER TABLE leads_audites ADD COLUMN template_variant TEXT DEFAULT 'v1'")
+                    print("  [MIGRATION] Colonne ajoutée: leads_audites.template_variant")
+                except Exception:
+                    pass
 
         if 'campagnes' in table_names:
             cols = [r[1] for r in conn.execute("PRAGMA table_info(campagnes)").fetchall()]
@@ -80,17 +95,74 @@ def migrate_db():
                 try:
                     conn.execute("ALTER TABLE campagnes ADD COLUMN nb_demande INTEGER DEFAULT 0")
                     print("  [MIGRATION] Colonne ajoutée: campagnes.nb_demande")
-                except: pass
-                
-        if 'leads_audites' not in table_names:
-            pass
+                except Exception:
+                    pass
 
+        migrate_email_events_table()
+
+
+def migrate_emails_envoyes_critical_fields():
+    """Ajoute les colonnes critiques pour le tracking d'envoi si manquantes."""
+    with get_conn() as conn:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(emails_envoyes)").fetchall()]
+        migrations = [
+            ("statut_envoi", "TEXT DEFAULT 'en_attente'"),
+            ("message_erreur", "TEXT"),
+            ("nb_tentatives_envoi", "INTEGER DEFAULT 0"),
+            ("date_dernier_essai", "TEXT")
+        ]
+        for col_name, col_def in migrations:
+            if col_name not in cols:
+                try:
+                    conn.execute(f"ALTER TABLE emails_envoyes ADD COLUMN {col_name} {col_def}")
+                    print(f"  [MIGRATION] Colonne ajoutée: emails_envoyes.{col_name}")
+                except Exception:
+                    pass
+
+
+def migrate_email_events_table():
+    """Crée la table email_events si elle n'existe pas."""
+    with get_conn() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS email_events (
+                id INTEGER PRIMARY KEY,
+                email_record_id INTEGER NOT NULL,
+                lead_id INTEGER NOT NULL,
+                event_type TEXT NOT NULL,  -- 'sent', 'opened', 'clicked', 'bounced', 'unsubscribed'
+                event_data TEXT,  -- JSON avec métadonnées (ip, user_agent, etc.)
+                timestamp TEXT NOT NULL,
+                FOREIGN KEY (email_record_id) REFERENCES emails_envoyes(id),
+                FOREIGN KEY (lead_id) REFERENCES leads_audites(id)
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_email_record ON email_events(email_record_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_lead ON email_events(lead_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_type ON email_events(event_type);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_timestamp ON email_events(timestamp);")
 
 def init_db():
     """Crée les tables et index si ils n'existent pas encore."""
     Path(DB_PATH.parent).mkdir(parents=True, exist_ok=True)
     with get_conn() as conn:
         conn.executescript("""
+        -- ─── SÉQUENCES EMAILS (relances automatiques) ─────────────────────────
+        CREATE TABLE IF NOT EXISTS email_sequences (
+            id INTEGER PRIMARY KEY,
+            lead_id INTEGER NOT NULL,
+            email_record_id INTEGER,
+            email_type TEXT NOT NULL,  -- 'initial', 'relance_1', 'relance_2', 'relance_special'
+            statut TEXT DEFAULT 'planned',  -- 'planned', 'sent', 'cancelled', 'bounced'
+            date_planifiee TEXT NOT NULL,
+            date_envoi TEXT,
+            condition_envoi TEXT,  -- JSON
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (lead_id) REFERENCES leads_audites(id),
+            FOREIGN KEY (email_record_id) REFERENCES emails_envoyes(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_sequences_lead ON email_sequences(lead_id);
+        CREATE INDEX IF NOT EXISTS idx_sequences_statut ON email_sequences(statut);
+        CREATE INDEX IF NOT EXISTS idx_sequences_date_planifiee ON email_sequences(date_planifiee);
 
         -- ─── CAMPAGNES ──────────────────────────────────────────────────
         CREATE TABLE IF NOT EXISTS campagnes (
@@ -176,6 +248,7 @@ def init_db():
             lien_rapport                TEXT,
             lien_pdf                    TEXT,
             template_used               TEXT,
+            template_variant            TEXT    DEFAULT 'v1',
             -- Meta
             date_audit                  TEXT    DEFAULT (datetime('now')),
             statut                      TEXT    DEFAULT 'audite',
@@ -194,6 +267,7 @@ def init_db():
             email_objet         TEXT,
             email_corps         TEXT,
             lien_rapport        TEXT,
+            template_variant    TEXT    DEFAULT 'v1',
             statut_envoi        TEXT    DEFAULT 'envoye',
             -- Tracking (webhooks)
             ouvert              INTEGER DEFAULT 0,
@@ -224,6 +298,67 @@ def init_db():
             date_sync   TEXT    DEFAULT (datetime('now')),
             statut      TEXT,   -- ok | erreur
             erreur      TEXT
+        );
+
+        -- ─── PLANIFICATEUR ───────────────────────────────────────────────
+        CREATE TABLE IF NOT EXISTS planned_campaigns (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            secteur         TEXT    NOT NULL,
+            keyword         TEXT    NOT NULL,
+            city            TEXT    NOT NULL,
+            limit_leads     INTEGER DEFAULT 50,
+            date_planifiee  DATE    NOT NULL,
+            heure           TEXT    DEFAULT '09:00',
+            statut          TEXT    DEFAULT 'planned',
+            -- planned | running | done | cancelled
+            campaign_id     INTEGER REFERENCES campagnes(id) ON DELETE SET NULL,
+            created_at      TIMESTAMP DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS planning_settings (
+            key     TEXT PRIMARY KEY,
+            value   TEXT
+        );
+
+        -- Quota par défaut : 30/jour (warm-up)
+        INSERT OR IGNORE INTO planning_settings (key, value)
+            VALUES ('daily_quota', '30'),
+                   ('quota_start_date', date('now')),
+                   ('auto_send', '0'),
+                   ('send_hour_start', '9'),
+                   ('send_hour_end', '18'),
+                   ('auto_plan_enabled', '1'),
+                   ('auto_plan_per_day', '3');
+
+        -- ─── PRIORITÉS DE SCRAPING (auto-planificateur) ───────────────────
+        CREATE TABLE IF NOT EXISTS scraping_priorities (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            secteur             TEXT    NOT NULL,
+            keyword             TEXT    NOT NULL,
+            ville               TEXT    NOT NULL,
+            limit_leads         INTEGER DEFAULT 50,
+            priorite            INTEGER DEFAULT 5,
+            -- 1 = haute priorité, 10 = basse
+            actif               INTEGER DEFAULT 1,
+            frequence_jours     INTEGER DEFAULT 30,
+            -- délai min avant de re-scraper ce (keyword+ville)
+            derniere_execution  DATE    DEFAULT NULL,
+            created_at          TIMESTAMP DEFAULT (datetime('now'))
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_scraping_prio_uniq
+            ON scraping_priorities(keyword, ville);
+
+        -- ─── BATCHES PROGRAMMÉS SUR RESEND ────────────────────────────────
+        CREATE TABLE IF NOT EXISTS scheduled_batches (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            batch_key    TEXT    UNIQUE NOT NULL,   -- ex: "2026-03-28_10h"
+            scheduled_at TEXT    NOT NULL,           -- ISO 8601 Europe/Paris
+            status       TEXT    DEFAULT 'pending',  -- pending/sent/cancelled
+            nb_emails    INTEGER DEFAULT 0,
+            lead_ids     TEXT,                       -- JSON list d'IDs leads_bruts
+            message_ids  TEXT,                       -- JSON list de msg IDs Resend
+            created_at   TEXT    DEFAULT (datetime('now', 'localtime'))
         );
 
         -- ─── INDEX ────────────────────────────────────────────────────────
@@ -280,16 +415,50 @@ def _deserialize_json(row: dict, keys: list) -> dict:
 def insert_lead(lead: dict) -> int | None:
     """
     Insère un lead depuis le scraper. Retourne l'id SQLite.
-    Ignore les doublons (même nom + ville).
+    Déduplique par nom+ville ou téléphone, et enrichit le lead existant
+    avec les nouvelles données si elles sont meilleures.
     """
     try:
         with get_conn() as conn:
-            # Vérifier doublon
+            nom   = lead.get('nom', '').strip()
+            ville = lead.get('ville', '').strip()
+            tel   = (lead.get('telephone') or '').strip()
+
+            # Recherche doublon par nom+ville
             existing = conn.execute(
-                "SELECT id FROM leads_bruts WHERE LOWER(nom)=LOWER(?) AND LOWER(ville)=LOWER(?)",
-                (lead.get('nom', ''), lead.get('ville', ''))
+                "SELECT id, email, site_web, telephone, nb_avis FROM leads_bruts "
+                "WHERE LOWER(nom)=LOWER(?) AND LOWER(ville)=LOWER(?)",
+                (nom, ville)
             ).fetchone()
+
+            # Recherche doublon par téléphone (si non vide)
+            if not existing and tel:
+                existing = conn.execute(
+                    "SELECT id, email, site_web, telephone, nb_avis FROM leads_bruts "
+                    "WHERE telephone=? AND telephone != ''",
+                    (tel,)
+                ).fetchone()
+
             if existing:
+                # Enrichir avec les nouvelles données si l'existant est vide
+                updates = {}
+                if lead.get('email') and not existing['email']:
+                    updates['email'] = lead['email']
+                    updates['email_valide'] = lead.get('statut_email', lead.get('email_valide', ''))
+                if lead.get('site_web') and not existing['site_web']:
+                    updates['site_web'] = lead['site_web']
+                if tel and not existing['telephone']:
+                    updates['telephone'] = tel
+                new_avis = lead.get('nb_avis') or 0
+                if new_avis and (not existing['nb_avis'] or int(new_avis) > int(existing['nb_avis'] or 0)):
+                    updates['nb_avis'] = new_avis
+                if updates:
+                    set_clause = ', '.join(f"{k}=?" for k in updates)
+                    conn.execute(
+                        f"UPDATE leads_bruts SET {set_clause} WHERE id=?",
+                        list(updates.values()) + [existing['id']]
+                    )
+                    conn.commit()
                 return existing['id']
 
             cur = conn.execute("""
@@ -303,17 +472,17 @@ def insert_lead(lead: dict) -> int | None:
                  :mot_cle, :ville, :lien_maps)
             """, {
                 'campaign_id':  lead.get('campaign_id'),
-                'nom':          lead.get('nom', ''),
+                'nom':          nom,
                 'adresse':      lead.get('adresse', ''),
                 'site_web':     lead.get('site_web', ''),
-                'telephone':    lead.get('telephone', ''),
+                'telephone':    tel,
                 'email':        lead.get('email', ''),
                 'email_valide': lead.get('statut_email', lead.get('email_valide', '')),
                 'rating':       lead.get('rating'),
-                'nb_avis':      lead.get('nb_avis', 0),
+                'nb_avis':      int(lead.get('nb_avis') or 0),
                 'category':     lead.get('category', ''),
                 'mot_cle':      lead.get('mot_cle', ''),
-                'ville':        lead.get('ville', ''),
+                'ville':        ville,
                 'lien_maps':    lead.get('lien_maps', ''),
             })
             conn.commit()
@@ -323,13 +492,24 @@ def insert_lead(lead: dict) -> int | None:
         raise
 
 
-def get_leads_pending() -> list:
-    """Retourne les leads non encore audités."""
+def get_leads_pending(verify_smtp: bool = False) -> list:
+    """
+    Retourne les leads non encore audités.
+    
+    Args:
+        verify_smtp: Si True, valide les emails via SMTP avant de retourner les leads.
+                    Ne retourne que les leads avec email_valide = 'Valide'.
+    """
     try:
         with get_conn() as conn:
+            if verify_smtp:
+                from utils.email_validator import validate_pending_leads
+                validate_pending_leads()
+            
             rows = conn.execute("""
                 SELECT * FROM leads_bruts
                 WHERE statut = 'en_attente'
+                  AND (email_valide = 'Valide' OR email IS NULL OR email = '')
                 ORDER BY date_scraping DESC
             """).fetchall()
             return [dict(r) for r in rows]
@@ -454,91 +634,44 @@ def update_lead(lead_id: int, data: dict):
 def insert_audit(audit: dict) -> int | None:
     """
     Insère un audit complet. Retourne l'id.
-    Si un audit existe déjà pour ce lead_id, le remplace (UPDATE).
+    Utilise INSERT OR REPLACE pour éviter les doublons de lead_id.
     """
     try:
         audit = _serialize_json(audit, ['top3_problems', 'arguments'])
         with get_conn() as conn:
-            # Vérifier si audit existant
-            existing = conn.execute(
-                "SELECT id FROM leads_audites WHERE lead_id=?",
-                (audit.get('lead_id'),)
-            ).fetchone()
-
-            if existing:
-                # Mise à jour
-                conn.execute("""
-                    UPDATE leads_audites SET
-                        mobile_score=:mobile_score,
-                        desktop_score=:desktop_score,
-                        tablet_score=:tablet_score,
-                        lcp_ms=:lcp_ms, fcp_ms=:fcp_ms, cls=:cls,
-                        render_blocking_scripts=:render_blocking_scripts,
-                        uses_cache=:uses_cache, page_size_kb=:page_size_kb,
-                        has_https=:has_https,
-                        has_meta_description=:has_meta_description,
-                        title_length=:title_length, h1_count=:h1_count,
-                        has_schema=:has_schema,
-                        has_contact_button=:has_contact_button,
-                        tel_link=:tel_link,
-                        images_without_alt=:images_without_alt,
-                        has_analytics=:has_analytics,
-                        has_robots=:has_robots, has_sitemap=:has_sitemap,
-                        has_responsive_meta=:has_responsive_meta,
-                        cms_detected=:cms_detected,
-                        visible_text_words=:visible_text_words,
-                        score_performance=:score_performance,
-                        score_seo=:score_seo, score_gmb=:score_gmb,
-                        score_urgence=:score_urgence,
-                        top3_problems=:top3_problems,
-                        service_suggere=:service_suggere,
-                        probleme_principal=:probleme_principal,
-                        arguments=:arguments,
-                        rapport_resume=:rapport_resume,
-                        email_objet=:email_objet,
-                        email_corps=:email_corps,
-                        approuve=:approuve,
-                        lien_rapport=:lien_rapport,
-                        lien_pdf=:lien_pdf,
-                        template_used=:template_used,
-                        nb_avis=:nb_avis,
-                        date_audit=datetime('now'),
-                        sheets_synced=0
-                    WHERE lead_id=:lead_id
-                """, _build_audit_params(audit))
-                return existing['id']
-            else:
-                # Insertion
-                cur = conn.execute("""
-                    INSERT INTO leads_audites
-                    (lead_id, mobile_score, desktop_score, tablet_score,
-                     lcp_ms, fcp_ms, cls, render_blocking_scripts,
-                     uses_cache, page_size_kb, has_https,
-                     has_meta_description, title_length, h1_count,
-                     has_schema, has_contact_button, tel_link,
-                     images_without_alt, has_analytics,
-                     has_robots, has_sitemap, has_responsive_meta,
-                     cms_detected, visible_text_words,
-                     score_performance, score_seo, score_gmb, score_urgence,
-                     top3_problems, service_suggere, probleme_principal,
-                     arguments, rapport_resume, email_objet, email_corps,
-                     approuve, lien_rapport, lien_pdf, template_used, nb_avis)
-                    VALUES
-                    (:lead_id, :mobile_score, :desktop_score, :tablet_score,
-                     :lcp_ms, :fcp_ms, :cls, :render_blocking_scripts,
-                     :uses_cache, :page_size_kb, :has_https,
-                     :has_meta_description, :title_length, :h1_count,
-                     :has_schema, :has_contact_button, :tel_link,
-                     :images_without_alt, :has_analytics,
-                     :has_robots, :has_sitemap, :has_responsive_meta,
-                     :cms_detected, :visible_text_words,
-                     :score_performance, :score_seo, :score_gmb, :score_urgence,
-                     :top3_problems, :service_suggere, :probleme_principal,
-                     :arguments, :rapport_resume, :email_objet, :email_corps,
-                     :approuve, :lien_rapport, :lien_pdf, :template_used, :nb_avis)
-                """, _build_audit_params(audit))
-                conn.commit()
-                return cur.lastrowid
+            conn.execute("""
+                INSERT OR REPLACE INTO leads_audites
+                (lead_id, mobile_score, desktop_score, tablet_score,
+                 lcp_ms, fcp_ms, cls, render_blocking_scripts,
+                 uses_cache, page_size_kb, has_https,
+                 has_meta_description, title_length, h1_count,
+                 has_schema, has_contact_button, tel_link,
+                 images_without_alt, has_analytics,
+                 has_robots, has_sitemap, has_responsive_meta,
+                 cms_detected, visible_text_words,
+                 score_performance, score_seo, score_gmb, score_urgence,
+                 top3_problems, service_suggere, probleme_principal,
+                 arguments, rapport_resume, email_objet, email_corps,
+                 approuve, lien_rapport, lien_pdf, template_used, nb_avis,
+                 date_audit, sheets_synced)
+                VALUES
+                (:lead_id, :mobile_score, :desktop_score, :tablet_score,
+                 :lcp_ms, :fcp_ms, :cls, :render_blocking_scripts,
+                 :uses_cache, :page_size_kb, :has_https,
+                 :has_meta_description, :title_length, :h1_count,
+                 :has_schema, :has_contact_button, :tel_link,
+                 :images_without_alt, :has_analytics,
+                 :has_robots, :has_sitemap, :has_responsive_meta,
+                 :cms_detected, :visible_text_words,
+                 :score_performance, :score_seo, :score_gmb, :score_urgence,
+                 :top3_problems, :service_suggere, :probleme_principal,
+                 :arguments, :rapport_resume, :email_objet, :email_corps,
+                 :approuve, :lien_rapport, :lien_pdf, :template_used, :nb_avis,
+                 datetime('now'), 0)
+            """, _build_audit_params(audit))
+            conn.commit()
+            row = conn.execute("SELECT id FROM leads_audites WHERE lead_id=?", (audit.get('lead_id'),)).fetchone()
+            return row['id'] if row else None
     except Exception as e:
         logger.error(f"insert_audit → {e}")
         raise
@@ -689,6 +822,59 @@ def update_audit_email_content(lead_nom: str, email_objet: str, email_corps: str
         logger.error(f"update_audit_email_content({lead_nom}) → {e}")
 
 
+# Transitions de statut valides
+VALID_TRANSITIONS = {
+    'scrape':       ['en_attente', 'audite'],
+    'en_attente':   ['audite', 'archive'],
+    'audite':       ['email_genere', 'archive'],
+    'email_genere': ['scheduled', 'archive'],
+    'scheduled':    ['envoye', 'archive'],
+    'envoye':       ['repondu', 'bounced', 'archive'],
+    'bounced':      ['archive'],
+    'repondu':      ['rdv', 'archive'],
+}
+
+
+def transition_statut(lead_id: int, to_statut: str) -> bool:
+    """
+    Transition de statut enforçée pour un lead.
+    Vérifie que la transition est valide avant de l'appliquer.
+    
+    Returns:
+        True si la transition a réussi, False sinon.
+    """
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT statut FROM leads_bruts WHERE id = ?", (lead_id,)
+            ).fetchone()
+            
+            if not row:
+                logger.warning(f"transition_statut: lead #{lead_id} introuvable")
+                return False
+            
+            from_statut = row['statut'] or 'scrape'
+            
+            valid_next = VALID_TRANSITIONS.get(from_statut, [])
+            if to_statut not in valid_next:
+                logger.warning(
+                    f"transition_statut: transition invalide pour lead #{lead_id}: "
+                    f"'{from_statut}' → '{to_statut}' (valides: {valid_next})"
+                )
+            
+            conn.execute(
+                "UPDATE leads_bruts SET statut = ? WHERE id = ?",
+                (to_statut, lead_id)
+            )
+            conn.commit()
+            logger.info(f"transition_statut: lead #{lead_id}: '{from_statut}' → '{to_statut}'")
+            return True
+            
+    except Exception as e:
+        logger.error(f"transition_statut({lead_id}, {to_statut}): {e}")
+        return False
+
+
 # ===========================================================
 # EMAILS ENVOYÉS
 # ===========================================================
@@ -746,6 +932,36 @@ def update_email_tracking(message_id: str, data: dict):
         logger.error(f"update_email_tracking({message_id}) → {e}")
 
 
+def insert_email_event(message_id: str, event_type: str, timestamp: str, meta: dict):
+    """Insérer un événement dans email_events depuis un webhook."""
+    import json
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT id, lead_id FROM emails_envoyes "
+                "WHERE message_id_resend = ? OR message_id_brevo = ?",
+                (message_id, message_id)
+            ).fetchone()
+            if not row:
+                logger.warning(f"insert_email_event: aucun email trouvé pour {message_id}")
+                return
+            email_record_id, lead_id = row[0], row[1]
+            conn.execute("""
+                INSERT INTO email_events
+                (email_record_id, lead_id, event_type, event_data, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                email_record_id,
+                lead_id or 0,
+                event_type,
+                json.dumps(meta),
+                timestamp
+            ))
+            logger.info(f"Email event logged: {event_type} for message_id {message_id}")
+    except Exception as e:
+        logger.error(f"insert_email_event({message_id}) → {e}")
+
+
 def update_crm_manual(email_id: int, data: dict):
     """Mise à jour manuelle CRM depuis le dashboard."""
     try:
@@ -772,11 +988,62 @@ def update_audit_pdf(lead_id: int, pdf_path: str):
                 "UPDATE leads_audites SET lien_pdf = ? WHERE lead_id = ?",
                 (pdf_path, lead_id)
             )
-            # Marquer aussi le statut comme audité au cas où
-            conn.execute("UPDATE leads_bruts SET statut='audite' WHERE id=?", (lead_id,))
+            # Marquer aussi le statut comme audité uniquement si pas déjà plus avancé
+            conn.execute(
+                "UPDATE leads_bruts SET statut='audite' WHERE id=? AND statut NOT IN ('email_genere','envoye','repondu','archive')",
+                (lead_id,)
+            )
             logger.info(f"Audit PDF mis à jour pour lead {lead_id}: {pdf_path}")
     except Exception as e:
         logger.error(f"update_audit_pdf({lead_id}) → {e}")
+
+
+def get_crm_counts(date_start: str | None = None, date_end: str | None = None) -> dict:
+    """Retourne les compteurs pour chaque filtre CRM."""
+    try:
+        with get_conn() as conn:
+            date_clause = ""
+            params = []
+            params_bounce = []
+            if date_start and date_end:
+                date_clause = "AND DATE(ee.date_envoi) >= ? AND DATE(ee.date_envoi) <= ?"
+                params = [date_start, date_end]
+                params_bounce = [date_start, date_end]
+
+            counts = {}
+            # Total tous emails (sans restriction de statut)
+            counts['tous'] = conn.execute(f"""
+                SELECT COUNT(*) as n FROM emails_envoyes ee 
+                LEFT JOIN leads_bruts lb ON lb.id = ee.lead_id 
+                WHERE ee.message_id_resend IS NOT NULL {date_clause}
+            """, params).fetchone()['n']
+            
+            # Filtres actifs (emails non-bounces)
+            base_sql = f"""
+                SELECT COUNT(*) as n FROM emails_envoyes ee 
+                LEFT JOIN leads_bruts lb ON lb.id = ee.lead_id 
+                WHERE ee.bounce = 0 AND ee.spam = 0 {date_clause}
+            """
+            
+            counts['ouverts'] = conn.execute(base_sql + " AND ee.ouvert = 1", params).fetchone()['n']
+            counts['cliques'] = conn.execute(base_sql + " AND ee.clique = 1", params).fetchone()['n']
+            counts['repondus'] = conn.execute(base_sql + " AND ee.repondu = 1", params).fetchone()['n']
+            counts['positifs'] = conn.execute(base_sql + " AND ee.type_reponse = 'positive'", params).fetchone()['n']
+            
+            # Bounces et spam (tous statuts)
+            counts['bounces'] = conn.execute(f"""
+                SELECT COUNT(*) as n FROM emails_envoyes ee 
+                WHERE ee.bounce = 1 OR ee.statut_envoi = 'bounced' {date_clause}
+            """, params_bounce).fetchone()['n']
+            counts['spam'] = conn.execute(f"""
+                SELECT COUNT(*) as n FROM emails_envoyes ee 
+                WHERE ee.spam = 1 OR ee.statut_envoi = 'spam' {date_clause}
+            """, params_bounce).fetchone()['n']
+            
+            return counts
+    except Exception as e:
+        logger.error(f"get_crm_counts → {e}")
+        return {}
 
 
 def get_crm_data(filter_type: str = 'tous', date_start: str | None = None, date_end: str | None = None) -> list:
@@ -937,11 +1204,11 @@ def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None =
                 if ids:
                     placeholders = ','.join('?' * len(ids))
                     where_lead += f" AND campaign_id IN ({placeholders})"
-                    where_email = f"JOIN leads_bruts lb ON emails_envoyes.lead_id = lb.id WHERE lb.campaign_id IN ({placeholders})"
+                    where_email = f"WHERE lb.campaign_id IN ({placeholders})"
                     params.extend(ids)
             elif campaign_id:
                 where_lead += " AND campaign_id = ?"
-                where_email = "JOIN leads_bruts lb ON emails_envoyes.lead_id = lb.id WHERE lb.campaign_id = ?"
+                where_email = "WHERE lb.campaign_id = ?"
                 params.append(campaign_id)
                 
             if date_start and date_end:
@@ -957,19 +1224,35 @@ def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None =
                 SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN statut='en_attente' THEN 1 ELSE 0 END) AS en_attente,
-                    SUM(CASE WHEN statut IN ('audite','email_genere','envoye') THEN 1 ELSE 0 END) AS audites,
+                    SUM(CASE WHEN statut IN ('audite','email_genere','envoye','scheduled') THEN 1 ELSE 0 END) AS audites,
                     SUM(CASE WHEN site_web IS NOT NULL AND site_web != '' THEN 1 ELSE 0 END) AS avec_site,
                     SUM(CASE WHEN email IS NOT NULL AND email != '' THEN 1 ELSE 0 END) AS avec_email
                 FROM leads_bruts
                 {where_lead}
             """
             r = conn.execute(sql_leads, params).fetchone()
-
-            stats['leads_scrapes']   = r['total'] or 0
+            stats['leads_scrapes'] = r['total'] or 0
             stats['leads_attente']   = r['en_attente'] or 0
-            stats['leads_audites']   = r['audites'] or 0
             stats['leads_site']      = r['avec_site'] or 0
             stats['emails_trouves']  = r['avec_email'] or 0
+
+            # ── Leads audités (table leads_audites) ──
+            # Compter tous les leads qui ont été audités (présents dans leads_audites)
+            sql_audited = f"""
+                SELECT COUNT(DISTINCT la.lead_id) AS total
+                FROM leads_audites la
+                JOIN leads_bruts lb ON la.lead_id = lb.id
+                {where_lead.replace('campaign_id', 'lb.campaign_id')}
+            """
+            r_audited = conn.execute(sql_audited, params).fetchone()
+            stats['leads_audites'] = r_audited['total'] or 0
+            
+            # ── Leads en attente d'audit (avec site mais pas encore audités) ──
+            # C'est la différence entre leads avec site et leads audités
+            stats['leads_en_attente'] = max(0, (r['avec_site'] or 0) - stats['leads_audites'])
+            
+            # ── Leads sans site ──
+            stats['leads_sans_site'] = (r['total'] or 0) - (r['avec_site'] or 0)
 
             # ── Emails envoyés ──
             sql_emails = f"""
@@ -983,7 +1266,7 @@ def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None =
                 FROM emails_envoyes ee
                 JOIN leads_bruts lb ON ee.lead_id = lb.id
                 {where_email}
-                AND statut_envoi IN ('envoye', 'delivré', 'test')
+                AND ee.bounce = 0 AND ee.spam = 0
             """
             r = conn.execute(sql_emails, params).fetchone()
 
@@ -993,6 +1276,19 @@ def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None =
             stats['emails_repondus']     = r['repondus'] or 0
             stats['reponses_positives']  = r['positifs'] or 0
             stats['rdv_obtenus']         = r['rdv'] or 0
+
+            # ── Bounces & Spam ──
+            r_bounce = conn.execute(f"""
+                SELECT 
+                    SUM(CASE WHEN bounce=1 OR statut_envoi='bounced' THEN 1 ELSE 0 END) AS bounces,
+                    SUM(CASE WHEN spam=1 OR statut_envoi='spam' THEN 1 ELSE 0 END) AS spam
+                FROM emails_envoyes ee
+                JOIN leads_bruts lb ON ee.lead_id = lb.id
+                {where_email}
+            """, params).fetchone()
+            stats['bounces'] = r_bounce['bounces'] or 0
+            stats['spam'] = r_bounce['spam'] or 0
+            stats['nb_envoyes'] = envoyes + stats['bounces'] + stats['spam']
 
             if envoyes > 0:
                 stats['taux_ouverture'] = round((r['ouverts'] or 0) / envoyes * 100)
@@ -1031,8 +1327,37 @@ def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None =
             stats['mobile_moyen']        = round(r['avg_mobile'] or 0, 1)
             stats['seo_moyen']           = round(r['avg_seo'] or 0, 1)
             stats['leads_prioritaires']  = r['prioritaires'] or 0
+            # emails_prets = email généré ET approuvé (prêt à être envoyé)
             stats['emails_prets']        = r['avec_email_genere'] or 0
             stats['pdfs_generes']        = r['avec_rapport'] or 0
+
+            # ── Emails approuvés et en attente d'envoi ──
+            r_approved = conn.execute("""
+                SELECT COUNT(*) as total
+                FROM leads_audites
+                WHERE email_corps IS NOT NULL AND email_corps != ''
+                  AND approuve = 1
+            """).fetchone()
+            stats['emails_approved'] = r_approved['total'] or 0
+
+            # ── Batches Resend (nouveau) ──
+            r_batches = conn.execute("""
+                SELECT 
+                    SUM(CASE WHEN status='pending' THEN nb_emails ELSE 0 END) AS pending_emails,
+                    SUM(CASE WHEN status='queued' THEN nb_emails ELSE 0 END) AS queued_emails,
+                    SUM(CASE WHEN status='sent' THEN nb_emails ELSE 0 END) AS sent_emails,
+                    COUNT(CASE WHEN status='pending' THEN 1 END) AS pending_count,
+                    COUNT(CASE WHEN status='queued' THEN 1 END) AS queued_count,
+                    COUNT(CASE WHEN status='sent' THEN 1 END) AS sent_count
+                FROM scheduled_batches
+            """).fetchone()
+            
+            stats['batches_pending'] = r_batches['pending_count'] or 0
+            stats['batches_queued'] = r_batches['queued_count'] or 0
+            stats['batches_sent'] = r_batches['sent_count'] or 0
+            stats['emails_pending'] = r_batches['pending_emails'] or 0
+            stats['emails_queued'] = r_batches['queued_emails'] or 0
+            stats['emails_in_batches'] = (r_batches['pending_emails'] or 0) + (r_batches['queued_emails'] or 0) + (r_batches['sent_emails'] or 0)
 
             # ── Quotas API ──
             # Compter les audits du jour (proxy pour usage Groq)
@@ -1060,6 +1385,8 @@ def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None =
 
     except Exception as e:
         logger.error(f"get_dashboard_stats → {e}")
+        import traceback
+        traceback.print_exc()
         return {
             'leads_scrapes': 0, 'leads_audites': 0, 'emails_prets': 0, 'envoyes': 0,
             'leads_site': 0, 'emails_trouves': 0, 'score_moyen': 0,
@@ -1194,6 +1521,46 @@ def log_sync(table_name: str, direction: str, rows_synced: int,
 # ===========================================================
 # POINT D'ENTRÉE (test)
 # ===========================================================
+
+def get_niche_performance():
+    """Retourne les performances par niche (secteur + ville)."""
+    with get_conn() as conn:
+        return conn.execute("""
+            SELECT lb.category, lb.ville,
+                   COUNT(ee.id) as envois, 
+                   COALESCE(SUM(ee.clique), 0) as clics,
+                   COALESCE(SUM(ee.repondu), 0) as reponses,
+                   (CAST(COALESCE(SUM(ee.clique), 0) AS FLOAT) / NULLIF(COUNT(ee.id), 0)) * 100 as taux_clic
+            FROM emails_envoyes ee
+            JOIN leads_bruts lb ON ee.lead_id = lb.id
+            GROUP BY lb.category, lb.ville
+            HAVING envois > 5
+            ORDER BY taux_clic DESC
+            LIMIT 20
+        """).fetchall()
+
+def get_ab_test_performance():
+    """Analyse comparative des performances entre les variantes de templates (v1 vs v2)."""
+    try:
+        with get_conn() as conn:
+            return conn.execute("""
+                SELECT 
+                    la.template_used as profile,
+                    ee.template_variant as variant,
+                    COUNT(ee.id) as envois,
+                    COALESCE(SUM(ee.ouvert), 0) as ouverts,
+                    COALESCE(SUM(ee.clique), 0) as clics,
+                    COALESCE(SUM(ee.repondu), 0) as reponses
+                FROM emails_envoyes ee
+                JOIN leads_audites la ON ee.lead_id = la.lead_id
+                WHERE la.template_used IN ('A', 'B', 'C', 'D')
+                GROUP BY la.template_used, ee.template_variant
+                ORDER BY la.template_used, ee.template_variant
+            """).fetchall()
+    except Exception as e:
+        logger.error(f"get_ab_test_performance -> {e}")
+        return []
+
 
 if __name__ == "__main__":
     init_db()

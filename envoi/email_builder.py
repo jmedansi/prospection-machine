@@ -37,6 +37,7 @@ def build_premium_email(lead_data, verify_link: bool = True):
         HTML de l'email, ou None si lien non valide (si verify_link=True)
     """
     template_used = lead_data.get('template_used', '')
+    template_variant = lead_data.get('template_variant', 'v1')
     explicit_profile = lead_data.get('profile', '').upper()
     
     if template_used in ('ignored', 'failed'):
@@ -53,7 +54,12 @@ def build_premium_email(lead_data, verify_link: bool = True):
     elif template_used == 'reputation':
         profile = 'C'
     else:
-        return None
+        import logging
+        logging.getLogger(__name__).warning(
+            f"email_builder: profil non mappé (template_used='{template_used}', "
+            f"explicit_profile='{explicit_profile}') — fallback profil B"
+        )
+        profile = 'B'
     
     nom = lead_data.get('prospect_nom', '') or lead_data.get('nom', 'votre etablissement')
     nom = re.sub(r'\(Test.*?\)', '', nom).strip()
@@ -99,12 +105,16 @@ def build_premium_email(lead_data, verify_link: bool = True):
                 return None
 
     # Template filename
-    template_filename = f"template_profil_{profile.lower()}.html"
+    template_filename = f"template_profil_{profile.lower()}_{template_variant}.html"
     template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates', 'emails')
     template_path = os.path.join(template_dir, template_filename)
     
     if not os.path.exists(template_path):
-        return f"Erreur: Template {template_filename} introuvable dans {template_dir}"
+        # Fallback to v1 if the variant file isn't found
+        template_filename = f"template_profil_{profile.lower()}_v1.html"
+        template_path = os.path.join(template_dir, template_filename)
+        if not os.path.exists(template_path):
+            return f"Erreur: Template {template_filename} introuvable dans {template_dir}"
 
     with open(template_path, 'r', encoding='utf-8') as f:
         html = f.read()
@@ -115,29 +125,30 @@ def build_premium_email(lead_data, verify_link: bool = True):
     html = html.replace('{{CATEGORY}}', category)
     html = html.replace('{{LIEN_RAPPORT}}', lien_rapport)
 
+    prenom = lead_data.get('prenom_gerant')
+    nom_etablissement = lead_data.get('nom', 'votre établissement')
+    salutation = f"Bonjour {prenom}," if prenom else "Bonjour,"
+    html = html.replace('[salutation]', salutation)
+
+
     if profile == "B":
         html = html.replace('{{LCP}}', str(lcp_s))
-        html = html.replace('{{IMPACT}}', f"votre score mobile est de {int(mobile_score)}/100 — vos concurrents sont à 75/100 en moyenne.")
-        html = html.replace('{{PERTE}}', "plus de la moitié de vos visiteurs repartent sans avoir vu vos services ni votre numéro de téléphone.")
-        html = html.replace('{{LIEN}}', "Par ailleurs, même un site rapide ne suffit pas si Google ne peut pas l'afficher correctement dans ses résultats. J'ai aussi analysé votre référencement.")
-        html = html.replace('{{OUTRO}}', f"J'ai préparé une analyse complète pour {nom} avec les 3 actions prioritaires pour passer sous les 3 secondes.")
-    
+
     elif profile == "C":
         html = html.replace('{{RATING}}', str(rating))
         html = html.replace('{{REVIEWS}}', str(reviews))
-        html = html.replace('{{IMPACT}}', f"la moyenne dans votre secteur à {ville} est 4.5/5 avec plus de 50 avis.")
-        html = html.replace('{{PERTE}}', "9 prospects sur 10 choisissent un concurrent mieux noté avant même de visiter votre site.")
-        html = html.replace('{{OUTRO}}', f"J'ai préparé une analyse de votre fiche Google et une stratégie pour doubler vos avis en 30 jours.")
-    
-    elif profile == "A":
-        html = html.replace('{{IMPACT}}', f"vos concurrents {category.lower()} à {ville} captent ces recherches chaque jour à votre place.")
-        html = html.replace('{{PERTE}}', "chaque semaine, des clients potentiels vous cherchent en ligne et contactent directement un concurrent.")
-        html = html.replace('{{OUTRO}}', f"J'ai préparé une maquette de ce que pourrait être votre site — personnalisée pour {nom}.")
-    
-    elif profile == "D":
-        html = html.replace('{{IMPACT}}', "votre site manque d'éléments essentiels pour être référencé sur Google.")
-        html = html.replace('{{PERTE}}', "vos clients potentiels ne vous trouvent pas sur les mots-clés qui comptent pour votre activité.")
-        html = html.replace('{{LIEN}}', "Par ailleurs, j'ai aussi analysé la performance de votre site. Un référencement optimal ne suffit pas si votre site met plus de 3 secondes à charger.")
-        html = html.replace('{{OUTRO}}', f"J'ai préparé une analyse SEO de {nom} avec les actions prioritaires pour améliorer votre visibilité.")
+
+    screenshot_url = lien_rapport + "preview.png"
+    html = html.replace('[screenshot_url]', screenshot_url)
 
     return html
+
+
+def build_followup_email(lead_nom):
+    """Génère un email de relance simple."""
+    subject = f"Re: Audit pour {lead_nom}"
+    body = f"""Bonjour,<br><br>
+Je me permets de vous relancer car je n'ai pas eu de retour concernant l'audit de performance de votre site.<br>
+Avez-vous eu l'occasion d'y jeter un œil ?<br><br>
+Bonne journée,<br>Jean-Marc"""
+    return subject, body

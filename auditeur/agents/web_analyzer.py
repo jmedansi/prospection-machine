@@ -2,6 +2,7 @@
 import requests
 import re
 import logging
+import os
 from bs4 import BeautifulSoup
 from typing import Dict, Any
 from config_manager import get_active_client
@@ -135,7 +136,7 @@ def parse_html(url: str) -> Dict[str, Any]:
         logger.error(f"Erreur parse_html: {e}")
         return data
 
-def run_web_analysis(url: str) -> Dict[str, Any]:
+def run_web_analysis(url: str, report_dir: str = None) -> Dict[str, Any]:
     """Orchestration de l'analyse web technique (Mobile + Desktop)."""
     print(f"   [Agent Web] Analyse technique complète de {url}...")
     
@@ -167,5 +168,12 @@ def run_web_analysis(url: str) -> Dict[str, Any]:
     # Pour compatibilité descendante
     all_results["lcp_ms"] = all_results.get("mobile_lcp_ms")
     all_results["site_analysee"] = url
+    
+    # Nouveau : Screenshot si report_dir est fourni
+    if report_dir:
+        from utils.screenshot_helper import capture_site_mobile
+        shot_path = os.path.join(report_dir, "preview.png")
+        if capture_site_mobile(url, shot_path):
+            all_results["screenshot_path"] = "preview.png"
     
     return all_results

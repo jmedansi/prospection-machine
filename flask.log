@@ -1,0 +1,14 @@
+  [Debug] Recherche .env dans : D:\prospection-machine\.env
+  [Debug] Fichier existe : True
+[OK] Base SQLite: D:\prospection-machine\data\prospection.db
+[OK] Base SQLite: D:\prospection-machine\data\prospection.db
+
+=======================================================
+  Incidenx - Prospection Machine Dashboard
+  http://localhost:5001
+  Source de donnees : SQLite (data/prospection.db)
+=======================================================
+
+  [Scheduler] Planificateur démarré (scraping 08h, emails 9h-18h)
+ * Serving Flask app 'app'
+ * Debug mode: off

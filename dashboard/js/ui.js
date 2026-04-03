@@ -29,7 +29,14 @@ function setInner(id, html) {
 
 function setText(id, text) {
     const el = document.getElementById(id);
-    if (el) el.textContent = text;
+    if (!el) return;
+    const prev = el.textContent;
+    el.textContent = text;
+    if (prev !== String(text) && (el.classList.contains('mv') || el.classList.contains('pn'))) {
+        el.classList.remove('bump');
+        void el.offsetWidth; // reflow pour relancer l'animation
+        el.classList.add('bump');
+    }
 }
 
 function escHtml(s) {
@@ -76,8 +83,10 @@ async function nav(id, el) {
             if (typeof loadEmails === 'function') await loadEmails();
             if (typeof loadCampaigns === 'function') await loadCampaigns();
         } else if (id === 'suivi') {
+            if (typeof loadStats === 'function') await loadStats();
             if (typeof loadCRM === 'function') await loadCRM();
             if (typeof loadTracking === 'function') await loadTracking();
+            if (typeof loadCRMCounts === 'function') await loadCRMCounts();
         } else if (id === 'rapports') {
             if (typeof loadReports === 'function') await loadReports();
         } else if (id === 'settings') {
@@ -127,18 +136,106 @@ function toggleTheme() {
 })();
 
 // --- Toasts ---
+const _toastIcons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.textContent = message;
+    toast.innerHTML = `<span class="t-icon">${_toastIcons[type] || '✅'}</span><span class="t-msg">${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100%)';
-        setTimeout(() => toast.remove(), 300);
+        toast.style.transform = 'translateX(110%)';
+        setTimeout(() => toast.remove(), 350);
     }, 4000);
+}
+
+// --- Confirm Dialog (remplace window.confirm natif) ---
+function showConfirm(message, { title = 'Confirmation', confirmText = 'Confirmer', cancelText = 'Annuler', danger = false } = {}) {
+    return new Promise(resolve => {
+        let modal = document.getElementById('_confirm-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = '_confirm-modal';
+            modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div id="_confirm-box" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 28px 22px;min-width:320px;max-width:460px;box-shadow:0 24px 48px rgba(0,0,0,0.35);animation:_cfade .15s ease">
+                    <div id="_confirm-title" style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:10px"></div>
+                    <div id="_confirm-msg"  style="font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:24px"></div>
+                    <div style="display:flex;justify-content:flex-end;gap:10px">
+                        <button id="_confirm-cancel" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--ink2);font-size:13px;cursor:pointer;font-weight:500"></button>
+                        <button id="_confirm-ok"     style="padding:8px 20px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;"></button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        const style = document.getElementById('_confirm-style') || (() => {
+            const s = document.createElement('style');
+            s.id = '_confirm-style';
+            s.textContent = '@keyframes _cfade{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}';
+            document.head.appendChild(s); return s;
+        })();
+
+        modal.querySelector('#_confirm-title').textContent = title;
+        modal.querySelector('#_confirm-msg').textContent   = message;
+        const cancelBtn = modal.querySelector('#_confirm-cancel');
+        const okBtn     = modal.querySelector('#_confirm-ok');
+        cancelBtn.textContent = cancelText;
+        okBtn.textContent     = confirmText;
+        okBtn.style.background = danger ? 'var(--red, #ef4444)' : 'var(--accent, #3b82f6)';
+        okBtn.style.color      = '#fff';
+
+        modal.style.display = 'flex';
+
+        const close = val => {
+            modal.style.display = 'none';
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            modal.removeEventListener('click', onBackdrop);
+            resolve(val);
+        };
+        const onOk       = () => close(true);
+        const onCancel   = () => close(false);
+        const onBackdrop = e => { if (e.target === modal) close(false); };
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.addEventListener('click', onBackdrop);
+        setTimeout(() => okBtn.focus(), 50);
+    });
+}
+
+// --- Skeleton loader ---
+function skeletonTable(rows = 6) {
+    const widths = [
+        ['24px','120px','80px','50px','20px','20px','30px','60px','80px'],
+        ['24px','100px','70px','40px','20px','20px','30px','60px','80px'],
+        ['24px','140px','90px','55px','20px','20px','30px','60px','80px'],
+    ];
+    return Array.from({length: rows}, (_, i) =>
+        `<tr class="skeleton-row">${widths[i % 3].map(w =>
+            `<td><span class="skeleton" style="width:${w};height:13px"></span></td>`
+        ).join('')}</tr>`
+    ).join('');
+}
+
+function skeletonPanel() {
+    return `<div class="panel-skeleton">
+        <div style="display:flex;gap:14px;align-items:center">
+            <span class="skeleton sk-avatar"></span>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <span class="skeleton sk-line" style="width:60%"></span>
+                <span class="skeleton sk-line" style="width:40%"></span>
+            </div>
+        </div>
+        <span class="skeleton sk-block"></span>
+        <span class="skeleton sk-line" style="width:100%"></span>
+        <span class="skeleton sk-line" style="width:80%"></span>
+        <span class="skeleton sk-line" style="width:90%"></span>
+        <span class="skeleton sk-block"></span>
+    </div>`;
 }
 
 // --- Formateurs de Badges/Pills ---

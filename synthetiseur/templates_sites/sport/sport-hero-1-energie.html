@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT SPORT 1 : #00c896 (vert énergie / néon)
+  Python remplace '#00c896'
+  VARIABLES : {{NOM_ENTREPRISE}} {{VILLE}} {{TELEPHONE}}
+              {{ADRESSE}} {{NB_AVIS}} {{LOGO_URL}}
+              {{SECTEUR_TAGLINE}} ex: "Performance & Dépassement"
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Sora',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;
+}
+
+.hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&q=90') center/cover no-repeat;
+  animation:zoomin 10s ease-out forwards;
+}
+@keyframes zoomin{from{transform:scale(1.06)}to{transform:scale(1)}}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(
+      to top,
+      rgba(8,12,20,.98) 0%,
+      rgba(8,12,20,.88) 30%,
+      rgba(8,12,20,.62) 55%,
+      rgba(8,12,20,.28) 75%,
+      rgba(8,12,20,.06) 92%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(8,12,20,.55) 0%,
+      transparent 60%
+    );
+}
+
+/* Accent géométrique */
+.hero-accent{
+  position:absolute;left:0;top:0;bottom:0;
+  width:4px;z-index:5;
+  background:linear-gradient(
+    to bottom,
+    transparent 0%,
+    #00c896 25%,
+    #66e8c8 50%,
+    #00c896 75%,
+    transparent 100%
+  );
+  opacity:.6;
+}
+
+/* ── NAV ── */
+nav{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.75rem 3rem;
+}
+
+.nav-logo-img{height:36px;width:auto;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Sora',sans-serif;
+  font-size:1.15rem;font-weight:700;color:#fff;
+  text-decoration:none;letter-spacing:.02em;
+}
+.nav-logo-text span{color:#66e8c8}
+
+.nav-links{display:flex;gap:2.25rem;list-style:none}
+.nav-links a{
+  font-size:.7rem;font-weight:400;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#66e8c8}
+
+.nav-cta{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.6rem 1.5rem;
+  background:#00c896;color:#080c14;
+  font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .2s;
+  white-space:nowrap;
+}
+.nav-cta:hover{background:#66e8c8;color:#080c14}
+
+/* ── CONTENU ── */
+.hero-content{
+  position:relative;z-index:5;
+  padding:0 3rem 5rem 4rem;
+  max-width:760px;
+}
+
+.hero-eyebrow{
+  display:flex;align-items:center;gap:.875rem;
+  margin-bottom:1.75rem;
+}
+.ew-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#00c896;flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(0,200,150,.3);
+}
+.ew-text{
+  font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);
+}
+
+.hero-title{
+  font-family:'Lora',serif;
+  font-size:clamp(3rem,6.5vw,5.5rem);
+  font-weight:600;line-height:1.05;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 24px rgba(0,0,0,.5);
+}
+.hero-title em{
+  font-style:italic;font-weight:400;
+  color:#66e8c8;display:block;
+}
+
+.hero-sub-line{
+  display:flex;align-items:center;gap:1rem;
+  margin:1.5rem 0;
+}
+.sub-bar{height:2px;width:40px;background:#00c896;flex-shrink:0}
+.sub-text{
+  font-size:.72rem;font-weight:400;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.38);
+}
+
+.hero-desc{
+  font-size:.95rem;font-weight:300;
+  color:rgba(255,255,255,.65);
+  line-height:1.9;max-width:480px;
+  margin-bottom:2.5rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+
+.hero-ctas{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
+
+.btn-contact{
+  display:inline-block;
+  padding:.9rem 2.25rem;
+  background:#00c896;color:#080c14;
+  font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;
+  transition:all .25s;
+  box-shadow:0 4px 20px rgba(0,200,150,.4);
+}
+.btn-contact:hover{
+  background:#66e8c8;color:#080c14;
+  transform:translateY(-2px);
+  box-shadow:0 8px 28px rgba(0,0,0,.3);
+}
+
+.btn-tel{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.85rem;font-weight:300;
+  color:rgba(255,255,255,.75);text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.25);
+  padding-bottom:1px;transition:color .2s;
+}
+.btn-tel:hover{color:#fff;border-bottom-color:#fff}
+
+/* Stats */
+.hero-stats{
+  position:absolute;bottom:0;right:0;z-index:5;
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.08);
+  border-left:1px solid rgba(255,255,255,.08);
+}
+.stat-block{
+  padding:1rem 1.75rem;text-align:center;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.stat-block:last-child{border-right:none}
+.stat-num{
+  font-family:'Lora',serif;
+  font-size:1.7rem;font-weight:600;color:#fff;
+  display:block;line-height:1;
+}
+.stat-label{
+  font-size:.62rem;font-weight:400;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);display:block;margin-top:.3rem;
+}
+
+/* Barre infos */
+.hero-bar{
+  position:absolute;bottom:0;left:0;z-index:5;
+  display:flex;border-top:1px solid rgba(255,255,255,.07);
+}
+.bar-item{
+  padding:.875rem 1.75rem;
+  font-size:.7rem;color:rgba(255,255,255,.45);
+  display:flex;align-items:center;gap:.5rem;
+  border-right:1px solid rgba(255,255,255,.05);
+  white-space:nowrap;
+}
+.bar-item strong{color:rgba(255,255,255,.78)}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#f5f7fa,#e8ecf2);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.3;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Lora',serif;
+  font-size:2.6rem;color:#080c14;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#2a3040;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:180px;height:110px;background:#c8d4e8;border-radius:4px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#00c896}
+.preview-msg{
+  font-family:'Lora',serif;
+  font-size:1.7rem;font-style:italic;
+  color:#080c14;text-align:center;max-width:420px;line-height:1.4;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#080c14;color:#fff;
+  font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#00c896;color:#080c14;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-content{padding:0 1.5rem 3rem}
+  .hero-stats,.hero-bar,.hero-accent{display:none}
+}
+
+/* -- RESPONSIVE TABLET -- */
+@media(max-width:1024px){
+  nav{padding:1.5rem 2rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:2rem!important;padding-right:2rem!important}
+}
+/* -- RESPONSIVE MOBILE -- */
+@media(max-width:768px){
+  .nav-cta,.nav-rdv,.nav-tel{font-size:.62rem!important;padding:.5rem .875rem!important;white-space:nowrap}
+  .hero-title{font-size:clamp(2rem,7.5vw,3rem)!important;line-height:1.1!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.88rem!important;max-width:100%!important}
+  .hero-ctas,.cta-group{flex-direction:column!important;align-items:flex-start!important;gap:.75rem!important}
+  .hero-content,.hero-inner,.hero-left{max-width:100%!important}
+  .page-preview{height:auto!important;min-height:60vh!important}
+}
+/* -- RESPONSIVE SMALL PHONE -- */
+@media(max-width:480px){
+  nav{padding:.75rem 1rem!important}
+  .hero-title{font-size:clamp(1.6rem,9vw,2.25rem)!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:1rem!important;padding-right:1rem!important;padding-bottom:6rem!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.83rem!important}
+  .stat-num{font-size:1.3rem!important}
+  .stat-block{padding:.75rem 1rem!important}
+  .btn-contact,.btn-primary,.nav-cta,.nav-rdv{width:100%!important;text-align:center!important;justify-content:center!important}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-accent"></div>
+
+  <nav>
+    <div style="display:flex;align-items:center;gap:.875rem">
+      <img src="{{LOGO_URL}}" class="nav-logo-img" alt="{{NOM_ENTREPRISE}}">
+      <a href="#" class="nav-logo-text">{{NOM_ENTREPRISE}}<span>.</span></a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#">Services</a></li>
+      <li><a href="#">À propos</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <a href="tel:{{TELEPHONE}}" class="nav-cta">📞 {{TELEPHONE}}</a>
+  </nav>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="ew-dot"></div>
+      <span class="ew-text">Performance &amp; Dépassement · {{VILLE}}</span>
+    </div>
+    <h1 class="hero-title">
+      {{NOM_ENTREPRISE}}<br>
+      <em>à votre service.</em>
+    </h1>
+    <div class="hero-sub-line">
+      <div class="sub-bar"></div>
+      <span class="sub-text">{{VILLE}} · Depuis {{ANNEE_CREATION}}</span>
+    </div>
+    <p class="hero-desc">
+      Atteignez vos objectifs avec les meilleurs coachs de {{VILLE}}.
+      {{NOM_ENTREPRISE}} est là pour vous accompagner.
+    </p>
+    <div class="hero-ctas">
+      <a href="#" class="btn-contact">Nous contacter</a>
+      <a href="tel:{{TELEPHONE}}" class="btn-tel">
+        📞 {{TELEPHONE}}
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-block">
+      <span class="stat-num">{{NB_AVIS}}</span>
+      <span class="stat-label">Avis Google</span>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">4.8★</span>
+      <span class="stat-label">Note moyenne</span>
+    </div>
+  </div>
+
+  <div class="hero-bar">
+    <div class="bar-item">📍 <strong>{{ADRESSE}}</strong>, {{VILLE}}</div>
+    <div class="bar-item">📞 <strong>{{TELEPHONE}}</strong></div>
+  </div>
+</section>
+
+<div class="page-preview">
+  <div class="preview-blur">
+    <h2>Nos services</h2>
+    <p>Une équipe à votre écoute, des prestations sur mesure, une qualité de service reconnue à {{VILLE}}.</p>
+    <div class="preview-cards">
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+      <div class="preview-card"></div>
+    </div>
+  </div>
+  <div class="preview-over">
+    <div class="preview-tag">La suite vous attend</div>
+    <div class="preview-msg">"Découvrez tout ce que nous proposons"</div>
+    <a href="tel:{{TELEPHONE}}" class="preview-cta">
+      Nous contacter — {{TELEPHONE}}
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

@@ -31,9 +31,11 @@ async function loadLeadsFiltered(page = 1) {
         const site = filterSite.value || 'tous';
         const email = filterEmail.value || 'tous';
         const note = filterNote.value || 'tous';
+        const filterSector = document.getElementById('filter-sector');
+        const sector = filterSector ? (filterSector.value || 'tous') : 'tous';
 
         const p = _leadsPagination.page || 1;
-        const url = '/api/leads' + _globalFilters({statut, site, email, note, page: p, limit: 50});
+        const url = '/api/leads' + _globalFilters({statut, site, email, note, sector, page: p, limit: 50});
 
         const r = await fetch(url);
         const d = await r.json();
@@ -104,8 +106,25 @@ async function loadLeadsFiltered(page = 1) {
         }
 
         updatePaginationControls();
+        loadSectorFilter();
 
     } catch (e) { console.error('loadLeadsFiltered:', e); }
+}
+
+async function loadSectorFilter() {
+    const sel = document.getElementById('filter-sector');
+    if (!sel) return;
+    try {
+        const r = await fetch('/api/leads/sectors');
+        const d = await r.json();
+        if (!d.sectors) return;
+        const current = sel.value;
+        const opts = ['<option value="tous">Secteur: Tous</option>'];
+        d.sectors.forEach(s => {
+            opts.push(`<option value="${s}" ${s === current ? 'selected' : ''}>${s}</option>`);
+        });
+        sel.innerHTML = opts.join('');
+    } catch (e) { /* silencieux */ }
 }
 
 function updatePaginationControls() {
@@ -167,7 +186,7 @@ function getSelectedLeadNoms() {
 
 function openEditLead(leadNom) {
     const l = _allLeads.find(x => x.nom === leadNom);
-    if (!l) { alert("Erreur: Impossible de trouver les détails de " + leadNom); return; }
+    if (!l) { showToast("Impossible de trouver les détails de " + leadNom, 'error'); return; }
     document.getElementById('edit-lead-id').value = l.id || '';
     document.getElementById('edit-lead-nom').value = l.nom || '';
     document.getElementById('edit-lead-email').value = l.email || '';
@@ -197,27 +216,80 @@ async function saveLead() {
             loadLeads();
             if (typeof loadCampaignTable === 'function') loadCampaignTable();
         }
-        else alert("Erreur lors de la sauvegarde.");
+        else showToast("Erreur lors de la sauvegarde", 'error');
     } catch (e) { console.error(e); }
 }
 
 async function deleteLead() {
     const id = document.getElementById('edit-lead-id').value;
     const nom = document.getElementById('edit-lead-nom').value;
-    if (!confirm(`Supprimer DÉFINITIVEMENT le lead "${nom}" et ses audits ?`)) return;
+    if (!await showConfirm(`Supprimer définitivement le lead "${nom}" et tous ses audits ?`, { title: 'Supprimer le lead', confirmText: 'Supprimer', danger: true })) return;
     try {
         const r = await fetch('/api/leads/' + id, { method: 'DELETE' });
-        if (r.ok) { 
-            if (typeof closeModal === 'function') closeModal('modal-edit-lead'); 
+        if (r.ok) {
+            if (typeof closeModal === 'function') closeModal('modal-edit-lead');
             if (typeof refreshAll === 'function') refreshAll();
             if (typeof loadCampaignTable === 'function') loadCampaignTable();
         }
     } catch (e) { console.error(e); }
 }
 
+async function deleteSelectedLeads() {
+    const ids = getSelectedLeadIds();
+    if (!ids.length) { showToast('Sélectionner au moins un lead', 'error'); return; }
+    if (!await showConfirm(`Supprimer définitivement ${ids.length} lead(s) sélectionné(s) et tous leurs audits ?`, { title: 'Suppression en masse', confirmText: 'Supprimer', danger: true })) return;
+    try {
+        const r = await fetch('/api/leads/batch-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        });
+        const d = await r.json();
+        if (d.success) {
+            showToast(`${d.deleted} lead(s) supprimé(s)`, 'success');
+            loadLeads();
+            if (typeof loadCampaignTable === 'function') loadCampaignTable();
+        } else {
+            showToast(d.error || 'Erreur lors de la suppression', 'error');
+        }
+    } catch (e) { console.error(e); showToast('Erreur réseau', 'error'); }
+}
+
+async function purgeZeroAvis() {
+    if (!await showConfirm('Supprimer tous les leads sans avis (0 ou vide) non encore contactés ?', { title: 'Purge des leads', confirmText: 'Purger', danger: true })) return;
+    try {
+        const r = await fetch('/api/leads/purge-zero-avis', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+            showToast(`${d.deleted} lead(s) purgé(s)`, 'success');
+            if (typeof refreshAll === 'function') refreshAll();
+        } else {
+            showToast(d.error || 'Erreur lors de la purge', 'error');
+        }
+    } catch (e) { console.error(e); showToast('Erreur réseau', 'error'); }
+}
+
+async function retryFailedAudits() {
+    if (!await showConfirm('Relancer l\'audit sur tous les leads en échec (ceux avec un site web) ?', { title: 'Relancer les audits échoués', confirmText: 'Relancer' })) return;
+    try {
+        const r = await fetch('/api/audit/retry-failed', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+            if (d.count === 0) {
+                showToast('Aucun audit échoué à relancer', 'info');
+            } else {
+                showToast(`${d.count} lead(s) remis en attente — lancez l'audit pour les traiter`, 'success');
+                if (typeof refreshAll === 'function') refreshAll();
+            }
+        } else {
+            showToast(d.error || 'Erreur', 'error');
+        }
+    } catch (e) { console.error(e); showToast('Erreur réseau', 'error'); }
+}
+
 function exportSelected() {
     const selected = getSelectedLeadIds();
-    if (!selected.length) return alert('Sélectionner au moins un lead');
+    if (!selected.length) { showToast('Sélectionner au moins un lead', 'warning'); return; }
 
     const leadsToExport = _allLeads.filter(l => selected.includes(l.id));
     const csv = ['Nom,Ville,Secteur,Note,Avis,Site,Email,Statut'];
@@ -235,12 +307,53 @@ function exportSelected() {
     if (typeof showToast === 'function') showToast(`✅ Export CSV généré (${leadsToExport.length} leads)`);
 }
 
+async function exportFilteredLeads() {
+    try {
+        if (typeof showToast === 'function') showToast('Récupération de tous les leads filtrés…', 'info');
+
+        // Build filter params from current UI state
+        const params = new URLSearchParams();
+        const statutEl = document.getElementById('filter-statut');
+        const siteEl   = document.getElementById('filter-site');
+        const emailEl  = document.getElementById('filter-email');
+        const sectorEl = document.getElementById('filter-sector');
+        if (statutEl) params.set('statut', statutEl.value || 'tous');
+        if (siteEl)   params.set('site',   siteEl.value   || 'tous');
+        if (emailEl)  params.set('email',  emailEl.value  || 'tous');
+        if (sectorEl && sectorEl.value && sectorEl.value !== 'tous') params.set('sector', sectorEl.value);
+        params.set('limit', '500');
+        params.set('page', '1');
+
+        const r = await fetch('/api/leads?' + params.toString());
+        const d = await r.json();
+        if (!d.leads || !d.leads.length) { showToast('Aucun lead à exporter', 'error'); return; }
+
+        const CSV_SEP = ';'; // semi-colon for Excel compatibility
+        const escape = v => '"' + String(v || '').replace(/"/g, '""') + '"';
+        const header = ['Nom', 'Ville', 'Secteur', 'Note', 'Avis', 'Site', 'Email', 'Téléphone', 'Statut', 'Score urgence'].join(CSV_SEP);
+        const rows = d.leads.map(l => [
+            l.nom, l.ville, l.secteur || l.category, l.note, l.avis || l.nb_avis,
+            l.site_web, l.email, l.telephone, l.statut, l.score_urgence
+        ].map(escape).join(CSV_SEP));
+
+        const bom = '\uFEFF'; // UTF-8 BOM for Excel
+        const blob = new Blob([bom + [header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `leads_export_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        if (typeof showToast === 'function') showToast(`Export CSV : ${d.leads.length} leads (sur ${d.total} au total)`, 'success');
+    } catch (e) { console.error(e); if (typeof showToast === 'function') showToast('Erreur export', 'error'); }
+}
+
 function shareReport(name, url) {
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
-            alert(`Lien du rapport pour ${name} copié !`);
+            showToast(`Lien du rapport pour ${name} copié`, 'success');
         });
     } else {
-        alert("Lien du rapport: " + url);
+        showToast("Lien du rapport: " + url, 'info');
     }
 }

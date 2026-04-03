@@ -40,14 +40,18 @@ def send_prospecting_email(
     is_html: bool = True
 ) -> Dict[str, Any]:
     """
-    Envoie un email de prospection via Brevo.
+    ⚠️  NE PAS UTILISER pour la prospection commerciale.
+        L'envoi de prospection se fait via envoi/resend_sender.py → send_prospecting_email().
+
+    Cette fonction est uniquement appelée par send_email() ci-dessous,
+    pour les alertes internes (notifications d'ouverture, etc.).
 
     Args:
         prospect_email  : Adresse email du destinataire
         prospect_nom    : Nom de l'établissement / prospect
         email_objet     : Objet de l'email
         email_corps     : Corps du mail (HTML ou texte brut)
-        lien_rapport    : Lien vers le rapport PDF (optionnel)
+        lien_rapport    : Lien vers le rapport (optionnel)
         dry_run         : Si True, simule l'envoi sans appel API
         compte_id       : ID du compte pour incrémenter usage
         is_html         : Si True (défaut), envoie en tant que htmlContent

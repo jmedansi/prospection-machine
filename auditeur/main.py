@@ -73,7 +73,7 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
             l = get_lead_by_name(name)
             if l: leads.append(l)
     else:
-        leads = get_leads_pending()
+        leads = get_leads_pending(verify_smtp=True)
 
     if not leads:
         print("   [!] Aucun lead à auditer.")
@@ -97,28 +97,28 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
         gmb_data = collect_gmb(nom, ville, lead)
         
         skip_analysis = False
-        # Règle stricte (User Request) : Incohérence scraper = Échec audit
+        # Incohérence scraper : avertissement uniquement, audit continue
         if gmb_data.get('rating', 0) > 0 and gmb_data.get('nb_avis', 0) == 0:
             msg = f"Incohérence scraper : Note de {gmb_data.get('rating')} mais 0 avis."
-            print(f"   [ERREUR GMB] {msg} -> Audit annulé.")
-            logger.error(f"Audit annulé pour {nom} (ID {lead_id}) : {msg}")
-            
-            audit_result['audit_failed'] = True
-            audit_result['probleme_principal'] = msg
-            audit_result['mobile_score'] = 0
-            audit_result['score_seo'] = 0
-            audit_result['score_urgence'] = 0
-            skip_analysis = True
+            print(f"   [WARN GMB] {msg} -> Audit continue quand même.")
+            logger.warning(f"Incohérence GMB pour {nom} (ID {lead_id}) : {msg}")
 
         audit_result.update(gmb_data)
 
         # 1. Analyse Web Technique avec retry
-        max_retries = 2
+        max_retries = 3
         audit_success = False
-        
+
         if not skip_analysis:
-            for attempt in range(1, max_retries + 1):
-                if site_url and site_url.startswith(('http://', 'https://')):
+            if not (site_url and site_url.startswith(('http://', 'https://'))):
+                # Pas de site = Profil A (pas de retry nécessaire)
+                print(f"   [!] Pas de site web pour {nom} - Profil A")
+                audit_result['mobile_score'] = 0
+                audit_result['score_seo'] = 0
+                audit_result['score_urgence'] = 8.0
+                audit_success = True
+            else:
+                for attempt in range(1, max_retries + 1):
                     print(f"   [Agent Web] Analyse technique de {site_url}... (tentative {attempt}/{max_retries})")
                     try:
                         web_results = run_web_analysis(site_url)
@@ -128,57 +128,58 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
                         mobile_score = audit_result.get('mobile_score')
                         desktop_score = audit_result.get('desktop_score')
                         lcp_ms = audit_result.get('lcp_ms')
-                        
+
                         # Vérifier aussi les données SEO (ne doivent pas être toutes absentes)
                         has_meta = audit_result.get('has_meta_description') is not None
                         has_schema = audit_result.get('has_schema') is not None
                         has_robots = audit_result.get('has_robots') is not None
                         has_sitemap = audit_result.get('has_sitemap') is not None
                         seo_data_ok = has_meta or has_schema or has_robots or has_sitemap
-                        
+
                         # Fallback: si mobile_score est None ou 0, utiliser desktop_score
                         if (mobile_score is None or mobile_score == 0) and desktop_score is not None and desktop_score > 0:
                             print(f"   [FALLBACK] Utilisation du score desktop ({desktop_score}) comme substitut mobile")
                             mobile_score = desktop_score
                             audit_result['mobile_score'] = desktop_score
-                        
+
                         # Rejeter les scores à 0 (données invalides de PageSpeed)
                         if mobile_score is not None and mobile_score == 0:
                             print(f"   [REJECT] Score mobile à 0 - données invalides")
                             audit_result['mobile_score'] = None
                             mobile_score = None
-                        
+
                         # Si les données de performance ET SEO sont présentes et cohérentes, on sort
                         if mobile_score is not None and mobile_score > 0 and seo_data_ok:
                             audit_success = True
                             break
                         else:
                             print(f"   [WARN] Données incomplètes (tentative {attempt}): mobile={mobile_score}, seo_data={seo_data_ok}")
-                            
+
                     except Exception as e:
                         logger.error(f"Erreur web analyzer pour {nom} (tentative {attempt}): {e}")
                         print(f"   [ERREUR] Analyse échouée (tentative {attempt}): {e}")
-                    
+
                     # Pause entre les tentatives
                     if attempt < max_retries:
                         print(f"   [INFO] Nouvelle tentative dans 3s...")
                         time.sleep(3)
+        
+        # Si audit échoué après les tentatives — utiliser données partielles si disponibles
+        if not audit_success and site_url:
+            partial_score = audit_result.get('mobile_score') or audit_result.get('desktop_score') or 0
+            seo_partial = audit_result.get('has_meta_description') is not None or audit_result.get('has_https') is not None
+            if partial_score > 0 or seo_partial:
+                # Données partielles disponibles — audit dégradé mais valide
+                print(f"   [PARTIEL] Données partielles disponibles (score={partial_score}) — audit sauvegardé en mode dégradé")
+                audit_success = True
+                if not audit_result.get('mobile_score'):
+                    audit_result['mobile_score'] = partial_score
             else:
-                # Pas de site = Profil A (pas de retry nécessaire)
-                print(f"   [!] Pas de site web pour {nom} - Profil A")
+                print(f"   [ERREUR] Échec de l'analyse après {max_retries} tentatives — aucune donnée exploitable")
                 audit_result['mobile_score'] = 0
                 audit_result['score_seo'] = 0
-                audit_result['score_urgence'] = 8.0
-                audit_success = True
-                break
-        
-        # Si audit échoué après les tentatives, marquer comme tel
-        if not audit_success and site_url:
-            print(f"   [ERREUR] Échec de l'analyse après {max_retries} tentatives")
-            audit_result['mobile_score'] = 0
-            audit_result['score_seo'] = 0
-            audit_result['score_urgence'] = 0
-            audit_result['audit_failed'] = True
+                audit_result['score_urgence'] = 0
+                audit_result['audit_failed'] = True
 
         # Calcul des scores agrégés (si analyse réussie)
         if audit_success and site_url:
@@ -205,10 +206,10 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
         reviews = audit_result.get('nb_avis') or lead.get('nb_avis', 0) or 0
         m_score = audit_result.get('mobile_score', 0) or 0
         lcp_ms = audit_result.get('lcp_ms', 0) or 0
-        has_meta = audit_result.get('has_meta_description', True)
-        has_schema = audit_result.get('has_schema', True)
-        has_robots = audit_result.get('has_robots', True)
-        has_sitemap = audit_result.get('has_sitemap', True)
+        has_meta = audit_result.get('has_meta_description', False)
+        has_schema = audit_result.get('has_schema', False)
+        has_robots = audit_result.get('has_robots', False)
+        has_sitemap = audit_result.get('has_sitemap', False)
         
         # Logique des profils (ordre de priorite):
         # 1. Pas de site -> Maquette (A)

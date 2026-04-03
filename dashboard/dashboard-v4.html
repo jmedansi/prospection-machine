@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
     <style>
         /* New Dashboard Styles - Using CSS variables for consistency */
         :root {
@@ -22,8 +22,8 @@
         }
         
         .campaign-table { width: 100%; border-collapse: collapse; }
-        .campaign-table th { text-align: left; padding: 16px 14px; font-size: var(--text-sm); font-weight: 600; color: var(--ink3); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
-        .campaign-table td { padding: 18px 14px; font-size: var(--text-base); border-bottom: 1px solid var(--surface2); vertical-align: middle; transition: background var(--transition-fast); }
+        .campaign-table th { text-align: left; padding: 10px 14px; font-size: var(--text-2xs); font-weight: 700; color: var(--ink3); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
+        .campaign-table td { padding: 11px 14px; font-size: var(--text-base); border-bottom: 1px solid var(--surface2); vertical-align: middle; transition: background var(--transition-fast); }
         .campaign-table tr:hover { background: var(--surface2); transform: translateX(2px); }
         .campaign-table tr.selected { background: rgba(16, 185, 129, 0.12); border-left: 3px solid var(--accent); }
         
@@ -296,8 +296,13 @@
                     </svg>
                     Campagne
                 </div>
+                <div class="ni" id="nav-planificateur" onclick="nav('planificateur',this)">
+                    <span class="ni-icon">📅</span>
+                    <span class="ni-label">Planning</span>
+                    <span class="ni-badge" id="nav-badge-planning">0</span>
+                </div>
             </div>
-            
+
             <div class="ng">
                 <div class="nl">Tracking</div>
                 <div class="ni" id="nav-suivi" onclick="nav('suivi',this)">
@@ -305,6 +310,12 @@
                         <path d="M1 12L5 7l3 3 3-4 4 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                     Suivi CRM
+                </div>
+                <div class="ni" id="nav-roi" onclick="nav('roi',this)">
+                    <svg viewBox="0 0 16 16" fill="none">
+                        <path d="M2 14V6a2 2 0 012-2h2M14 14V4a2 2 0 00-2-2h-2M6 14V8a2 2 0 012-2h2M10 14V2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                    </svg>
+                    ROI Analytics
                 </div>
             </div>
             
@@ -393,12 +404,36 @@
                             <option value="">Toutes les campagnes</option>
                         </select>
                     </div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-right:15px;padding-right:15px;border-right:1px solid var(--border)">
-                        <span style="font-size:11px;font-weight:600;color:var(--ink3)">📅</span>
-                        <input type="date" id="global-date-start" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--ink1)" onchange="changeGlobalDate()" title="Date de début">
-                        <span style="font-size:11px;color:var(--ink3)">→</span>
-                        <input type="date" id="global-date-end" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--ink1)" onchange="changeGlobalDate()" title="Date de fin">
-                        <button class="btn bg0 sm" onclick="clearGlobalDate()" title="Réinitialiser la période" style="padding:3px 7px;font-size:11px">✕</button>
+                    <!-- Date Range Picker -->
+                    <div style="position:relative;margin-right:15px;padding-right:15px;border-right:1px solid var(--border)">
+                        <input type="hidden" id="global-date-start">
+                        <input type="hidden" id="global-date-end">
+                        <button id="drp-trigger" onclick="_drpToggle()" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--ink);font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;transition:border-color .15s">
+                            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 6h14" stroke="currentColor" stroke-width="1.3"/><path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                            <span id="drp-label" style="color:var(--ink3)">Période</span>
+                            <span id="drp-clear" onclick="event.stopPropagation();clearGlobalDate()" style="display:none;color:var(--ink3);font-size:14px;line-height:1;margin-left:2px">✕</span>
+                        </button>
+                        <div id="drp-popup" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.18);z-index:10000;padding:16px 16px 14px;width:268px">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                                <button onclick="_drpPrevMonth()" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--ink3);width:28px;height:28px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink3)'">‹</button>
+                                <span id="drp-month-label" style="font-size:13px;font-weight:700;color:var(--ink)"></span>
+                                <button onclick="_drpNextMonth()" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--ink3);width:28px;height:28px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink3)'">›</button>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px">
+                                <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Lu</div>
+                                <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Ma</div>
+                                <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Me</div>
+                                <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Je</div>
+                                <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Ve</div>
+                                <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Sa</div>
+                                <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Di</div>
+                            </div>
+                            <div id="drp-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px"></div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+                                <span id="drp-footer" style="font-size:11px;color:var(--ink3)">Choisissez la date de début</span>
+                                <button onclick="_drpReset();_drpRender()" style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer;padding:0;text-decoration:underline">Effacer</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="sp" id="status-provider" style="background:var(--surface2);color:var(--ink3);border-color:var(--border)"><span class="pls" style="background:var(--ink3)"></span><span id="status-provider-text">Chargement...</span></div>
                     <button class="btn bg1 sm" onclick="refreshAll()">Rafraîchir</button>
@@ -436,12 +471,12 @@
                         </div>
                         <div class="mc">
                             <div class="ml">Réponses reçues</div>
-                            <div class="mv">0</div>
-                            <div class="ms">0 positives</div>
+                            <div class="mv" id="stat-reponses">—</div>
+                            <div class="ms" id="stat-reponses-positives">0 positives</div>
                         </div>
                         <div class="mc">
                             <div class="ml">RDV obtenus</div>
-                            <div class="mv">0</div>
+                            <div class="mv" id="stat-rdv">—</div>
                             <div class="ms">Objectif: 3/mois</div>
                         </div>
                     </div>
@@ -450,32 +485,32 @@
                         <div class="ps">
                             <div class="pn" style="color:var(--accent)" id="stat-scrapes">—</div>
                             <div class="pl">Scrapés</div>
-                            <div class="pb">Google Maps</div>
+                            <div class="pb">Total</div>
                         </div>
                         <div class="ps">
-                            <div class="pn" id="stat-audites">—</div>
-                            <div class="pl">Audités</div>
-                            <div class="pb">Score</div>
+                            <div class="pn" id="stat-with-site-2">—</div>
+                            <div class="pl">Avec site</div>
+                            <div class="pb" id="stat-with-site-pct">—</div>
+                        </div>
+                        <div class="ps">
+                            <div class="pn" style="color:var(--orange)" id="stat-sans-site">—</div>
+                            <div class="pl">Sans site</div>
+                            <div class="pb">—</div>
+                        </div>
+                        <div class="ps">
+                            <div class="pn" style="color:var(--orange)" id="stat-en-attente">—</div>
+                            <div class="pl">En attente</div>
+                            <div class="pb">d'audit</div>
                         </div>
                         <div class="ps">
                             <div class="pn" id="stat-prets">—</div>
                             <div class="pl">Emails prêts</div>
-                            <div class="pb">En attente Brevo</div>
+                            <div class="pb">Approuvés</div>
                         </div>
                         <div class="ps">
-                            <div class="pn" style="color:var(--ink3)" id="stat-envoyes">—</div>
-                            <div class="pl">Envoyés</div>
-                            <div class="pb">—</div>
-                        </div>
-                        <div class="ps">
-                            <div class="pn" style="color:var(--ink3)">0</div>
-                            <div class="pl">Réponses</div>
-                            <div class="pb">—</div>
-                        </div>
-                        <div class="ps">
-                            <div class="pn" style="color:var(--ink3)">0</div>
-                            <div class="pl">RDV</div>
-                            <div class="pb">—</div>
+                            <div class="pn" id="stat-batches-pending">—</div>
+                            <div class="pl">Batches</div>
+                            <div class="pb">en attente</div>
                         </div>
                     </div>
                     <div class="sl" style="margin-top:2rem">Actions rapides</div>
@@ -497,6 +532,10 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
                             Auditer
                         </button>
+                        <button class="btn sm" style="background:rgba(245,158,11,0.1);color:var(--orange)" onclick="retryFailedAudits()" title="Relancer tous les audits échoués">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                            Relancer échecs
+                        </button>
                         <button class="btn bp1 sm" onclick="generateSelectedEmails()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                             Générer emails
@@ -512,15 +551,28 @@
                         <button class="btn bg1 sm" onclick="refreshCampaignData()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
                         </button>
-                        
+                        <button class="btn sm" style="background:rgba(239,68,68,0.1);color:var(--red)" onclick="deleteSelectedLeads()" title="Supprimer les leads sélectionnés">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            Supprimer
+                        </button>
+                        <button class="btn sm" style="background:rgba(239,68,68,0.06);color:var(--red);opacity:0.8" onclick="purgeZeroAvis()" title="Purger les leads sans avis non contactés">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                            Purger 0 avis
+                        </button>
+
+                        <button class="btn sm" style="background:rgba(16,185,129,0.08);color:var(--green)" onclick="exportFilteredLeads()" title="Exporter tous les leads filtrés en CSV">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Export CSV
+                        </button>
+
                         <div style="flex:1"></div>
-                        
+
                         <span id="campaign-count" style="font-size:16px;color:var(--ink3)">0 leads</span>
                     </div>
                     
                     <!-- Filters - Horizontal alignment -->
                     <div class="filter-bar" style="flex-wrap:nowrap;align-items:center;gap:8px;margin-bottom:16px">
-                        <select id="filter-statut" onchange="loadCampaignTable()" style="min-width:160px">
+                        <select id="filter-statut" onchange="_resetAndLoad()" style="min-width:160px">
                             <option value="tous">Tous statuts</option>
                             <option value="en_attente">En attente</option>
                             <option value="scraped">Scrapé</option>
@@ -530,17 +582,20 @@
                             <option value="repondu">Répondu</option>
                             <option value="non_envoye">Non encore envoyé</option>
                         </select>
-                        <select id="filter-site" onchange="loadCampaignTable()" style="min-width:120px">
+                        <select id="filter-site" onchange="_resetAndLoad()" style="min-width:120px">
                             <option value="tous">Site: Tous</option>
                             <option value="avec">Avec site</option>
                             <option value="sans">Sans site</option>
                         </select>
-                        <select id="filter-email" onchange="loadCampaignTable()" style="min-width:130px">
+                        <select id="filter-email" onchange="_resetAndLoad()" style="min-width:130px">
                             <option value="tous">Email: Tous</option>
                             <option value="avec">Avec email</option>
                             <option value="sans">Sans email</option>
                         </select>
-                        <input type="text" id="search-lead" placeholder="Rechercher..." onkeyup="loadCampaignTable()" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;width:160px;font-size:12px">
+                        <select id="filter-sector" onchange="_resetAndLoad()" style="min-width:130px">
+                            <option value="tous">Secteur: Tous</option>
+                        </select>
+                        <input type="text" id="search-lead" placeholder="Rechercher..." onkeyup="_debouncedSearch()" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;width:160px;font-size:12px">
                     </div>
                     
                     <!-- Unified Table -->
@@ -563,6 +618,13 @@
                                 <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--ink3)">Chargement des leads...</td></tr>
                             </tbody>
                         </table>
+                        <!-- Pagination -->
+                        <div id="pagination-controls" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
+                            <button id="btn-prev-page" class="btn sm" onclick="changeCampaignPage(-1)" disabled style="padding:4px 8px">← Précédent</button>
+                            <select id="page-select" onchange="goToCampaignPage(this.value)" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px"></select>
+                            <span id="page-info" style="flex:1;text-align:center">page 1 sur 1</span>
+                            <button id="btn-next-page" class="btn sm" onclick="changeCampaignPage(1)" disabled style="padding:4px 8px">Suivant →</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -571,7 +633,7 @@
                     <div class="mg">
                         <div class="mc">
                             <div class="ml">Envoyés total</div>
-                            <div class="mv">0</div>
+                            <div class="mv" id="crm-stat-envoyes">0</div>
                         </div>
                         <div class="mc">
                             <div class="ml">Taux d'ouverture</div>
@@ -593,6 +655,14 @@
                             <div class="ml">RDV obtenus</div>
                             <div class="mv" id="crm-stat-rdv">0</div>
                         </div>
+                        <div class="mc">
+                            <div class="ml">Bounces</div>
+                            <div class="mv" id="crm-stat-bounces">0</div>
+                        </div>
+                        <div class="mc">
+                            <div class="ml">Spam</div>
+                            <div class="mv" id="crm-stat-spam">0</div>
+                        </div>
                     </div>
                     <div class="sl">Historique des emails</div>
                     <div class="card">
@@ -603,6 +673,8 @@
                                 <button class="btn bg1 sm" onclick="setCRMFilter('cliques', this)">Cliqués</button>
                                 <button class="btn bg1 sm" onclick="setCRMFilter('repondus', this)">Répondus</button>
                                 <button class="btn bg1 sm" onclick="setCRMFilter('positifs', this)">Positifs</button>
+                                <button class="btn bg1 sm" onclick="setCRMFilter('bounces', this)">Bounces</button>
+                                <button class="btn bg1 sm" onclick="setCRMFilter('spam', this)">Spam</button>
                             </div>
                         </div>
                         <table class="tbl" style="margin-top:10px">
@@ -622,6 +694,286 @@
                     </div>
                 </div>
                 
+                <!-- ROI ANALYTICS -->
+                <div class="pg" id="pg-roi">
+                    <div class="sl">ROI & Analytics</div>
+                    
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+                        <div class="card" style="text-align:center">
+                            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Taux de Clic</div>
+                            <div id="roi-ctr" style="font-size:32px;font-weight:700;color:var(--accent)">—</div>
+                        </div>
+                        <div class="card" style="text-align:center">
+                            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Taux de Réponse</div>
+                            <div id="roi-reply" style="font-size:32px;font-weight:700;color:var(--accent)">—</div>
+                        </div>
+                        <div class="card" style="text-align:center">
+                            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">RDV Confirmés</div>
+                            <div id="roi-rdv" style="font-size:32px;font-weight:700;color:var(--green)">—</div>
+                        </div>
+                        <div class="card" style="text-align:center">
+                            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Emails Envoyés</div>
+                            <div id="roi-sent" style="font-size:32px;font-weight:700">—</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="margin-bottom:24px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                            <h3 style="font-size:14px;font-weight:600">Tunnel de Conversion</h3>
+                            <button onclick="loadRoiData()" class="btn sm">Rafraîchir</button>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;height:200px" id="roi-funnel">
+                            <div style="text-align:center">
+                                <div id="roi-scraped" style="font-size:24px;font-weight:700">0</div>
+                                <div style="font-size:11px;color:var(--ink3)">Scrapés</div>
+                            </div>
+                            <span style="color:var(--ink3)">→</span>
+                            <div style="text-align:center">
+                                <div id="roi-audited" style="font-size:24px;font-weight:700">0</div>
+                                <div style="font-size:11px;color:var(--ink3)">Audités</div>
+                            </div>
+                            <span style="color:var(--ink3)">→</span>
+                            <div style="text-align:center">
+                                <div id="roi-sent2" style="font-size:24px;font-weight:700">0</div>
+                                <div style="font-size:11px;color:var(--ink3)">Envoyés</div>
+                            </div>
+                            <span style="color:var(--ink3)">→</span>
+                            <div style="text-align:center">
+                                <div id="roi-clicked" style="font-size:24px;font-weight:700">0</div>
+                                <div style="font-size:11px;color:var(--ink3)">Clics</div>
+                            </div>
+                            <span style="color:var(--ink3)">→</span>
+                            <div style="text-align:center">
+                                <div id="roi-replied" style="font-size:24px;font-weight:700">0</div>
+                                <div style="font-size:11px;color:var(--ink3)">Réponses</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="margin-bottom:24px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                            <h3 style="font-size:14px;font-weight:600">Top Niches (par taux de clic)</h3>
+                            <a href="/api/stats/export" download class="btn sm" style="text-decoration:none">Export CSV</a>
+                        </div>
+                        <table class="campaign-table">
+                            <thead>
+                                <tr>
+                                    <th>Secteur</th>
+                                    <th>Ville</th>
+                                    <th>Emails</th>
+                                    <th>Clics</th>
+                                    <th>Taux</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-niches">
+                                <tr><td colspan="5" style="text-align:center;padding:2rem">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- A/B TESTING -->
+                    <div class="card" style="margin-bottom:24px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                            <h3 style="font-size:14px;font-weight:600">A/B Testing : V1 vs V2</h3>
+                            <span style="font-size:11px;color:var(--ink3)">Comparatif de performance des templates d'emails</span>
+                        </div>
+                        <table class="campaign-table">
+                            <thead>
+                                <tr>
+                                    <th>Template</th>
+                                    <th>Variante</th>
+                                    <th>Envoyés</th>
+                                    <th>Ouverts</th>
+                                    <th>Clics</th>
+                                    <th>Réponses</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-abtest">
+                                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--ink3)">Chargement des données A/B...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- PLANIFICATEUR -->
+                <div class="pg" id="pg-planificateur">
+                    <!-- Header avec quota du jour -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+                        <h2>Planificateur de campagnes</h2>
+                        <div id="quota-bar" style="display:flex;align-items:center;gap:1rem">
+                            <span style="font-size:13px;color:var(--ink3)">Emails aujourd'hui :</span>
+                            <div style="position:relative;width:200px;height:8px;background:var(--surface2);border-radius:4px">
+                                <div id="quota-progress" style="height:100%;background:var(--green);border-radius:4px;width:0%;transition:width .3s"></div>
+                            </div>
+                            <span id="quota-text" style="font-size:13px;font-weight:600">0 / 100</span>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire d'ajout rapide -->
+                    <div class="card" style="margin-bottom:1.5rem">
+                        <div class="ct2" style="margin-bottom:1rem">Ajouter une campagne à la file</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+                            <div style="display:flex;flex-direction:column;gap:4px;min-width:180px">
+                                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Secteur</label>
+                                <select id="plan-sector" onchange="onPlanSectorChange(this)" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                                    <option value="" data-kw="">-- Choisir une niche --</option>
+                                    <optgroup label="⚒ Artisans / BTP">
+                                        <option value="Plombier"           data-kw="plombier">Plombier</option>
+                                        <option value="Électricien"        data-kw="électricien">Électricien</option>
+                                        <option value="Menuisier"          data-kw="menuisier">Menuisier</option>
+                                        <option value="Peintre"            data-kw="peintre bâtiment">Peintre en bâtiment</option>
+                                        <option value="Maçon"              data-kw="maçon">Maçon</option>
+                                        <option value="Couvreur"           data-kw="couvreur">Couvreur</option>
+                                        <option value="Carreleur"          data-kw="carreleur">Carreleur</option>
+                                        <option value="Chauffagiste"       data-kw="chauffagiste">Chauffagiste</option>
+                                        <option value="Serrurier"          data-kw="serrurier">Serrurier</option>
+                                        <option value="Architecte"         data-kw="architecte">Architecte</option>
+                                        <option value="Paysagiste"         data-kw="paysagiste">Paysagiste / Jardinier</option>
+                                        <option value="Climatisation"      data-kw="climatisation installation">Climatisation / Froid</option>
+                                    </optgroup>
+                                    <optgroup label="🏥 Santé / Bien-être">
+                                        <option value="Kinésithérapeute"   data-kw="kinésithérapeute">Kinésithérapeute</option>
+                                        <option value="Ostéopathe"         data-kw="ostéopathe">Ostéopathe</option>
+                                        <option value="Naturopathe"        data-kw="naturopathe">Naturopathe</option>
+                                        <option value="Psychologue"        data-kw="psychologue">Psychologue</option>
+                                        <option value="Dentiste"           data-kw="dentiste">Dentiste</option>
+                                        <option value="Infirmier"          data-kw="infirmier libéral">Infirmier libéral</option>
+                                        <option value="Médecin"            data-kw="médecin généraliste">Médecin généraliste</option>
+                                        <option value="Podologue"          data-kw="podologue">Podologue</option>
+                                    </optgroup>
+                                    <optgroup label="💅 Beauté / Coiffure">
+                                        <option value="Coiffeur"           data-kw="coiffeur">Coiffeur / Salon de coiffure</option>
+                                        <option value="Esthéticienne"      data-kw="esthéticienne">Esthéticienne</option>
+                                        <option value="Massage"            data-kw="salon massage">Salon de massage</option>
+                                        <option value="Onglerie"           data-kw="onglerie nail art">Onglerie</option>
+                                        <option value="Barbier"            data-kw="barbier">Barbier</option>
+                                    </optgroup>
+                                    <optgroup label="⚖️ Professions libérales">
+                                        <option value="Avocat"             data-kw="avocat">Avocat</option>
+                                        <option value="Expert-comptable"   data-kw="expert-comptable">Expert-comptable</option>
+                                        <option value="Notaire"            data-kw="notaire">Notaire</option>
+                                        <option value="Huissier"           data-kw="huissier de justice">Huissier de justice</option>
+                                        <option value="Conseiller financier" data-kw="conseiller financier">Conseiller financier</option>
+                                    </optgroup>
+                                    <optgroup label="📣 Services aux entreprises">
+                                        <option value="Agence communication" data-kw="agence communication">Agence de communication</option>
+                                        <option value="Agence immobilière" data-kw="agence immobilière">Agence immobilière</option>
+                                        <option value="Consultant"         data-kw="consultant">Consultant</option>
+                                        <option value="Coach"              data-kw="coach professionnel">Coach</option>
+                                        <option value="Formation"          data-kw="centre de formation">Organisme de formation</option>
+                                        <option value="Traducteur"         data-kw="traducteur interprète">Traducteur</option>
+                                        <option value="Comptable"          data-kw="cabinet comptable">Cabinet comptable</option>
+                                    </optgroup>
+                                    <optgroup label="🚗 Auto / Transport">
+                                        <option value="Garagiste"          data-kw="garage automobile">Garagiste</option>
+                                        <option value="Carrossier"         data-kw="carrosserie auto">Carrossier</option>
+                                        <option value="Auto-école"         data-kw="auto-école">Auto-école</option>
+                                        <option value="Déménageur"         data-kw="déménageur">Déménageur</option>
+                                        <option value="Taxi"               data-kw="taxi vtc">Taxi / VTC</option>
+                                    </optgroup>
+                                    <optgroup label="📸 Numérique / Créatif">
+                                        <option value="Photographe"        data-kw="photographe">Photographe</option>
+                                        <option value="Vidéaste"           data-kw="vidéaste">Vidéaste</option>
+                                        <option value="Graphiste"          data-kw="graphiste">Graphiste</option>
+                                        <option value="Web designer"       data-kw="web designer">Web designer</option>
+                                    </optgroup>
+                                    <optgroup label="🎓 Éducation / Sport">
+                                        <option value="Auto-école"         data-kw="auto-école">Auto-école</option>
+                                        <option value="Soutien scolaire"   data-kw="soutien scolaire">Soutien scolaire</option>
+                                        <option value="Salle de sport"     data-kw="salle de sport fitness">Salle de sport / Fitness</option>
+                                        <option value="Coach sportif"      data-kw="coach sportif">Coach sportif</option>
+                                        <option value="Yoga"               data-kw="yoga pilates">Yoga / Pilates</option>
+                                        <option value="École de danse"     data-kw="école de danse">École de danse</option>
+                                    </optgroup>
+                                    <optgroup label="🛒 Commerce local">
+                                        <option value="Fleuriste"          data-kw="fleuriste">Fleuriste</option>
+                                        <option value="Bijouterie"         data-kw="bijouterie">Bijouterie</option>
+                                        <option value="Boulangerie"        data-kw="boulangerie pâtisserie">Boulangerie / Pâtisserie</option>
+                                        <option value="Traiteur"           data-kw="traiteur">Traiteur</option>
+                                        <option value="Opticien"           data-kw="opticien">Opticien</option>
+                                        <option value="Librairie"          data-kw="librairie">Librairie</option>
+                                    </optgroup>
+                                    <optgroup label="➕ Autre">
+                                        <option value="Autre"              data-kw="">Autre (saisir manuellement)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;min-width:160px">
+                                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Mot-clé</label>
+                                <input type="text" id="plan-keyword" placeholder="plombier, avocat..." style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px">
+                                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Ville</label>
+                                <input type="text" id="plan-city" placeholder="Paris, Lyon..." style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;width:90px">
+                                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Leads</label>
+                                <input type="number" id="plan-leads" value="50" min="1" max="500" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px">
+                                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Date</label>
+                                <input type="date" id="plan-date" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;width:100px">
+                                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Heure</label>
+                                <input type="time" id="plan-heure" value="09:00" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                            </div>
+                            <button class="btn bp1" onclick="addPlannedCampaign()" style="align-self:flex-end;white-space:nowrap">
+                                + Ajouter à la file
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- File d'attente -->
+                    <div class="card" style="margin-bottom:1.5rem">
+                        <div class="ch" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                            <div class="ct2">File d'attente</div>
+                            <button class="btn bg1 sm" onclick="loadPlanning()">Rafraîchir</button>
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table class="tbl" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th style="width:32px">#</th>
+                                        <th>Secteur</th>
+                                        <th>Mot-clé</th>
+                                        <th>Ville</th>
+                                        <th>Leads</th>
+                                        <th>Date</th>
+                                        <th>Heure</th>
+                                        <th>Statut</th>
+                                        <th style="text-align:right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-planning">
+                                    <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--ink3)">Chargement...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Stats par niche -->
+                    <div class="card">
+                        <div class="ct2" style="margin-bottom:1rem">Statistiques par niche</div>
+                        <div style="overflow-x:auto">
+                            <table class="tbl" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Niche</th>
+                                        <th>Campagnes</th>
+                                        <th>Leads scrappés</th>
+                                        <th>Emails envoyés</th>
+                                        <th>Taux réponse</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-niche-stats">
+                                    <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--ink3)">Chargement...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- PARAMETRES -->
                 <div class="pg" id="pg-settings">
                     <div class="g2">
@@ -695,7 +1047,92 @@
             </div>
             <div class="mb">
                 <div class="fg">
-                    <div class="fgr"><label class="fl">Mot-clé / Secteur</label><input type="text" id="modal-keyword" value="restaurant" placeholder="restaurant, avocat..."></div>
+                    <div class="fgr">
+                        <label class="fl">Secteur / Niche</label>
+                        <select id="modal-sector" onchange="onSectorChange(this)" style="width:100%">
+                            <option value="" data-kw="">-- Choisir une niche --</option>
+                            <optgroup label="⚒ Artisans / BTP">
+                                <option value="Plombier"           data-kw="plombier">Plombier</option>
+                                <option value="Électricien"        data-kw="électricien">Électricien</option>
+                                <option value="Menuisier"          data-kw="menuisier">Menuisier</option>
+                                <option value="Peintre"            data-kw="peintre bâtiment">Peintre en bâtiment</option>
+                                <option value="Maçon"              data-kw="maçon">Maçon</option>
+                                <option value="Couvreur"           data-kw="couvreur">Couvreur</option>
+                                <option value="Carreleur"          data-kw="carreleur">Carreleur</option>
+                                <option value="Chauffagiste"       data-kw="chauffagiste">Chauffagiste</option>
+                                <option value="Serrurier"          data-kw="serrurier">Serrurier</option>
+                                <option value="Architecte"         data-kw="architecte">Architecte</option>
+                                <option value="Paysagiste"         data-kw="paysagiste">Paysagiste / Jardinier</option>
+                                <option value="Climatisation"      data-kw="climatisation installation">Climatisation / Froid</option>
+                            </optgroup>
+                            <optgroup label="🏥 Santé / Bien-être">
+                                <option value="Kinésithérapeute"   data-kw="kinésithérapeute">Kinésithérapeute</option>
+                                <option value="Ostéopathe"         data-kw="ostéopathe">Ostéopathe</option>
+                                <option value="Naturopathe"        data-kw="naturopathe">Naturopathe</option>
+                                <option value="Psychologue"        data-kw="psychologue">Psychologue</option>
+                                <option value="Dentiste"           data-kw="dentiste">Dentiste</option>
+                                <option value="Infirmier"          data-kw="infirmier libéral">Infirmier libéral</option>
+                                <option value="Médecin"            data-kw="médecin généraliste">Médecin généraliste</option>
+                                <option value="Podologue"          data-kw="podologue">Podologue</option>
+                            </optgroup>
+                            <optgroup label="💅 Beauté / Coiffure">
+                                <option value="Coiffeur"           data-kw="coiffeur">Coiffeur / Salon de coiffure</option>
+                                <option value="Esthéticienne"      data-kw="esthéticienne">Esthéticienne</option>
+                                <option value="Massage"            data-kw="salon massage">Salon de massage</option>
+                                <option value="Onglerie"           data-kw="onglerie nail art">Onglerie</option>
+                                <option value="Barbier"            data-kw="barbier">Barbier</option>
+                            </optgroup>
+                            <optgroup label="⚖️ Professions libérales">
+                                <option value="Avocat"             data-kw="avocat">Avocat</option>
+                                <option value="Expert-comptable"   data-kw="expert-comptable">Expert-comptable</option>
+                                <option value="Notaire"            data-kw="notaire">Notaire</option>
+                                <option value="Huissier"           data-kw="huissier de justice">Huissier de justice</option>
+                                <option value="Conseiller financier" data-kw="conseiller financier">Conseiller financier</option>
+                            </optgroup>
+                            <optgroup label="📣 Services aux entreprises">
+                                <option value="Agence communication" data-kw="agence communication">Agence de communication</option>
+                                <option value="Agence immobilière" data-kw="agence immobilière">Agence immobilière</option>
+                                <option value="Consultant"         data-kw="consultant">Consultant</option>
+                                <option value="Coach"              data-kw="coach professionnel">Coach</option>
+                                <option value="Formation"          data-kw="centre de formation">Organisme de formation</option>
+                                <option value="Traducteur"         data-kw="traducteur interprète">Traducteur</option>
+                                <option value="Comptable"          data-kw="cabinet comptable">Cabinet comptable</option>
+                            </optgroup>
+                            <optgroup label="🚗 Auto / Transport">
+                                <option value="Garagiste"          data-kw="garage automobile">Garagiste</option>
+                                <option value="Carrossier"         data-kw="carrosserie auto">Carrossier</option>
+                                <option value="Auto-école"         data-kw="auto-école">Auto-école</option>
+                                <option value="Déménageur"         data-kw="déménageur">Déménageur</option>
+                                <option value="Taxi"               data-kw="taxi vtc">Taxi / VTC</option>
+                            </optgroup>
+                            <optgroup label="📸 Numérique / Créatif">
+                                <option value="Photographe"        data-kw="photographe">Photographe</option>
+                                <option value="Vidéaste"           data-kw="vidéaste">Vidéaste</option>
+                                <option value="Graphiste"          data-kw="graphiste">Graphiste</option>
+                                <option value="Web designer"       data-kw="web designer">Web designer</option>
+                            </optgroup>
+                            <optgroup label="🎓 Éducation / Sport">
+                                <option value="Auto-école"         data-kw="auto-école">Auto-école</option>
+                                <option value="Soutien scolaire"   data-kw="soutien scolaire">Soutien scolaire</option>
+                                <option value="Salle de sport"     data-kw="salle de sport fitness">Salle de sport / Fitness</option>
+                                <option value="Coach sportif"      data-kw="coach sportif">Coach sportif</option>
+                                <option value="Yoga"               data-kw="yoga pilates">Yoga / Pilates</option>
+                                <option value="École de danse"     data-kw="école de danse">École de danse</option>
+                            </optgroup>
+                            <optgroup label="🛒 Commerce local">
+                                <option value="Fleuriste"          data-kw="fleuriste">Fleuriste</option>
+                                <option value="Bijouterie"         data-kw="bijouterie">Bijouterie</option>
+                                <option value="Boulangerie"        data-kw="boulangerie pâtisserie">Boulangerie / Pâtisserie</option>
+                                <option value="Traiteur"           data-kw="traiteur">Traiteur</option>
+                                <option value="Opticien"           data-kw="opticien">Opticien</option>
+                                <option value="Librairie"          data-kw="librairie">Librairie</option>
+                            </optgroup>
+                            <optgroup label="➕ Autre">
+                                <option value="Autre"              data-kw="">Autre (saisir manuellement)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="fgr"><label class="fl">Mot-clé Google Maps</label><input type="text" id="modal-keyword" placeholder="plombier, avocat..." style="width:100%"></div>
                     <div class="fgr"><label class="fl">Ville</label><input type="text" id="modal-city" value="" placeholder="Paris, Lyon..."></div>
                     <div class="fgr"><label class="fl">Nombre de leads</label><input type="number" id="modal-limit" value="20" min="1" max="500"></div>
                     <div class="fgr"><label class="fl">Emails min. à trouver</label><input type="number" id="modal-min-emails" value="" placeholder="ex: 5" min="0"></div>
@@ -784,14 +1221,15 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="/js/ui.js?v=4"></script>
-    <script src="/js/api.js?v=4"></script>
-    <script src="/js/modules/leads.js?v=4"></script>
-    <script src="/js/modules/collecte.js?v=4"></script>
-    <script src="/js/modules/audits.js?v=4"></script>
-    <script src="/js/modules/crm.js?v=4"></script>
-    <script src="/js/modules/rapports.js?v=4"></script>
-    <script src="/js/modules/settings.js?v=4"></script>
+    <script src="/static/js/ui.js?v=4"></script>
+    <script src="/static/js/api.js?v=4"></script>
+    <script src="/static/js/modules/leads.js?v=4"></script>
+    <script src="/static/js/modules/collecte.js?v=4"></script>
+    <script src="/static/js/modules/audits.js?v=4"></script>
+    <script src="/static/js/modules/crm.js?v=4"></script>
+    <script src="/static/js/modules/rapports.js?v=4"></script>
+    <script src="/static/js/modules/settings.js?v=4"></script>
+    <script src="/static/js/modules/planificateur.js?v=4"></script>
     <script>
         // Global variables
         let _selectedLeadId = null;
@@ -827,17 +1265,60 @@
             // Load data for page
             if(page === 'campagne') loadCampaignTable();
             if(page === 'suivi') loadCRM();
+            if(page === 'planificateur') {
+                if(typeof initPlanificateur === 'function') initPlanificateur();
+            }
             if(page === 'cockpit') {
                 if(typeof loadStats === 'function') loadStats();
                 if(typeof loadCampaigns === 'function') loadCampaigns();
             }
+            if(page === 'roi') loadRoiData();
         }
         
         function getSavedPage() {
             return localStorage.getItem('pm_current_page') || 'cockpit';
         }
         
+        function _resetAndLoad() { _campPage = 1; loadCampaignTable(); }
+
         // Campaign Table Functions
+        let _campPage = 1;
+        let _campTotalPages = 1;
+
+        function changeCampaignPage(delta) {
+            const newPage = _campPage + delta;
+            if (newPage >= 1 && newPage <= _campTotalPages) {
+                _campPage = newPage;
+                loadCampaignTable();
+            }
+        }
+
+        function goToCampaignPage(p) {
+            _campPage = parseInt(p) || 1;
+            loadCampaignTable();
+        }
+
+        function _updateCampaignPagination(page, totalPages, total) {
+            _campPage = page;
+            _campTotalPages = totalPages;
+            const info = document.getElementById('page-info');
+            if (info) info.textContent = `page ${page} sur ${totalPages} (${total} leads)`;
+            const prev = document.getElementById('btn-prev-page');
+            const next = document.getElementById('btn-next-page');
+            if (prev) prev.disabled = page <= 1;
+            if (next) next.disabled = page >= totalPages;
+            const sel = document.getElementById('page-select');
+            if (sel) {
+                sel.innerHTML = '';
+                for (let i = 1; i <= Math.min(totalPages, 50); i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i; opt.textContent = i;
+                    if (i === page) opt.selected = true;
+                    sel.appendChild(opt);
+                }
+            }
+        }
+
         async function loadCampaignTable() {
             try {
                 const params = new URLSearchParams();
@@ -845,35 +1326,46 @@
                 const siteEl = document.getElementById('filter-site');
                 const emailEl = document.getElementById('filter-email');
                 const campaignEl = document.getElementById('global-campaign-select');
-                
+
+                const sectorEl = document.getElementById('filter-sector');
                 params.set('statut', statutEl ? statutEl.value : 'tous');
                 params.set('site', siteEl ? siteEl.value : 'tous');
                 params.set('email', emailEl ? emailEl.value : 'tous');
+                if (sectorEl && sectorEl.value && sectorEl.value !== 'tous') {
+                    params.set('sector', sectorEl.value);
+                }
                 if (campaignEl && campaignEl.value) {
                     params.set('campaign_id', campaignEl.value);
                 }
-                params.set('limit', '100');
-                
+                params.set('limit', '50');
+                params.set('page', _campPage);
+
                 const url = '/api/leads?' + params.toString();
                 
+                // Skeleton pendant le chargement
+                const tbody = document.getElementById('tbody-campaign');
+                if (tbody && typeof skeletonTable === 'function') tbody.innerHTML = skeletonTable(6);
+
                 const r = await fetch(url);
                 const d = await r.json();
-                
+
                 if(d.leads && d.leads.length > 0) {
                     _campaignData = d.leads;
                     syncAllLeads();
                     renderCampaignTable(d.leads);
-                    // Afficher le total et avertir si > 100
                     const total = d.total || 0;
                     const countEl = document.getElementById('campaign-count');
-                    if (total > 100) {
-                        countEl.innerHTML = `<span style="color:var(--warning)">${d.leads.length} / ${total} leads</span> <span style="font-size:12px;color:var(--ink3)">(limite 100, paginez pour voir plus)</span>`;
-                    } else {
-                        countEl.textContent = total + ' leads';
-                    }
+                    if (countEl) countEl.textContent = total + ' leads';
+                    _updateCampaignPagination(d.page || 1, d.total_pages || 1, total);
+                    // Populate sector filter
+                    if (typeof loadSectorFilter === 'function') loadSectorFilter();
                 } else {
-                    document.getElementById('tbody-campaign').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem">Aucun lead trouvé</td></tr>';
-                    document.getElementById('campaign-count').textContent = '0 leads';
+                    document.getElementById('tbody-campaign').innerHTML = '<tr><td colspan="9"><div class="empty-state">' +
+                        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
+                        '<h3>Aucun lead trouvé</h3><p>Lance un scraping pour collecter des prospects, ou ajuste les filtres.</p>' +
+                        '</div></td></tr>';
+                    if (document.getElementById('campaign-count')) document.getElementById('campaign-count').textContent = '0 leads';
+                    _updateCampaignPagination(1, 1, 0);
                 }
             } catch(e) { console.error('loadCampaignTable:', e); }
         }
@@ -882,7 +1374,10 @@
             const search = document.getElementById('search-lead').value.toLowerCase();
             let filtered = leads;
             if(search) {
-                filtered = leads.filter(l => (l.nom || '').toLowerCase().includes(search));
+                filtered = leads.filter(l => 
+                    (l.nom || '').toLowerCase().includes(search) || 
+                    (l.email || '').toLowerCase().includes(search)
+                );
             }
             
             const rows = filtered.map(l => {
@@ -939,10 +1434,10 @@
             _selectedLeadId = id;
             renderCampaignTable(_campaignData);
             
-            // Vider immédiatement le contenu pour éviter les données périmées
+            // Skeleton immédiat pendant le chargement
             const content = document.getElementById('panel-content');
-            if (content) content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ink3)"><div style="font-size:24px;margin-bottom:8px">⏳</div>Chargement...</div>';
-            
+            if (content) content.innerHTML = typeof skeletonPanel === 'function' ? skeletonPanel() : '';
+
             // Open panel
             _openPanelWithOverlay();
             
@@ -958,7 +1453,8 @@
         // Fonction centralisée pour ouvrir le panel avec overlay
         function _openPanelWithOverlay() {
             document.getElementById('side-panel').classList.add('open');
-            document.querySelector('.main-content').classList.add('with-panel');
+            const mc = document.querySelector('.main-content');
+            if (mc) mc.classList.add('with-panel');
             const overlay = document.getElementById('panel-overlay');
             if (overlay) overlay.style.display = 'block';
         }
@@ -967,10 +1463,10 @@
         function openLeadPanel(leadId, tab = 'audit') {
             _selectedLeadId = leadId;
             
-            // Vider immédiatement pour éviter les données périmées
+            // Skeleton immédiat pendant le chargement
             const content = document.getElementById('panel-content');
-            if (content) content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ink3)"><div style="font-size:24px;margin-bottom:8px">⏳</div>Chargement...</div>';
-            
+            if (content) content.innerHTML = typeof skeletonPanel === 'function' ? skeletonPanel() : '';
+
             _openPanelWithOverlay();
             
             // Activer l'onglet sélectionné
@@ -984,7 +1480,8 @@
         
         function closeSidePanel() {
             document.getElementById('side-panel').classList.remove('open');
-            document.querySelector('.main-content').classList.remove('with-panel');
+            const mc = document.querySelector('.main-content');
+            if (mc) mc.classList.remove('with-panel');
             const overlay = document.getElementById('panel-overlay');
             if (overlay) overlay.style.display = 'none';
             // Réinitialiser l'état de sélection
@@ -1000,7 +1497,7 @@
             if(_selectedLeadId) {
                 // Vider immédiatement, puis recharger
                 const content = document.getElementById('panel-content');
-                if (content) content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ink3)"><div style="font-size:24px;margin-bottom:8px">⏳</div>Chargement...</div>';
+                if (content) content.innerHTML = typeof skeletonPanel === 'function' ? skeletonPanel() : '';
                 loadPanelContent(_selectedLeadId, tab);
             } else {
                 // Panel ouvert sans prospect sélectionné : fermer
@@ -1022,7 +1519,7 @@
                 const titleEl = document.getElementById('panel-title');
                 if (titleEl) titleEl.textContent = leadFromCache.nom || 'Détails';
                 if (tab === 'audit') content.innerHTML = renderAuditPanel(leadFromCache);
-                else if (tab === 'email') content.innerHTML = renderEmailPanel(leadFromCache);
+                else if (tab === 'email') { content.innerHTML = renderEmailPanel(leadFromCache); _setEmailPreviewSrc(leadFromCache); }
                 else if (tab === 'suivi') content.innerHTML = renderSuiviPanel(leadFromCache);
             }
             
@@ -1062,15 +1559,39 @@
                 
                 // Rendre le contenu final
                 if (tab === 'audit') content.innerHTML = renderAuditPanel(lead);
-                else if (tab === 'email') content.innerHTML = renderEmailPanel(lead);
+                else if (tab === 'email') { content.innerHTML = renderEmailPanel(lead); _setEmailPreviewSrc(lead); }
                 else if (tab === 'suivi') content.innerHTML = renderSuiviPanel(lead);
             } catch (e) {
                 if (!leadFromCache) content.innerHTML = '<p style="color:var(--red);padding:1rem">Erreur: ' + e.message + '</p>';
             }
         }
         
+        function _scoreBar(label, val, max, unit, inv) {
+            if (val === null || val === undefined || val === 0 && unit === 's') return '';
+            const pct = Math.min(100, Math.round((val / max) * 100));
+            const good = inv ? pct < 50 : pct >= 70;
+            const warn = inv ? pct < 70 : pct >= 40;
+            const color = good ? 'var(--green)' : warn ? 'var(--orange)' : 'var(--red)';
+            const display = unit === 's' ? parseFloat(val).toFixed(1) + 's' : val + unit;
+            return '<div style="margin-bottom:8px">'
+                + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:3px">'
+                + '<span>' + label + '</span><span style="font-weight:600;color:var(--ink)">' + display + '</span></div>'
+                + '<div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden">'
+                + '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:3px"></div>'
+                + '</div></div>';
+        }
+
+        function _renderScoreBars(lead) {
+            return '<div style="margin-bottom:16px">'
+                + _scoreBar('Performance', parseInt(lead.score_perf) || 0, 100, '', false)
+                + _scoreBar('SEO', parseInt(lead.score_seo) || 0, 100, '', false)
+                + _scoreBar('Urgence', parseFloat(lead.score_urgence) || 0, 10, '/10', true)
+                + (lead.lcp ? _scoreBar('LCP', parseFloat(lead.lcp) / 1000, 5, 's', true) : '')
+                + '</div>';
+        }
+
         function renderAuditPanel(lead) {
-            const hasAudit = (lead.lien_rapport && lead.lien_rapport.length > 0) || lead.score_perf || lead.score_seo || lead.lcp;
+            const hasAudit = lead.statut === 'audite' || (lead.lien_rapport && lead.lien_rapport.length > 0) || lead.score_perf || lead.score_seo || lead.lcp;
             // Use profile field from API, or extract from email_objet
             let profil = lead.profile || '';
             if(!profil) {
@@ -1104,22 +1625,7 @@
                         <div style="color:var(--red);font-weight:600;font-size:13px;margin-bottom:4px">Audit échoué</div>
                         <div style="font-size:13px;color:var(--ink2)">${escHtml(lead.probleme_principal || "Raison inconnue")}</div>
                     </div>
-                ` : hasAudit ? `
-                <div class="audit-metrics" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-                    <div class="metric-card" style="padding:16px">
-                        <div class="metric-value" style="font-size:22px">${lead.score_perf || '—'}</div>
-                        <div class="metric-label" style="font-size:12px">Perf</div>
-                    </div>
-                    <div class="metric-card" style="padding:16px">
-                        <div class="metric-value" style="font-size:22px">${lead.lcp ? (parseFloat(lead.lcp)/1000).toFixed(1) + 's' : '—'}</div>
-                        <div class="metric-label" style="font-size:12px">LCP</div>
-                    </div>
-                    <div class="metric-card" style="padding:16px">
-                        <div class="metric-value" style="font-size:22px">${lead.score_seo || '—'}</div>
-                        <div class="metric-label" style="font-size:12px">SEO</div>
-                    </div>
-                </div>
-                ` : '<p style="font-size:11px;color:var(--ink3);margin-bottom:12px">Aucun audit disponible</p>'}
+                ` : hasAudit ? _renderScoreBars(lead) : '<p style="font-size:var(--text-2xs);color:var(--ink3);margin-bottom:12px">Aucun audit disponible</p>'}
             </div>
             
             <div class="panel-section">
@@ -1157,12 +1663,10 @@
         function renderEmailPanel(lead) {
             const hasEmail = lead.email_corps && lead.email_corps.length > 0;
             // Extract subject from email HTML title tag
-            let emailSubject = 'Objet non défini';
-            if (lead.email_corps) {
+            let emailSubject = lead.email_objet || 'Objet non défini';
+            if (!lead.email_objet && lead.email_corps) {
                 const titleMatch = lead.email_corps.match(/<title>([^<]+)<\/title>/i);
-                if (titleMatch) {
-                    emailSubject = titleMatch[1];
-                }
+                if (titleMatch) emailSubject = titleMatch[1];
             }
             // Use profile field from API, or extract from email_objet
             let profil = lead.profile || '';
@@ -1178,9 +1682,10 @@
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                     </div>
                     <div style="flex:1">
-                        ${profil ? `<div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:4px">${escHtml(profil)}</div>` : ''}
-                        <div style="font-weight:600;font-size:16px;color:var(--ink1)">${escHtml(emailSubject)}</div>
-                        <div style="font-size:14px;color:${hasEmail ? 'var(--accent)' : 'var(--ink3)'}">${hasEmail ? 'Email généré' : 'Non généré'}</div>
+                        ${profil ? `<div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:4px">${escHtml(profil)}</div>` : ''}
+                        <div style="font-weight:600;font-size:15px;color:var(--ink)">${escHtml(emailSubject)}</div>
+                        <div style="font-size:12px;color:${hasEmail ? 'var(--accent)' : 'var(--ink3)'};margin-top:2px">${hasEmail ? 'Email généré' : 'Non généré'}</div>
+                        ${(lead.lien_rapport && lead.lien_rapport.startsWith('http')) ? `<a href="${escHtml(lead.lien_rapport)}" target="_blank" style="font-size:11px;color:var(--blue);margin-top:3px;display:block">Rapport en ligne</a>` : ''}
                     </div>
                 </div>
             </div>
@@ -1204,11 +1709,20 @@
             </div>
             ${hasEmail ? `
             <div class="panel-section">
-                <h4 style="font-size:14px;font-weight:600;color:var(--ink3);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px">Preview</h4>
-                <iframe class="email-preview-frame" srcdoc="${previewHtml}" style="height:350px"></iframe>
+                <h4 style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Preview</h4>
+                <iframe id="email-preview-iframe" class="email-preview-frame" style="height:350px;width:100%;border:1px solid var(--border);border-radius:8px"></iframe>
             </div>
             ` : ''}
             `;
+        }
+
+        function _setEmailPreviewSrc(lead) {
+            const iframe = document.getElementById('email-preview-iframe');
+            if (!iframe || !lead.email_corps) return;
+            const blob = new Blob([lead.email_corps], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            iframe.src = url;
+            iframe.onload = () => URL.revokeObjectURL(url);
         }
         
         function renderSuiviPanel(lead) {
@@ -1225,28 +1739,24 @@
             document.getElementById('modal-scraper').style.display = 'flex';
         }
         
+        function onSectorChange(sel) {
+            const kw = sel.options[sel.selectedIndex].dataset.kw || '';
+            const kwInput = document.getElementById('modal-keyword');
+            if (kw) kwInput.value = kw;
+            kwInput.readOnly = (sel.value !== 'Autre' && kw !== '');
+        }
+
         function launchScraperFromModal() {
-            const keyword = document.getElementById('modal-keyword').value;
-            const city = document.getElementById('modal-city').value;
-            const limit = document.getElementById('modal-limit').value;
-            const minEmails = document.getElementById('modal-min-emails').value;
-            
-            document.getElementById('keyword').value = keyword;
-            document.getElementById('city').value = city;
-            document.getElementById('limit').value = limit;
-            
-            // Créer ou mettre à jour le champ min-emails
-            let minEmailsEl = document.getElementById('min-emails');
-            if (!minEmailsEl) {
-                minEmailsEl = document.createElement('input');
-                minEmailsEl.id = 'min-emails';
-                minEmailsEl.type = 'hidden';
-                document.querySelector('#pg-collecte form')?.appendChild(minEmailsEl);
-            }
-            minEmailsEl.value = minEmails;
-            
+            const keyword = document.getElementById('modal-keyword').value.trim();
+            const city    = document.getElementById('modal-city').value.trim();
+            const sector  = document.getElementById('modal-sector').value.trim();
+            const limit   = parseInt(document.getElementById('modal-limit').value) || 20;
+            const minEmails = document.getElementById('modal-min-emails').value
+                ? parseInt(document.getElementById('modal-min-emails').value) : null;
+            const multiZone = document.getElementById('modal-multi-zone')?.checked || false;
+
             closeModal('modal-scraper');
-            launchScraper();
+            launchScraper({ keyword, city, sector, limit, minEmails, multiZone });
         }
         
         function closeModal(id) {
@@ -1289,7 +1799,7 @@
                 return;
             }
             
-            if(!confirm(`Publier ${slugsToPush.length} rapport(s) sur GitHub ?`)) return;
+            if(!await showConfirm(`Publier ${slugsToPush.length} rapport(s) sur GitHub Pages ?`, { title: 'Publier les rapports', confirmText: 'Publier' })) return;
             
             showToast(`Publication de ${slugsToPush.length} rapport(s)...`, 'info');
             
@@ -1552,7 +2062,7 @@
             fetch('/api/audit/launch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lead_ids: [lead.nom] })
+                body: JSON.stringify({ lead_ids: [lead.id] })
             })
             .then(r => r.json())
             .then(data => {
@@ -1627,13 +2137,51 @@ function pollAuditCompletion(leadId, attempts) {
         });
 }
         
+        // Debounced search
+        let _searchTimer = null;
+        function _debouncedSearch() {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => loadCampaignTable(), 300);
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             const savedPage = getSavedPage();
             const navEl = document.getElementById('nav-' + savedPage);
             nav(savedPage, navEl);
-            // Also load stats immediately for sidebar
             if(typeof loadStats === 'function') loadStats();
+
+            // Restaurer un audit de masse interrompu par un refresh
+            const saved = localStorage.getItem('_massAudit');
+            if (saved) {
+                try {
+                    const s = JSON.parse(saved);
+                    if (s.queue && s.index < s.total) {
+                        _massAuditQueue = s.queue;
+                        _massAuditIndex = s.index;
+                        _massAuditTotal = s.total;
+                        // Vérifier si un audit tourne encore côté serveur
+                        fetch('/api/audit/status').then(r => r.json()).then(st => {
+                            const globalProgress = document.getElementById('sidebar-audit');
+                            const textEl = document.getElementById('sidebar-audit-text');
+                            if (st.running) {
+                                // Reprendre le polling là où on en était
+                                if(globalProgress) globalProgress.style.display = 'block';
+                                const nom = _massAuditQueue[_massAuditIndex] || '';
+                                if(textEl) textEl.innerHTML = `<strong>Audit en cours</strong> (${_massAuditIndex + 1}/${_massAuditTotal}) : ${escHtml(nom)} <em style="font-size:10px;opacity:.7">(repris)</em>`;
+                                showToast(`Audit repris : ${_massAuditIndex + 1}/${_massAuditTotal}`, 'info');
+                                _pollMassAuditUntilDone(() => { _massAuditIndex++; _runNextMassAudit(); });
+                            } else {
+                                // Le serveur a fini — continuer avec le prochain lead
+                                _massAuditIndex++;
+                                _runNextMassAudit();
+                            }
+                        }).catch(() => { _clearMassAuditState(); });
+                    } else {
+                        _clearMassAuditState();
+                    }
+                } catch(e) { _clearMassAuditState(); }
+            }
         });
         
         // ============================================================
@@ -1656,10 +2204,12 @@ function pollAuditCompletion(leadId, attempts) {
             }
             
             const noms = Array.from(checkboxes).map(cb => {
-                const lead = _campaignData.find(l => l.id == cb.dataset.id);
-                return lead ? lead.nom : null;
+                const id = cb.dataset.id;
+                const lead = _campaignData.find(l => l.id == id)
+                          || (typeof _allLeads !== 'undefined' && _allLeads.find(l => l.id == id));
+                return lead ? lead.nom : (cb.dataset.nom || null);
             }).filter(Boolean);
-            
+
             if(noms.length === 0) return showToast('Aucun lead valide', 'error');
             
             _massAuditQueue = noms;
@@ -1670,10 +2220,24 @@ function pollAuditCompletion(leadId, attempts) {
             _runNextMassAudit();
         }
 
+        function _saveMassAuditState() {
+            localStorage.setItem('_massAudit', JSON.stringify({
+                queue: _massAuditQueue, index: _massAuditIndex, total: _massAuditTotal
+            }));
+        }
+        function _clearMassAuditState() { localStorage.removeItem('_massAudit'); }
+
         function _runNextMassAudit() {
+            _saveMassAuditState();
             if(_massAuditIndex >= _massAuditTotal) {
-                showToast(`✅ ${_massAuditTotal} audits massifs terminés avec succès`, 'success');
+                showToast(`✅ ${_massAuditTotal} audits terminés — affichage de tous les statuts`, 'success');
+                _clearMassAuditState();
+                // Retirer le filtre "en_attente" pour montrer les leads audités
+                const statutEl = document.getElementById('filter-statut');
+                if (statutEl && statutEl.value === 'en_attente') statutEl.value = 'tous';
+                _campPage = 1;
                 loadCampaignTable();
+                if(typeof loadStats === 'function') loadStats();
                 const globalProgress = document.getElementById('sidebar-audit');
                 if (globalProgress) globalProgress.style.display = 'none';
                 return;
@@ -1714,6 +2278,7 @@ function pollAuditCompletion(leadId, attempts) {
                     return;
                 }
                 // Attendre la fin de cet audit avant de passer au suivant
+                _saveMassAuditState();
                 _pollMassAuditUntilDone(() => {
                     _massAuditIndex++;
                     _runNextMassAudit();
@@ -1727,23 +2292,34 @@ function pollAuditCompletion(leadId, attempts) {
         }
 
         function _pollMassAuditUntilDone(callback, attempts = 0) {
-            const MAX = 150; // 5 min
+            const MAX = 200; // ~6.5 min (2s × 200)
             fetch('/api/audit/status')
                 .then(r => r.json())
                 .then(status => {
                     if(status.running) {
-                        // Mettre à jour la barre
                         const nom = _massAuditQueue[_massAuditIndex] || '';
                         const textEl = document.getElementById('sidebar-audit-text');
-                        if(textEl) textEl.innerHTML = `<strong>Audit en cours</strong> (${_massAuditIndex + 1}/${_massAuditTotal}) : ${escHtml(nom)} (${status.current || 0} ok)`;
+                        const pctEl  = document.getElementById('sidebar-audit-pct');
+                        const barEl  = document.getElementById('sidebar-audit-bar');
+                        const total  = status.total || _massAuditTotal || 1;
+                        const done   = status.current || 0;
+                        const pct    = Math.round(((_massAuditIndex + done / Math.max(total, 1)) / _massAuditTotal) * 100);
+                        if(textEl) textEl.innerHTML = `<strong>Audit en cours</strong> (${_massAuditIndex + 1}/${_massAuditTotal}) : ${escHtml(nom)}`;
+                        if(pctEl) pctEl.textContent = pct + '%';
+                        if(barEl) barEl.style.width = pct + '%';
+                        // Rafraîchir la table toutes les 10 secondes pour montrer les statuts
+                        if(attempts % 5 === 4) loadCampaignTable();
                         if(attempts < MAX) setTimeout(() => _pollMassAuditUntilDone(callback, attempts + 1), 2000);
-                        else callback();
+                        else { showToast('Audit toujours en cours (>6min) — refresh manuel', 'warning'); callback(); }
                     } else {
-                        // Audit terminé - rafraîchir la ligne du lead
-                        const leadNom = _massAuditQueue[_massAuditIndex];
-                        if(leadNom) {
-                            // Rafraîchir le tableau pour voir le résultat de l'audit
-                            loadCampaignTable();
+                        // Audit du lead terminé — rafraîchir immédiatement sans filtre statut
+                        const statutEl = document.getElementById('filter-statut');
+                        const prevFilter = statutEl ? statutEl.value : 'tous';
+                        if (statutEl && prevFilter === 'en_attente') statutEl.value = 'tous';
+                        loadCampaignTable();
+                        if (statutEl && prevFilter === 'en_attente') {
+                            // Remettre le filtre après le chargement pour ne pas désorienter
+                            // (on le laisse sur "tous" pour que l'utilisateur voie le lead audité)
                         }
                         callback();
                     }
@@ -1857,6 +2433,251 @@ function pollAuditCompletion(leadId, attempts) {
                 }, idx * 2000);
             });
         }
+
+        // ============================================================
+        // DATE RANGE PICKER — un mois, reste ouvert entre les 2 clics
+        // ============================================================
+        let _drpStart = null, _drpEnd = null, _drpOpen = false, _drpHover = null;
+        let _drpView  = new Date();
+        const _DRP_M  = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+        const _drpFmt = s => s ? s.split('-').reverse().join('/') : '';
+
+        function _drpToggle() {
+            _drpOpen = !_drpOpen;
+            document.getElementById('drp-popup').style.display = _drpOpen ? 'block' : 'none';
+            if (_drpOpen) _drpRender();
+        }
+
+        function _drpClose() {
+            _drpOpen = false;
+            document.getElementById('drp-popup').style.display = 'none';
+        }
+
+        function _drpRender() {
+            const y = _drpView.getFullYear(), m = _drpView.getMonth();
+            document.getElementById('drp-month-label').textContent = _DRP_M[m] + ' ' + y;
+
+            const today  = new Date().toISOString().slice(0, 10);
+            const offset = (() => { const d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1; })();
+            const total  = new Date(y, m + 1, 0).getDate();
+            const tip    = _drpEnd || (_drpStart && _drpHover ? _drpHover : null);
+            const lo     = _drpStart && tip ? (_drpStart < tip ? _drpStart : tip) : _drpStart;
+            const hi     = _drpStart && tip ? (_drpStart < tip ? tip : _drpStart) : _drpStart;
+
+            let html = '';
+            for (let i = 0; i < offset; i++) html += '<div></div>';
+
+            for (let day = 1; day <= total; day++) {
+                const ds     = y + '-' + String(m+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+                const isLo   = ds === lo;
+                const isHi   = ds === hi && lo !== hi;
+                const isOnly = ds === lo && lo === hi;
+                const inRng  = lo && hi && ds > lo && ds < hi;
+                const isDay  = ds === today;
+
+                let bg = '', fg = 'var(--ink)', fw = '400', br = '6px', brd = 'none';
+                if (isLo || isHi || isOnly) {
+                    bg = 'var(--accent)'; fg = '#fff'; fw = '700';
+                    br = isOnly ? '6px' : isLo ? '6px 0 0 6px' : '0 6px 6px 0';
+                } else if (inRng) {
+                    bg = 'rgba(16,185,129,0.13)'; fg = 'var(--accent)'; br = '0';
+                } else if (isDay) {
+                    brd = '1.5px solid var(--accent)'; fg = 'var(--accent)'; fw = '600';
+                }
+
+                html += `<div onclick="_drpClick('${ds}')" onmouseenter="_drpIn('${ds}')" onmouseleave="_drpOut()"
+                    style="text-align:center;padding:6px 1px;font-size:12px;cursor:pointer;border-radius:${br};
+                    background:${bg};color:${fg};font-weight:${fw};border:${brd};user-select:none;transition:background .08s,color .08s">${day}</div>`;
+            }
+
+            document.getElementById('drp-grid').innerHTML = html;
+
+            const foot = document.getElementById('drp-footer');
+            if (!_drpStart) {
+                foot.innerHTML = 'Choisissez la <strong>date de début</strong>';
+            } else if (!_drpEnd) {
+                foot.innerHTML = `<span style="color:var(--accent);font-weight:600">${_drpFmt(_drpStart)}</span> &rarr; Choisissez la <strong>date de fin</strong>`;
+            } else {
+                foot.innerHTML = `<span style="color:var(--accent);font-weight:600">${_drpFmt(_drpStart)}</span> &rarr; <span style="color:var(--accent);font-weight:600">${_drpFmt(_drpEnd)}</span>`;
+            }
+        }
+
+        function _drpIn(ds) {
+            if (_drpStart && !_drpEnd) { _drpHover = ds; _drpRender(); }
+        }
+        function _drpOut() {
+            if (_drpStart && !_drpEnd) { _drpHover = null; _drpRender(); }
+        }
+
+        function _drpClick(ds) {
+            if (!_drpStart || (_drpStart && _drpEnd)) {
+                _drpStart = ds; _drpEnd = null; _drpHover = null;
+                _drpRender();
+            } else {
+                if (ds === _drpStart) { _drpStart = null; _drpHover = null; _drpRender(); return; }
+                if (ds < _drpStart) { _drpEnd = _drpStart; _drpStart = ds; }
+                else { _drpEnd = ds; }
+                _drpHover = null;
+                _drpRender();
+                setTimeout(_drpApply, 180);
+            }
+        }
+
+        function _drpPrevMonth() {
+            _drpView = new Date(_drpView.getFullYear(), _drpView.getMonth() - 1, 1);
+            _drpRender();
+        }
+        function _drpNextMonth() {
+            _drpView = new Date(_drpView.getFullYear(), _drpView.getMonth() + 1, 1);
+            _drpRender();
+        }
+
+        function _drpApply() {
+            if (!_drpStart || !_drpEnd) return;
+            document.getElementById('global-date-start').value = _drpStart;
+            document.getElementById('global-date-end').value   = _drpEnd;
+            _activeDateStart = _drpStart;
+            _activeDateEnd   = _drpEnd;
+            const lbl = document.getElementById('drp-label');
+            lbl.textContent = _drpFmt(_drpStart) + ' → ' + _drpFmt(_drpEnd);
+            lbl.style.color = 'var(--ink)';
+            document.getElementById('drp-clear').style.display = 'inline';
+            _drpClose();
+            showToast('Période : ' + _drpFmt(_drpStart) + ' → ' + _drpFmt(_drpEnd));
+            refreshAll();
+        }
+
+        function _drpReset() {
+            _drpStart = null; _drpEnd = null; _drpHover = null;
+            document.getElementById('global-date-start').value = '';
+            document.getElementById('global-date-end').value   = '';
+            const lbl = document.getElementById('drp-label');
+            lbl.textContent = 'Période';
+            lbl.style.color = 'var(--ink3)';
+            document.getElementById('drp-clear').style.display = 'none';
+        }
+
+        // Fermer en cliquant en dehors
+        document.addEventListener('click', function(e) {
+            if (!_drpOpen) return;
+            if (!document.getElementById('drp-trigger').contains(e.target) &&
+                !document.getElementById('drp-popup').contains(e.target)) _drpClose();
+        });
+
+        // ============================================================
+        // MODULE 5: ANALYTICS & BUSINESS INTELLIGENCE
+        // ============================================================
+        function loadRoiData() {
+            showToast('Actualisation des données de ROI...', 'info');
+            
+            // Charger les statistiques globales du funnel
+            fetch('/api/stats/funnel')
+                .then(r => r.json())
+                .then(data => {
+                    const scraped = data.total_scraped || 0;
+                    const audited = Math.min(data.total_audited || 0, scraped); // sécurité visuelle
+                    const sent = data.total_sent || 0;
+                    const clicked = data.total_clicked || 0;
+                    const replied = data.total_replied || 0;
+                    const rdv = data.total_rdv || 0;
+                    
+                    document.getElementById('roi-scraped').textContent = scraped;
+                    document.getElementById('roi-audited').textContent = audited;
+                    document.getElementById('roi-sent2').textContent = sent;
+                    document.getElementById('roi-clicked').textContent = clicked;
+                    document.getElementById('roi-replied').textContent = replied;
+                    
+                    const roiSentEl = document.getElementById('roi-sent');
+                    if(roiSentEl) roiSentEl.textContent = sent;
+                    
+                    const roiRdvEl = document.getElementById('roi-rdv');
+                    if(roiRdvEl) roiRdvEl.textContent = rdv;
+                    
+                    const ctr = sent > 0 ? ((clicked / sent) * 100).toFixed(1) + '%' : '—';
+                    const rep = sent > 0 ? ((replied / sent) * 100).toFixed(1) + '%' : '—';
+                    
+                    const roiCtrEl = document.getElementById('roi-ctr');
+                    if(roiCtrEl) roiCtrEl.textContent = ctr;
+                    
+                    const roiRepEl = document.getElementById('roi-reply');
+                    if(roiRepEl) roiRepEl.textContent = rep;
+                })
+                .catch(e => console.error("Erreur funnel:", e));
+                
+            // Charger les performances par niche
+            fetch('/api/stats/niche')
+                .then(r => r.json())
+                .then(niches => {
+                    const tbody = document.getElementById('tbody-niches');
+                    if(niches.error) {
+                         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red)">Erreur de chargement.</td></tr>';
+                         return;
+                    }
+                    if(!niches || niches.length === 0) {
+                         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--ink3)">Pas de données suffisantes pour déterminer les top niches (>5 envois nécessaires).</td></tr>';
+                         return;
+                    }
+                    
+                    tbody.innerHTML = niches.map(n => `
+                        <tr>
+                            <td><div style="font-weight:600;color:var(--ink)">${escHtml(n.category || '—')}</div></td>
+                            <td>${escHtml(n.ville || '—')}</td>
+                            <td>${n.envois}</td>
+                            <td>${n.clics}</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <div style="flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+                                        <div style="height:100%;width:${Math.min(100, (n.clics / Math.max(1, n.envois)) * 100).toFixed(1)}%;background:var(--accent);border-radius:3px"></div>
+                                    </div>
+                                    <span style="font-weight:600;font-size:12px;width:35px;text-align:right">${((n.clics / Math.max(1, n.envois)) * 100).toFixed(1)}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(e => console.error("Erreur niche:", e));
+                
+            // Charger les résultats de l'A/B Testing
+            fetch('/api/stats/ab_test')
+                .then(r => r.json())
+                .then(ab => {
+                    const tbody = document.getElementById('tbody-abtest');
+                    if(ab.error) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--red)">Erreur de chargement.</td></tr>';
+                        return;
+                    }
+                    if(!ab || ab.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--ink3)">Pas de données A/B testing (Il faut des envois).</td></tr>';
+                        return;
+                    }
+                    
+                    tbody.innerHTML = ab.map(r => {
+                        const openRate = r.envois > 0 ? ((r.ouverts / r.envois) * 100).toFixed(1) : 0;
+                        const clickRate = r.envois > 0 ? ((r.clics / r.envois) * 100).toFixed(1) : 0;
+                        const replyRate = r.envois > 0 ? ((r.reponses / r.envois) * 100).toFixed(1) : 0;
+                        
+                        return `
+                        <tr>
+                            <td><span style="font-weight:600">Profil ${r.profile}</span></td>
+                            <td><span class="status-badge" style="background:var(--accent-light);color:var(--accent)">${r.variant}</span></td>
+                            <td>${r.envois}</td>
+                            <td>${r.ouverts} <span style="font-size:10px;color:var(--ink3)">(${openRate}%)</span></td>
+                            <td>${r.clics} <span style="font-size:10px;color:var(--ink3)">(${clickRate}%)</span></td>
+                            <td>${r.reponses} <span style="font-size:10px;color:var(--ink3)">(${replyRate}%)</span></td>
+                        </tr>
+                    `}).join('');
+                })
+                .catch(e => console.error("Erreur AB Test:", e));
+        }
+
+        // Add hook to the Navigation router to automatically load ROI data when navigating to the ROI tab
+        const originalNav = window.nav;
+        window.nav = function(page, el) {
+            if(originalNav) originalNav(page, el);
+            if(page === 'roi') {
+                loadRoiData();
+            }
+        };
     </script>
 </body>
 </html>

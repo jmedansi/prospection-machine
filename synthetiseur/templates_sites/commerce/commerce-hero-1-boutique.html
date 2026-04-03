@@ -216,6 +216,31 @@ nav{
   .hero-content{padding:0 1.5rem 3rem}
   .hero-stats,.hero-bar{display:none}
 }
+
+/* -- RESPONSIVE TABLET -- */
+@media(max-width:1024px){
+  nav{padding:1.5rem 2rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:2rem!important;padding-right:2rem!important}
+}
+/* -- RESPONSIVE MOBILE -- */
+@media(max-width:768px){
+  .nav-cta,.nav-rdv,.nav-tel{font-size:.62rem!important;padding:.5rem .875rem!important;white-space:nowrap}
+  .hero-title{font-size:clamp(2rem,7.5vw,3rem)!important;line-height:1.1!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.88rem!important;max-width:100%!important}
+  .hero-ctas,.cta-group{flex-direction:column!important;align-items:flex-start!important;gap:.75rem!important}
+  .hero-content,.hero-inner,.hero-left{max-width:100%!important}
+  .page-preview{height:auto!important;min-height:60vh!important}
+}
+/* -- RESPONSIVE SMALL PHONE -- */
+@media(max-width:480px){
+  nav{padding:.75rem 1rem!important}
+  .hero-title{font-size:clamp(1.6rem,9vw,2.25rem)!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:1rem!important;padding-right:1rem!important;padding-bottom:6rem!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.83rem!important}
+  .stat-num{font-size:1.3rem!important}
+  .stat-block{padding:.75rem 1rem!important}
+  .btn-contact,.btn-primary,.nav-cta,.nav-rdv{width:100%!important;text-align:center!important;justify-content:center!important}
+}
 </style>
 </head>
 <body>

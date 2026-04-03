@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
 """
+dashboard/app.py — Serveur Flask du cockpit Incidenx
+SQLite comme source de vérité principale.
+Sheets est synchronisé toutes les heures en arrière-plan.
+Lance : python dashboard/app.py
+Port  : 5001
+"""
+
+
+
+
+# === ROUTE API LEADS (tableau principal) ===
+# (À placer après l'initialisation de l'app Flask)
+
+# -*- coding: utf-8 -*-
+"""
 dashboard/app.py â Serveur Flask du cockpit Incidenx
 SQLite comme source de vÃ©ritÃ© principale.
 Sheets est synchronisÃ© toutes les heures en arriÃ¨re-plan.
@@ -14,8 +29,12 @@ import logging
 import subprocess
 import threading
 import time
+from functools import lru_cache
 import re
 from datetime import datetime
+
+PYTHONW = r"C:\Python314\pythonw.exe" if sys.platform == 'win32' else sys.executable
+CREATE_NO_WINDOW = 0x08000000 if sys.platform == 'win32' else 0
 # --- AccÃ¨s aux modules du projet ---
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -46,7 +65,103 @@ from database.db_manager import (
 init_db()
 
 # --- Configuration Flask ---
-app = Flask(__name__, static_folder=os.path.dirname(os.path.abspath(__file__)), static_url_path='')
+STATIC_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='/static')
+
+# --- Configuration CORS ---
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
+
+
+# Route pour servir le dashboard HTML principal
+@app.route('/')
+def dashboard_root():
+    return send_from_directory(STATIC_DIR, 'dashboard-v4.html')
+
+# === ROUTE API LEADS (tableau principal) ===
+@app.route('/api/leads')
+def api_leads():
+    from database.db_manager import get_all_leads
+    # Récupération des filtres GET
+    statut = request.args.get('statut', 'tous')
+    site = request.args.get('site', 'tous')
+    email = request.args.get('email', 'tous')
+    note = request.args.get('note', 'tous')
+    sector = request.args.get('sector', 'tous')
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 50))
+
+    # Récupération brute
+    all_leads = get_all_leads(statut=statut, limit=10000)
+
+    # Filtres additionnels côté Python (site, email, note, sector)
+    def lead_filter(l):
+        if site != 'tous':
+            has_site = bool(l.get('site_web'))
+            if (site == 'avec' and not has_site) or (site == 'sans' and has_site):
+                return False
+        if email != 'tous':
+            has_email = bool(l.get('email'))
+            if (email == 'avec' and not has_email) or (email == 'sans' and has_email):
+                return False
+        if note != 'tous':
+            try:
+                n = float(l.get('rating') or 0)
+                if note == 'bons' and n < 4:
+                    return False
+                if note == 'mauvais' and n >= 4:
+                    return False
+            except Exception:
+                return False
+        if sector != 'tous':
+            if (l.get('category') or '').lower() != sector.lower():
+                return False
+        return True
+
+    filtered = [l for l in all_leads if lead_filter(l)]
+    total = len(filtered)
+    total_pages = max(1, (total + limit - 1) // limit)
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * limit
+    end = start + limit
+    leads_page = filtered[start:end]
+
+    # Adapter les champs pour le frontend (exemple minimal)
+    def adapt(l):
+        return {
+            'id': l.get('id'),
+            'nom': l.get('nom'),
+            'ville': l.get('ville'),
+            'secteur': l.get('category'),
+            'note': l.get('rating'),
+            'avis': l.get('nb_avis'),
+            'site_web': l.get('site_web'),
+            'email': l.get('email'),
+            'statut': l.get('statut'),
+            'score_urgence': l.get('score_urgence'),
+            'a_site': bool(l.get('site_web')),
+            'a_email': bool(l.get('email')),
+        }
+
+    return jsonify({
+        'leads': [adapt(l) for l in leads_page],
+        'page': page,
+        'total_pages': total_pages,
+        'total': total
+    })
+
+
+def _safe_int(value, default=None):
+    """Convertit une valeur en entier en toute sécurité."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
 
 # --- Logging (un seul appel, au niveau WARNING pour les erreurs)
 logging.basicConfig(
@@ -57,1156 +172,248 @@ logging.basicConfig(
 
 # âââââââââââââââââââââââââââââââââââââââââââââââ
 # WEBHOOK RESEND - TRACKING DES EMAILS
-# âââââââââââââââââââââââââââââââââââââââââââââââ
 
-import hmac
-import hashlib
+import json
+from datetime import datetime
 
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# UTILITAIRES
-# âââââââââââââââââââââââââââââââââââââââââââââââ
+# --- WEBHOOK RESEND: Enregistre tous les événements Resend dans email_events et met à jour les champs tracking ---
+from envoi.email_tracking_service import EmailTrackingService
 
-def _safe_int(val, default=0):
-    """Convertit une valeur en entier, retourne default si impossible."""
-    try:
-        return int(val) if val not in (None, '', 'N/A', 0) else default
-    except (ValueError, TypeError):
-        return default
+# Redirection pour les webhooks Resend (sans /prospection/)
+@app.route('/webhooks/resend', methods=['POST'])
+def webhook_resend_root():
+    """Rediriger vers le webhook avec /prospection/"""
+    from flask import redirect, request
+    # Appeler directement la fonction webhook
+    return webhook_resend()
 
-def _safe_float(val, default=0.0):
-    """Convertit une valeur en float, retourne default si impossible."""
-    try:
-        return float(val) if val not in (None, '', 'N/A') else default
-    except (ValueError, TypeError):
-        return default
-
-def _determine_profile_v9(audit_data: dict) -> str:
-    """Determine le profil A, B, C, D ou I selon les regles de l'auditeur.
-    
-    Ordre de priorite:
-    1. Maquette (pas de site) -> A
-    2. Audit (performance: m_score < 60 OR lcp >= 3000) -> B
-    3. SEO (!has_meta OR !has_schema OR !has_robots OR !has_sitemap) -> D
-    4. Reputation (GMB: rating < 4.5 OR reviews < 50) -> C
-    5. Ignored (tout OK) -> I
+@app.route('/prospection/webhooks/resend', methods=['POST'])
+def webhook_resend():
     """
-    template_used = audit_data.get('template_used', '')
-    has_site = bool(audit_data.get('site_web'))
-    rating = _safe_float(audit_data.get('rating', 0))
-    reviews = _safe_int(audit_data.get('nb_avis', audit_data.get('reviews_count', 0)))
-    lcp_ms = _safe_int(audit_data.get('lcp_ms', 0))
-    mobile_score = _safe_int(audit_data.get('mobile_score', audit_data.get('score_performance', 0)))
-    has_meta = audit_data.get('has_meta_description', True)
-    has_schema = audit_data.get('has_schema', True)
-    has_robots = audit_data.get('has_robots', True)
-    has_sitemap = audit_data.get('has_sitemap', True)
-    audit_failed = audit_data.get('audit_failed', False)
-    
-    if template_used == 'maquette':
-        return "A"
-    if template_used == 'seo':
-        return "D"
-    if template_used == 'reputation':
-        return "C"
-    if template_used == 'audit':
-        return "B"
-    if template_used == 'ignored':
-        return "I"
-    if template_used == 'failed':
-        return "F"
-    
-    if not has_site:
-        return "A"
-    if audit_failed:
-        return "F"
-    if mobile_score < 60 or lcp_ms >= 3000:
-        return "B"
-    if not has_meta or not has_schema or not has_robots or not has_sitemap:
-        return "D"
-    if rating < 4.5 or reviews < 50:
-        return "C"
-    return "I"
+    Webhook Resend - Enregistrer TOUS les événements dans email_events et mettre à jour emails_envoyes
+    """
+    # Valider la signature du webhook avec Svix
+    from svix.webhooks import Webhook
 
+    RESEND_WEBHOOK_SECRET = os.getenv('RESEND_WEBHOOK_SECRET', '')
 
-# âââââââââââââââââââââââââââââââââââââââââââââââ
-# ROUTE PRINCIPALE â Sert le HTML
-# âââââââââââââââââââââââââââââââââââââââââââââââ
+    if not RESEND_WEBHOOK_SECRET:
+        logger.error("RESEND_WEBHOOK_SECRET not configured")
+        return jsonify({'error': 'Webhook secret not configured'}), 500
 
-@app.route('/')
-def index():
-    """Sert le fichier dashboard-v4.html avec headers no-cache."""
-    dashboard_dir = os.path.dirname(os.path.abspath(__file__))
-    response = send_from_directory(dashboard_dir, 'dashboard-v4.html')
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    return response
-
-@app.after_request
-def add_header(response):
-    """Désactive le cache globalement."""
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-# PREVIEWS LOCAUX - Nouveau workflow local-first
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/previews/<slug>/<path:filename>')
-def serve_preview_file(slug, filename):
-    """Sert les fichiers (images) depuis le dossier local du rapport."""
-    preview_dir = os.path.join(ROOT, 'reporter', 'reports', slug)
-    return send_from_directory(preview_dir, filename)
-
-@app.route('/previews/<slug>/')
-def serve_preview_index(slug):
-    """Sert l'index HTML du rapport local."""
-    preview_dir = os.path.join(ROOT, 'reporter', 'reports', slug)
-    return send_from_directory(preview_dir, 'index.html')
-
-@app.route('/previews/<slug>')
-def serve_preview_index_short(slug):
-    """Redirect vers /previews/<slug>/"""
-    return redirect(f'/previews/{slug}/')
-
-@app.route('/api/previews')
-def api_list_previews():
-    """Liste tous les rapports locaux et leur statut."""
-    reports_dir = os.path.join(ROOT, 'reporter', 'reports')
-    previews = []
-    
-    # Check if directory exists
-    if not os.path.exists(reports_dir):
-        return jsonify({'previews': previews, 'warning': 'reports_dir not found'})
-    
     try:
-        for slug in os.listdir(reports_dir):
-            slug_dir = os.path.join(reports_dir, slug)
-            if os.path.isdir(slug_dir):
-                index_path = os.path.join(slug_dir, 'index.html')
-                has_local = os.path.exists(index_path)
+        # Récupérer le raw body pour la validation
+        body = request.get_data(as_text=True)
+        headers = dict(request.headers)
 
-                # Check if published (URL starts with https://)
-                from database.db_manager import get_conn
-                with get_conn() as conn:
-                    row = conn.execute(
-                        "SELECT lien_rapport FROM leads_audites WHERE lien_rapport LIKE ?",
-                        (f"%{slug}%",)
-                    ).fetchone()
-                    is_published = row and row[0] and row[0].startswith('https://')
+        # Valider avec Svix
+        wh = Webhook(RESEND_WEBHOOK_SECRET)
+        data = wh.verify(body, headers)
 
-                previews.append({
-                    'slug': slug,
-                    'local': has_local,
-                    'published': is_published,
-                    'preview_url': f'/previews/{slug}/'
-                })
+        logger.info(f"✅ Webhook valide de Resend: {data.get('type')}")
     except Exception as e:
-        logger.error(f"Erreur liste previews: {e}")
-    
-    return jsonify({'previews': previews})
+        logger.error(f"❌ Erreur validation webhook: {e}")
+        return jsonify({'error': 'Invalid signature'}), 401
 
-@app.route('/api/previews/push', methods=['POST'])
-def api_push_previews():
-    """Push les rapports sélectionnés sur GitHub."""
-    data = request.get_json() or {}
-    slugs = data.get('slugs', [])
-    
-    if not slugs:
-        return jsonify({'error': 'Aucun slug fourni'}), 400
-    
-    results = []
-    reports_dir = os.path.join(ROOT, 'reporter', 'reports')
-    
-    from synthetiseur.github_publisher import _commit_files, AUDIT_DOMAIN
+    event_type = data.get('type')  # 'email.sent', 'email.opened', 'email.clicked', etc.
+
+    # Resend webhook format: {"type": "email.opened", "data": {"email_id": "re_xxx", ...}}
+    resend_data = data.get('data') or {}
+    message_id = (resend_data.get('email_id')
+                  or data.get('email_record_id')
+                  or data.get('message_id'))
+
+    timestamp = resend_data.get('created_at') or data.get('timestamp') or datetime.utcnow().isoformat()
+    event_type_clean = event_type.split('.')[-1] if event_type else 'unknown'
+
+    meta = {
+        'user_agent': resend_data.get('user_agent') or data.get('user_agent'),
+        'ip': resend_data.get('ip') or data.get('ip'),
+        'details': resend_data,
+        'raw': data
+    }
+    # Log event in email_events
+    try:
+        EmailTrackingService.log_event(
+            message_id=message_id,
+            event_type=event_type_clean,
+            timestamp=timestamp,
+            meta=meta
+        )
+    except Exception as e:
+        logger.error(f"[webhook_resend] log_event failed: {e}")
+    # Update tracking fields in emails_envoyes
+    try:
+        if event_type_clean == 'opened':
+            _handle_email_opened(message_id, timestamp, meta)
+        elif event_type_clean == 'clicked':
+            _handle_email_clicked(message_id, timestamp, meta)
+        elif event_type_clean in ('bounced', 'complained', 'spam', 'blocked'):
+            _handle_email_bounced(message_id, timestamp, meta)
+    except Exception as e:
+        logger.error(f"[webhook_resend] tracking update failed: {e}")
+    return jsonify({'status': 'ok'})
+
+# --- Handlers for tracking updates ---
+def _handle_email_opened(message_id, timestamp, meta):
+    try:
+        EmailTrackingService.mark_opened(message_id, timestamp, meta)
+    except Exception as e:
+        logger.error(f"[handle_email_opened] {e}")
+
+def _handle_email_clicked(message_id, timestamp, meta):
+    try:
+        EmailTrackingService.mark_clicked(message_id, timestamp, meta)
+    except Exception as e:
+        logger.error(f"[handle_email_clicked] {e}")
+
+def _handle_email_bounced(message_id, timestamp, meta):
+    try:
+        EmailTrackingService.mark_bounced(message_id, timestamp, meta)
+    except Exception as e:
+        logger.error(f"[handle_email_bounced] {e}")
+
+# --- DEBUG: Voir les derniers webhooks reçus ---
+@app.route('/api/webhook-debug')
+def webhook_debug():
+    """Voir les derniers événements reçus pour déboguer."""
     from database.db_manager import get_conn
-    
-    for slug in slugs:
-        slug_dir = os.path.join(reports_dir, slug)
-        index_path = os.path.join(slug_dir, 'index.html')
-        
-        if not os.path.exists(index_path):
-            results.append({'slug': slug, 'status': 'error', 'message': 'Fichier local introuvable'})
-            continue
-        
-        try:
-            # Read HTML and prepare files
-            with open(index_path, 'r', encoding='utf-8') as f:
-                html_content = f.read()
-            
-            files_to_commit = [{
-                'path': f'{slug}/index.html',
-                'content': html_content,
-                'is_binary': False
-            }]
-            
-            # Add images
-            for fname in os.listdir(slug_dir):
-                if fname.endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
-                    fpath = os.path.join(slug_dir, fname)
-                    with open(fpath, 'rb') as f:
-                        files_to_commit.append({
-                            'path': f'{slug}/{fname}',
-                            'content': f.read(),
-                            'is_binary': True
-                        })
-            
-            # Commit to GitHub
-            success = _commit_files(files_to_commit, f'Rapport {slug}')
-            
-            if success:
-                public_url = f'https://{AUDIT_DOMAIN}/{slug}/'
+    try:
+        with get_conn() as conn:
+            # Derniers événements
+            events = conn.execute("""
+                SELECT ee.event_type, ee.timestamp, ee.email_record_id,
+                       e.email_destinataire, e.message_id_resend
+                FROM email_events ee
+                LEFT JOIN emails_envoyes e ON ee.email_record_id = e.id
+                ORDER BY ee.timestamp DESC
+                LIMIT 50
+            """).fetchall()
 
-                # Mettre à jour leads_audites ET emails_envoyes
-                with get_conn() as conn:
-                    conn.execute(
-                        "UPDATE leads_audites SET lien_rapport = ? WHERE lien_rapport LIKE ?",
-                        (public_url, f'%{slug}%')
-                    )
-                    # Aussi synchroniser le lien dans emails_envoyes
-                    conn.execute(
-                        "UPDATE emails_envoyes SET lien_rapport = ? WHERE lien_rapport LIKE ?",
-                        (public_url, f'%{slug}%')
-                    )
-                    conn.commit()
+            # Statistiques par type
+            stats = conn.execute("""
+                SELECT event_type, COUNT(*) as count
+                FROM email_events
+                GROUP BY event_type
+                ORDER BY count DESC
+            """).fetchall()
 
-                # Supprimer les fichiers locaux
-                import shutil
-                shutil.rmtree(slug_dir)
-
-                results.append({'slug': slug, 'status': 'published', 'url': public_url})
-            else:
-                results.append({'slug': slug, 'status': 'error', 'message': 'Commit failed'})
-
-        except Exception as e:
-            logger.error(f"Erreur push {slug}: {e}")
-            results.append({'slug': slug, 'status': 'error', 'message': str(e)})
-    
-    return jsonify({'results': results})
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-
+        return jsonify({
+            'total_events': sum(s[1] for s in stats),
+            'stats_by_type': {s[0]: s[1] for s in stats},
+            'recent_events': [
+                {
+                    'event_type': r[0],
+                    'timestamp': r[1],
+                    'email_record_id': r[2],
+                    'email_destinataire': r[3],
+                    'message_id_resend': r[4]
+                }
+                for r in events
+            ]
+        })
+    except Exception as e:
+        logger.error(f"webhook_debug error: {e}")
+        return jsonify({'error': str(e)}), 500
 # âââââââââââââââââââââââââââââââââââââââââââââââ
 # GET /api/stats  â SQLite
 # âââââââââââââââââââââââââââââââââââââââââââââââ
-
+# GET /api/emails  â SQLite
+# âââââââââââââââââââââââââââââââââââââââââââââââ
+# GET /api/leads  â SQLite
+# âââââââââââââââââââââââââââââââââââââââââââââââ
+# UPDATE & DELETE LEADS  â SQLite
+# âââââââââââââââââââââââââââââââââââââââââââââââ
+# GET /api/emails  â SQLite
+# âââââââââââââââââââââââââââââââââââââââââââââââ
+# GET /api/rapports  â SQLite
+# âââââââââââââââââââââââââââââââââââââââââââââââ
+# GET /api/crm  â SQLite
+# âââââââââââââââââââââââââââââââââââââââââââââââ
+# POST /api/crm/update  â SQLite
+# âââââââââââââââââââââââââââââââââââââââââââââââ
+# GET /api/stats - SQLite
 @app.route('/api/stats')
 def api_stats():
-    """
-    Retourne les métriques globales du pipeline depuis SQLite.
-    Supporte ?campaign_id=...
-    """
     try:
-        camp_id = request.args.get('campaign_id')
+        campaign_id = request.args.get('campaign_id', type=int)
         campaign_ids = request.args.get('campaign_ids')
-            
+        date_start = request.args.get('date_start')
+        date_end = request.args.get('date_end')
+
         stats = get_dashboard_stats(
-            campaign_id=camp_id if camp_id and camp_id.isdigit() else None,
-            date_start=request.args.get('date_start') or None,
-            date_end=request.args.get('date_end') or None,
+            campaign_id=campaign_id,
+            date_start=date_start,
+            date_end=date_end,
             campaign_ids=campaign_ids
         )
 
-        # Adapter le format pour la compatibilité avec le frontend existant
-        return jsonify({
+        # Wrapper les données avec la structure attendue par le frontend
+        response = {
             'pipeline': {
-                'leads_scrapes':     stats.get('leads_scrapes', 0),
-                'leads_audites':     stats.get('leads_audites', 0),
-                'emails_prets':      stats.get('emails_prets', 0),
-                'envoyes':           stats.get('envoyes', 0),
+                'leads_scrapes': stats.get('leads_scrapes', 0),
+                'leads_audites': stats.get('leads_audites', 0),
+                'emails_prets': stats.get('emails_prets', 0),
+                'envoyes': stats.get('envoyes', 0)
             },
             'performance': {
-                'score_moyen':       stats.get('score_moyen', 0),
-                'leads_prioritaires': stats.get('leads_prioritaires', 0),
-                'pdfs_generes':      stats.get('pdfs_generes', 0),
+                'score_moyen': stats.get('score_moyen', 0),
+                'mobile_moyen': stats.get('mobile_moyen', 0),
+                'seo_moyen': stats.get('seo_moyen', 0)
             },
             'email_stats': {
-                'nb_envoyes':        stats.get('envoyes', 0),
-                'taux_ouverture':    stats.get('taux_ouverture', 0),
-                'taux_clic':         stats.get('taux_clic', 0),
-                'taux_reponse':      stats.get('taux_reponse', 0),
-                'taux_rdv':          stats.get('taux_rdv', 0),
-                'indice_perf':       stats.get('indice_perf', 0),
+                'nb_envoyes': stats.get('nb_envoyes', 0),
+                'taux_ouverture': stats.get('taux_ouverture', 0),
+                'taux_clic': stats.get('taux_clic', 0),
+                'taux_reponse': stats.get('taux_reponse', 0),
                 'reponses_positives': stats.get('reponses_positives', 0),
-                'rdv_obtenus':       stats.get('rdv_obtenus', 0),
+                'rdv_obtenus': stats.get('rdv_obtenus', 0),
+                'bounces': stats.get('bounces', 0),
+                'spam': stats.get('spam', 0)
             },
-            'quotas': stats.get('quotas', {}),
-            # Champs directs (compatibilitÃ© ancienne API)
-            'leads_scrapes':     stats.get('leads_scrapes', 0),
-            'leads_audites':     stats.get('leads_audites', 0),
-            'audites':           stats.get('leads_audites', 0),
-            'emails_prets':      stats.get('emails_prets', 0),
-            'envoyes':           stats.get('envoyes', 0),
-            'score_moyen':       stats.get('score_moyen', 0),
-            'leads_prioritaires': stats.get('leads_prioritaires', 0),
-            'rapports_html':      stats.get('pdfs_generes', 0),
-            'nb_envoyes':        stats.get('envoyes', 0),
-            'taux_ouverture':    stats.get('taux_ouverture'),
-            'taux_reponse':      stats.get('taux_reponse'),
-            'leads_site':        stats.get('leads_site', 0),
-            'emails_trouves':    stats.get('emails_trouves', 0),
-            'resend_configured': bool(os.getenv('RESEND_API_KEY')),
-            'groq_configured':   bool(os.getenv('GROQ_API_KEY')),
-        })
+            **stats  # Inclure toutes les autres propriétés directement
+        }
+        return jsonify(response)
     except Exception as e:
         logger.error(f"GET /api/stats → {e}")
         return jsonify({'error': str(e)}), 500
 
 
+# GET /api/campaigns - SQLite
 @app.route('/api/campaigns')
 def api_campaigns():
-    """
-    Retourne la liste des campagnes.
-    Paramètres: date_start, date_end (YYYY-MM-DD)
-    """
     try:
         date_start = request.args.get('date_start')
         date_end = request.args.get('date_end')
-        campaigns = get_all_campaigns(date_start, date_end)
-        return jsonify({'campaigns': campaigns, 'total': len(campaigns)})
+
+        campaigns = get_all_campaigns(date_start=date_start, date_end=date_end)
+        return jsonify({'campaigns': campaigns})
     except Exception as e:
         logger.error(f"GET /api/campaigns → {e}")
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/campaigns/<int:campaign_id>')
-def api_campaign(campaign_id):
-    """Retourne les stats d'une campagne par ID."""
+# GET /api/config - SQLite
+@app.route('/api/config')
+def api_config():
     try:
-        campaign = get_campaign_by_id(campaign_id)
-        if not campaign:
-            return jsonify({'error': 'Campagne non trouvée'}), 404
-        return jsonify(campaign)
-    except Exception as e:
-        logger.error(f"GET /api/campaigns/{campaign_id} → {e}")
-        return jsonify({'error': str(e)}), 500
+        resend_configured = bool(os.getenv('RESEND_API_KEY'))
+        brevo_configured = bool(os.getenv('BREVO_API_KEY'))
+        groq_configured = bool(os.getenv('GROQ_API_KEY'))
 
-
-@app.route('/api/campaigns/<int:campaign_id>', methods=['DELETE'])
-def api_delete_campaign(campaign_id):
-    """Supprime une campagne."""
-    try:
-        delete_campaign(campaign_id)
-        return jsonify({'success': True})
-    except Exception as e:
-        logger.error(f"DELETE /api/campaigns/{campaign_id} → {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/collectes')
-def api_collectes():
-    """
-    Retourne la liste des collectes (campagnes) avec stats.
-    """
-    try:
-        collectes = get_all_campaigns()
-        return jsonify({'collectes': collectes, 'total': len(collectes)})
-    except Exception as e:
-        logger.error(f"GET /api/collectes → {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/collectes/leads')
-def api_collectes_leads():
-    """
-    Retourne les leads pour une ou plusieurs collectes.
-    Param: collectes (CSV d'IDs, ex: 1,2,3) — si vide, retourne tous.
-    """
-    try:
-        ids_str = request.args.get('collectes', '')
-        limit = _safe_int(request.args.get('limit', 200))
-        if limit > 500: limit = 500
-
-        collectes_leads = get_leads_for_dashboard(campaign_ids=ids_str, limit=limit)
-        return jsonify({'leads': collectes_leads, 'total': len(collectes_leads)})
-    except Exception as e:
-        logger.error(f"GET /api/collectes/leads → {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/collectes/stats')
-def api_collectes_stats():
-    """
-    Retourne les stats agrégées pour une ou plusieurs collectes.
-    Param: collectes (CSV d'IDs)
-    """
-    try:
-        ids_str = request.args.get('collectes', '')
-        if ids_str:
-            ids = [int(x.strip()) for x in ids_str.split(',') if x.strip().isdigit()]
-            where_clause = f"AND lb.campaign_id IN ({','.join('?' * len(ids))})" if ids else ""
-            params = ids
-            where_email = f"JOIN leads_bruts lb ON emails_envoyes.lead_id = lb.id AND lb.campaign_id IN ({','.join('?' * len(ids))})" if ids else ""
-        else:
-            where_clause = ""
-            where_email = ""
-            params = []
-
-        with get_conn() as conn:
-            row = conn.execute(f"""
-                SELECT
-                    COALESCE((SELECT COUNT(*) FROM leads_bruts lb WHERE 1=1 {where_clause}), 0) as leads_total,
-                    COALESCE((SELECT COUNT(*) FROM leads_bruts lb WHERE site_web IS NOT NULL AND site_web != '' {where_clause}), 0) as leads_with_site,
-                    COALESCE((SELECT COUNT(*) FROM leads_bruts lb WHERE email IS NOT NULL AND email != '' {where_clause}), 0) as leads_with_email,
-                    COALESCE((SELECT COUNT(*) FROM leads_bruts lb WHERE (site_web IS NULL OR site_web = '') {where_clause}), 0) as leads_without_email,
-                    COALESCE((SELECT COUNT(*) FROM leads_bruts lb WHERE statut IN ('audite','email_genere','envoye') {where_clause}), 0) as leads_audites
-                FROM (SELECT 1) t
-            """, params * 5 if ids else []).fetchone()
+        provider_name = 'Resend' if resend_configured else ('Brevo' if brevo_configured else 'None')
 
         return jsonify({
-            'leads_total': row[0],
-            'leads_with_site': row[1],
-            'leads_with_email': row[2],
-            'leads_without_email': row[3],
-            'leads_audites': row[4],
-        })
-    except Exception as e:
-        logger.error(f"GET /api/collectes/stats → {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/config', methods=['GET'])
-def api_get_config():
-    """Retourne la configuration actuelle (clés masquées)."""
-    print("  [DEBUG] api_get_config called")
-    try:
-        from config_manager import get_config
-        cfg = get_config()
-        print(f"  [DEBUG] cfg keys: {list(cfg.keys())}")
-        # Masquer les clés pour la sécurité
-        def mask(s):
-            s = str(s or '')
-            return s[:4] + '****' + s[-4:] if len(s) > 8 else '****'
-        
-        # Détecter le provider d'envoi configuré
-        resend_key = cfg.get('resend_key') or os.getenv('RESEND_API_KEY')
-        brevo_key = cfg.get('brevo_key') or os.getenv('BREVO_API_KEY')
-        
-        if resend_key:
-            email_provider = 'resend'
-            provider_name = 'Resend'
-            resend_configured = True
-        elif brevo_key:
-            email_provider = 'brevo'
-            provider_name = 'Brevo'
-            resend_configured = False
-        else:
-            email_provider = 'none'
-            provider_name = 'Aucun'
-            resend_configured = False
-        
-        return jsonify({
-            'hunter_key': mask(cfg.get('hunter_api_key') or cfg.get('hunter_key')),
-            'groq_key':   mask(cfg.get('groq_key') or os.getenv('GROQ_API_KEY')),
-            'brevo_key':  mask(cfg.get('brevo_key') or os.getenv('BREVO_API_KEY')),
-            'resend_key': mask(resend_key) if resend_key else None,
-            'sheet_id':   os.getenv('GOOGLE_SHEETS_ID', 'Non configuré'),
-            'email_provider': email_provider,
-            'provider_name': provider_name,
             'resend_configured': resend_configured,
-            'brevo_configured': bool(brevo_key),
-            'groq_configured': bool(cfg.get('groq_key') or os.getenv('GROQ_API_KEY'))
+            'brevo_configured': brevo_configured,
+            'groq_configured': groq_configured,
+            'provider_name': provider_name
         })
     except Exception as e:
+        logger.error(f"GET /api/config → {e}")
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/config', methods=['POST'])
-def api_save_config():
-    """
-    Sauvegarde les paramètres dans le fichier .env.
-    """
-    try:
-        data = request.get_json() or {}
-        env_updates = {}
-        if data.get('brevo_key'): env_updates['BREVO_API_KEY'] = data['brevo_key']
-        if data.get('groq_key'): env_updates['GROQ_API_KEY'] = data['groq_key']
-        if data.get('hunter_key'): env_updates['HUNTER_API_KEY'] = data['hunter_key']
-        if data.get('sheet_id'): env_updates['GOOGLE_SHEETS_ID'] = data['sheet_id']
-        if data.get('resend_key'): env_updates['RESEND_API_KEY'] = data['resend_key']
-
-        if env_updates:
-            env_lines = []
-            updated_keys = set()
-            if os.path.exists(env_path):
-                with open(env_path, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        key = line.split('=')[0].strip()
-                        if key in env_updates:
-                            env_lines.append(f'{key}="{env_updates[key]}"\n')
-                            updated_keys.add(key)
-                        else:
-                            env_lines.append(line)
-            for key, val in env_updates.items():
-                if key not in updated_keys:
-                    env_lines.append(f'{key}="{val}"\n')
-            with open(env_path, 'w', encoding='utf-8') as f:
-                f.writelines(env_lines)
-            # Recharger les variables dans le process actuel
-            for key, val in env_updates.items():
-                os.environ[key] = val
-
-        return jsonify({'success': True, 'message': f'{len(env_updates)} clé(s) sauvegardée(s) dans .env'})
-    except Exception as e:
-        logger.error(f"POST /api/config → {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-
-@app.route('/api/tracking')
-def api_tracking():
-    """
-    Retourne les 10 derniers événements de tracking pour le flux live du dashboard.
-    """
-    try:
-        date_start = request.args.get('date_start') or None
-        date_end = request.args.get('date_end') or None
-        
-        from database.db_manager import get_conn
-        with get_conn() as conn:
-            query = """
-                SELECT 
-                    COALESCE(lb.nom, 'Test') as nom, 
-                    ee.ouvert, ee.clique, ee.bounce, ee.spam,
-                    ee.date_ouverture, ee.date_clic, ee.date_envoi
-                FROM emails_envoyes ee
-                LEFT JOIN leads_bruts lb ON lb.id = ee.lead_id
-            """
-            params = []
-            if date_start and date_end:
-                query += " WHERE ee.date_envoi >= ? AND ee.date_envoi <= ? "
-                params.extend([date_start + ' 00:00:00', date_end + ' 23:59:59'])
-            
-            query += " ORDER BY ee.date_envoi DESC LIMIT 15 "
-            
-            rows = conn.execute(query, params).fetchall()
-            return jsonify({'events': [dict(r) for r in rows]})
-    except Exception as e:
-        logger.error(f"GET /api/tracking → {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-# GET /api/leads  â SQLite
-# ââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/leads')
-def api_leads():
-    """
-    Retourne la liste des leads depuis SQLite.
-    ParamÃ¨tres: 
-    - statut: tous|audite|en_attente|envoye
-    - site: tous|avec|sans
-    - email: tous|avec|sans
-    - note: tous|high|low (high=â¥4â, low=<4â)
-    - page: numÃ©ro de page (dÃ©faut 1)
-    - limit: nombre par page (dÃ©faut 50)
-    """
-    try:
-        # ParamÃ¨tres de filtrage
-        statut = request.args.get('statut', 'tous')
-        site_filter = request.args.get('site', 'tous')
-        email_filter = request.args.get('email', 'tous')
-        note_filter = request.args.get('note', 'tous')
-        
-        # Paramètres de pagination
-        page = _safe_int(request.args.get('page', 1))
-        limit = _safe_int(request.args.get('limit', 50))
-        camp_id = request.args.get('campaign_id')
-        if camp_id and camp_id.isdigit():
-            camp_id = int(camp_id)
-        else:
-            camp_id = None
-        date_start = request.args.get('date_start') or None
-        date_end = request.args.get('date_end') or None
-
-        if limit > 100: limit = 100
-        if page < 1: page = 1
-        
-        rows = get_leads_for_dashboard(camp_id, date_start, date_end, request.args.get('campaign_ids'))
-
-        # Filtrage par statut
-        if statut == 'audite':
-            rows = [r for r in rows if r.get('statut') in ('audite', 'email_genere', 'envoye')]
-        elif statut == 'en_attente':
-            rows = [r for r in rows if r.get('statut') == 'en_attente']
-        elif statut == 'envoye':
-            rows = [r for r in rows if r.get('statut') == 'envoye']
-        elif statut == 'non_envoye':
-            rows = [r for r in rows if r.get('statut') not in ('envoye', 'repondu')]
-
-        # Filtrage par site web
-        if site_filter == 'avec':
-            rows = [r for r in rows if r.get('site_web')]
-        elif site_filter == 'sans':
-            rows = [r for r in rows if not r.get('site_web')]
-
-        # Filtrage par email
-        if email_filter == 'avec':
-            rows = [r for r in rows if r.get('email')]
-        elif email_filter == 'sans':
-            rows = [r for r in rows if not r.get('email')]
-
-        # Filtrage par note Google
-        if note_filter == 'high':
-            rows = [r for r in rows if _safe_float(r.get('note', 0)) >= 4]
-        elif note_filter == 'low':
-            rows = [r for r in rows if _safe_float(r.get('note', 0)) < 4]
-
-        total = len(rows)
-        total_pages = (total + limit - 1) // limit if total > 0 else 1
-        
-        # Pagination
-        start = (page - 1) * limit
-        end = start + limit
-        paged_rows = rows[start:end]
-
-        # Normalisation pour la compatibilitÃ© frontend
-        leads = []
-        for r in paged_rows:
-            lead_site = r.get('site_web', '')
-            leads.append({
-                'id':           r.get('id'),
-                'nom':          r.get('nom', ''),
-                'ville':        r.get('ville', ''),
-                'secteur':      r.get('secteur', r.get('category', '')),
-                'note':         _safe_float(r.get('note', r.get('rating', 0))),
-                'avis':         _safe_int(r.get('avis', r.get('nb_avis', 0))),
-                'site_web':     lead_site,
-                'email':        r.get('email', ''),
-                'telephone':    r.get('telephone', ''),
-                'statut':       r.get('statut', 'en_attente'),
-                'a_site':       bool(lead_site),
-                'a_email':      bool(r.get('email')),
-                'score_perf':   _safe_int(r.get('score_perf', r.get('mobile_score', 0))),
-                'score_seo':    _safe_int(r.get('score_seo', 0)),
-                'score_urgence': _safe_float(r.get('score_urgence', 0)),
-                'lcp':          r.get('lcp', r.get('lcp_ms', '')),
-                'lien_rapport': r.get('lien_rapport', ''),
-                'email_corps':  r.get('email_corps', ''),
-                'email_objet':  r.get('email_objet', ''),
-                'approuve':     bool(r.get('approuve', False)),
-                'profile':      r.get('profile', ''),
-            })
-
-        return jsonify({
-            'leads': leads, 
-            'total': total,
-            'page': page,
-            'limit': limit,
-            'total_pages': total_pages
-        })
-
-    except Exception as e:
-        logger.error(f"GET /api/leads â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# âââââââââââââââââââââââââââââââââââââââââââââââ
-# UPDATE & DELETE LEADS  â SQLite
-# âââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/leads/<int:lead_id>')
-def api_lead(lead_id):
-    """Retourne le profil complet + score d'un seul lead."""
-    try:
-        from database.db_manager import get_conn
-        with get_conn() as conn:
-            # Get lead from leads_bruts
-            lead = conn.execute("SELECT * FROM leads_bruts WHERE id = ?", (lead_id,)).fetchone()
-            if not lead:
-                return jsonify({'error': 'Lead non trouvé'}), 404
-            
-            lead_data = dict(lead)
-            
-            # Get audit from leads_audites
-            audit = conn.execute("SELECT * FROM leads_audites WHERE lead_id = ?", (lead_id,)).fetchone()
-            audit_data = dict(audit) if audit else {}
-            
-            # Combine lead + audit data
-            return jsonify({
-                'id': lead_data.get('id'),
-                'nom': lead_data.get('nom', ''),
-                'ville': lead_data.get('ville', ''),
-                'secteur': lead_data.get('category', lead_data.get('secteur', '')),
-                'note': _safe_float(lead_data.get('rating', 0)),
-                'avis': _safe_int(lead_data.get('nb_avis', 0)),
-                'site_web': lead_data.get('site_web', ''),
-                'email': lead_data.get('email', ''),
-                'telephone': lead_data.get('telephone', ''),
-                'statut': lead_data.get('statut', 'en_attente'),
-                'score_perf': _safe_int(audit_data.get('mobile_score', 0)),
-                'score_seo': _safe_int(audit_data.get('score_seo', 0)),
-                'score_urgence': _safe_float(audit_data.get('score_urgence', 0)),
-                'lcp': audit_data.get('lcp_ms', ''),
-                'lien_rapport': audit_data.get('lien_rapport', ''),
-                'email_corps': audit_data.get('email_corps', ''),
-                'email_objet': audit_data.get('email_objet', ''),
-                'approuve': bool(audit_data.get('approuve', False)),
-                'profile': audit_data.get('profile', ''),
-            })
-    except Exception as e:
-        logger.error(f"GET /api/leads/{lead_id} → {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/leads/<int:lead_id>', methods=['PUT'])
-def api_update_lead(lead_id):
-    """Met à jour les informations d'un lead (nom, ville, site, email, adresse, tel)."""
-    try:
-        data = request.get_json() or {}
-        update_lead(lead_id, data)
-        return jsonify({'success': True, 'lead_id': lead_id})
-    except Exception as e:
-        logger.error(f"PUT /api/leads/{lead_id} → {e}")
-        return jsonify({'error': str(e)}), 500
-    """Met Ã  jour les informations d'un lead (nom, ville, site, email, adresse, tel)."""
-    try:
-        data = request.get_json() or {}
-        update_lead(lead_id, data)
-        return jsonify({'success': True, 'lead_id': lead_id})
-    except Exception as e:
-        logger.error(f"PUT /api/leads/{lead_id} â {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/leads/<int:lead_id>', methods=['DELETE'])
-def api_delete_lead(lead_id):
-    """Supprime un lead et toutes ses donnÃ©es en cascade."""
-    try:
-        delete_lead(lead_id)
-        return jsonify({'success': True, 'lead_id': lead_id})
-    except Exception as e:
-        logger.error(f"DELETE /api/leads/{lead_id} â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-# GET /api/emails  â SQLite
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/emails')
-def api_emails():
-    """
-    Retourne les emails générés depuis SQLite.
-    Supporte ?campaign_id=...
-    """
-    try:
-        camp_id = request.args.get('campaign_id')
-        if camp_id and camp_id.isdigit():
-            camp_id = int(camp_id)
-        else:
-            camp_id = None
-        date_start = request.args.get('date_start') or None
-        date_end = request.args.get('date_end') or None
-
-        emails  = get_emails_for_dashboard(camp_id, date_start, date_end)
-        # Tous les emails depuis emails_envoyes pour la section "envoyés"
-        envoyes = []
-        for r in get_crm_data(date_start=date_start, date_end=date_end):
-            envoyes.append({
-                'nom':        r.get('nom', ''),
-                'email':      r.get('prospect_email', ''),
-                'email_objet': r.get('email_objet', ''),
-                'date_envoi': r.get('date_envoi', ''),
-                'ouvert':     bool(r.get('ouvert', False)),
-                'repondu':    bool(r.get('repondu', False)),
-            })
-
-        # Normalisation des emails gÃ©nÃ©rÃ©s
-        emails_formatted = []
-        for r in emails:
-            emails_formatted.append({
-                'nom':          r.get('nom', ''),
-                'email':        r.get('email', ''),
-                'objet':        r.get('objet', r.get('email_objet', '')),
-                'corps':        r.get('corps', r.get('email_corps', '')),
-                'score_urgence': _safe_float(r.get('score_urgence', 0)),
-                'approuve':     bool(r.get('approuve', False)),
-                'lien_rapport': r.get('lien_rapport', ''),
-                'statut':       'pret',
-            })
-
-        return jsonify({
-            'emails':     emails_formatted,
-            'envoyes':    envoyes,
-            'total':      len(emails_formatted),
-            'nb_envoyes': len(envoyes)
-        })
-
-    except Exception as e:
-        logger.error(f"GET /api/emails â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-# GET /api/rapports  â SQLite
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/rapports')
-def api_rapports():
-    """
-    Retourne la liste des rapports PDF gÃ©nÃ©rÃ©s depuis SQLite.
-    """
-    try:
-        date_start = request.args.get('date_start') or None
-        date_end = request.args.get('date_end') or None
-        rows = get_audits_with_reports(date_start, date_end)
-        rapports = []
-        for r in rows:
-            rapports.append({
-                'nom':          r.get('nom', ''),
-                'ville':        r.get('ville', ''),
-                'secteur':      r.get('category', ''),
-                'score':        _safe_float(r.get('score_urgence', 0)),
-                'lien_rapport': r.get('lien_rapport', ''),
-                'lien_pdf':     r.get('lien_pdf', r.get('lien_rapport', '')),
-                'date_audit':   r.get('date_audit', ''),
-            })
-        return jsonify({'rapports': rapports, 'total': len(rapports)})
-
-    except Exception as e:
-        logger.error(f"GET /api/rapports â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-# GET /api/crm  â SQLite
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/crm')
-def api_crm():
-    """
-    Retourne les donnÃ©es CRM (suivi commercial) depuis SQLite.
-    Supporte ?filter=ouverts|cliques|repondus|positifs|rdv|bounces
-    """
-    try:
-        f = request.args.get('filter', 'tous')
-        date_start = request.args.get('date_start') or None
-        date_end = request.args.get('date_end') or None
-        rows = get_crm_data(f, date_start, date_end)
-        return jsonify({'crm': rows, 'total': len(rows)})
-
-    except Exception as e:
-        logger.error(f"GET /api/crm â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââââ
-# POST /api/crm/update  â SQLite
-# âââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/crm/update', methods=['POST'])
-def api_crm_update():
-    """
-    Mise Ã  jour manuelle des donnÃ©es CRM depuis le dashboard.
-    Body JSON : {email_id, type_reponse, rdv_confirme, notes, ...}
-    """
-    try:
-        data = request.get_json() or {}
-        email_id = data.pop('email_id', None)
-        if not email_id:
-            return jsonify({'error': 'email_id requis'}), 400
-        update_crm_manual(int(email_id), data)
-        return jsonify({'success': True})
-
-    except Exception as e:
-        logger.error(f"POST /api/crm/update â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/emails/<int:email_id>')
-def api_email_details(email_id):
-    """
-    Retourne les dÃ©tails complets d'un email envoyÃ© (objet, corps, etc.).
-    """
-    try:
-        from database.db_manager import get_conn
-        with get_conn() as conn:
-            row = conn.execute("""
-                SELECT 
-                    ee.*, 
-                    lb.nom as prospect_nom,
-                    lb.email as prospect_email
-                FROM emails_envoyes ee
-                LEFT JOIN leads_bruts lb ON lb.id = ee.lead_id
-                WHERE ee.id = ?
-            """, (email_id,)).fetchone()
-            
-            if not row:
-                return jsonify({'error': 'Email introuvable'}), 404
-
-            return jsonify(dict(row))
-    except Exception as e:
-        logger.error(f"GET /api/emails/{email_id} â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
-# POST /api/webhook/resend_legacy (Brevo) â Tracking emails
-# âââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/webhook/brevo', methods=['POST'])
-def api_webhook_brevo():
-    try:
-        data = request.get_json() or {}
-        event_type = data.get('event')
-        message_id = data.get('message-id')
-        if not message_id or not event_type:
-            return jsonify({'ok': True}), 200
-        
-        update_map = {
-            'opened':     {'ouvert': 1, 'date_ouverture': datetime.now().isoformat()},
-            'clicks':     {'clique': 1, 'date_clic': datetime.now().isoformat()},
-            'delivered':  {'statut_envoi': 'delivré'},
-            'deferred':   {'statut_envoi': 'différé'},
-            'soft_bounce': {'bounce': 1, 'statut_envoi': 'soft_bounce'},
-            'hard_bounce': {'bounce': 1, 'statut_envoi': 'hard_bounce'},
-            'spam':        {'spam': 1, 'statut_envoi': 'spam'}
-        }
-        if event_type in update_map:
-            from database.db_manager import get_conn
-            with get_conn() as conn:
-                # Chercher soit dans message_id_resend (Resend) soit message_id_brevo (Brevo)
-                conn.execute("""
-                    UPDATE emails_envoyes 
-                    SET ouvert = COALESCE(?, ouvert), 
-                        date_ouverture = COALESCE(?, date_ouverture),
-                        clique = COALESCE(?, clique),
-                        date_clic = COALESCE(?, date_clic),
-                        statut_envoi = COALESCE(?, statut_envoi),
-                        bounce = COALESCE(?, bounce),
-                        spam = COALESCE(?, spam)
-                    WHERE message_id_resend = ? OR message_id_brevo = ?
-                """, (
-                    update_map[event_type].get('ouvert'),
-                    update_map[event_type].get('date_ouverture'),
-                    update_map[event_type].get('clique'),
-                    update_map[event_type].get('date_clic'),
-                    update_map[event_type].get('statut_envoi'),
-                    update_map[event_type].get('bounce'),
-                    update_map[event_type].get('spam'),
-                    message_id, message_id
-                ))
-            if event_type == 'opened':
-                threading.Thread(target=_alert_opening, args=(message_id, 'brevo'), daemon=True).start()
-        return jsonify({'ok': True}), 200
-    except Exception as e:
-        return jsonify({'ok': True}), 200
-
-@app.route('/webhooks/resend', methods=['POST'])
-def api_webhook_resend():
-    try:
-        data = request.get_json() or {}
-        event_type = data.get('type')
-        msg_data = data.get('data', {})
-        message_id = msg_data.get('id') or msg_data.get('email_id')
-        
-        # Log V17 pour voir ce que Resend nous envoie réellement
-        logger.error(f"[V17 WEBHOOK RESEND] Payload: {json.dumps(data)}")
-        
-        if not message_id or not event_type:
-            return jsonify({'ok': True}), 200
-        
-        update_map = {
-            'email.opened': {'ouvert': 1, 'date_ouverture': datetime.now().isoformat()},
-            'email.clicked': {'clique': 1, 'date_clic': datetime.now().isoformat()},
-            'email.delivered': {'statut_envoi': 'delivré'}
-        }
-        if event_type in update_map:
-            from database.db_manager import update_email_tracking
-            update_email_tracking(message_id, update_map[event_type])
-            if event_type == 'email.opened':
-                threading.Thread(target=_alert_opening, args=(message_id, 'resend'), daemon=True).start()
-        return jsonify({'ok': True}), 200
-    except Exception as e:
-        logger.error(f"Webhook Resend error: {e}")
-        return jsonify({'ok': True}), 200
-
-def _alert_opening(message_id, provider='resend'):
-    try:
-        from envoi.brevo_sender import send_email
-        from database.db_manager import get_conn
-        id_col = 'message_id_resend' if provider == 'resend' else 'message_id_brevo'
-        with get_conn() as conn:
-            prospect = conn.execute(f'SELECT lb.nom FROM leads_bruts lb JOIN emails_envoyes ee ON ee.lead_id = lb.id WHERE ee.{id_col} = ?', (message_id,)).fetchone()
-            nome = prospect['nom'] if prospect else 'un prospect'
-        subject = f"🔔 Ouvert ({provider}) : {nome} vient d'ouvrir ton mail"
-        content = f"<p>Bonne nouvelle ! <strong>{nome}</strong> a ouvert l'audit ({provider}) à {datetime.now().strftime('%H:%M')}.</p>"
-        send_email('jmedansi@incidenx.com', subject, content)
-    except Exception as e:
-        pass
-
-# POST /api/scraper/launch
-# â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�â•�
-_scraper_job = {'running': False, 'logs': [], 'returncode': None, 'campaign_id': None, 'total': 0, 'current': 0, 'emails_found': 0, 'sites_found': 0}
-
-@app.route('/api/scraper/launch', methods=['POST'])
-def api_scraper_launch():
-    """
-    Lance le scraper en arriÃ¨re-plan.
-    Body JSON : {keyword, city, limit, min_emails}
-    """
-    try:
-        data    = request.get_json() or {}
-        keyword = data.get('keyword', '').strip()
-        city    = data.get('city', '').strip()
-        limit   = _safe_int(data.get('limit', 20))
-        min_emails = data.get('min_emails')
-        multi_zone = data.get('multi_zone', False)
-
-        if not keyword or not city:
-            return jsonify({'error': 'keyword et city sont requis'}), 400
-
-        campaign_name = data.get('campaign_name', f"Campagne {datetime.now().strftime('%d/%m %H:%M')}")
-        
-        if _scraper_job['running']:
-            return jsonify({'error': 'Un scraping est déjà en cours'}), 409
-
-        # CrÃ©er la campagne en base
-        try:
-            camp_id = insert_campaign(campaign_name, keyword, city, nb_demande=limit)
-            logger.error(f"[DASHBOARD] Campagne créée: {campaign_name} (ID: {camp_id})")
-        except Exception as e:
-            logger.error(f"Erreur création campagne: {e}")
-            return jsonify({'error': f"Impossible de créer la campagne: {e}"}), 500
-
-        cmd = [
-            sys.executable,
-            os.path.join(ROOT, 'scraper', 'main.py'),
-            '--keyword',     keyword,
-            '--city',        city,
-            '--limit',       str(limit),
-            '--campaign-id', str(camp_id)
-        ]
-        
-        if min_emails:
-            cmd.extend(['--min-emails', str(min_emails)])
-        
-        if multi_zone:
-            cmd.append('--multi-zone')
-
-        def _run():
-            import re
-            _scraper_job['running']     = True
-            _scraper_job['logs']        = []
-            _scraper_job['returncode']  = None
-            _scraper_job['campaign_id'] = camp_id
-            _scraper_job['total']      = limit
-            _scraper_job['current']     = 0
-            _scraper_job['emails_found'] = 0
-            _scraper_job['sites_found']  = 0
-            try:
-                proc = subprocess.Popen(
-                    cmd, cwd=ROOT,
-                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                    text=True, encoding='utf-8', errors='replace'
-                )
-                for line in proc.stdout:
-                    stripped = line.rstrip()
-                    _scraper_job['logs'].append(stripped)
-                    # Total attendu: "[OK] N fiches a extraire"
-                    m_total = re.search(r'\[OK\]\s*(\d+)\s*fiches?\s*a?\s*extraire', stripped)
-                    if m_total:
-                        _scraper_job['total'] = int(m_total.group(1))
-                    # Multi-passes: "Limite N > 120: mode multi-passes" → récupérer la limite totale
-                    m_limit = re.search(r'Limite (\d+)', stripped)
-                    if m_limit and 'multi-passes' in stripped:
-                        _scraper_job['total'] = int(m_limit.group(1))
-                    # Compteur global: "+N nouveaux leads (total: X)"
-                    m_global = re.search(r'total:\s*(\d+)', stripped)
-                    if m_global:
-                        _scraper_job['current'] = int(m_global.group(1))
-                    # Compter les emails trouvés (toutes méthodes)
-                    if ('Email trouvé' in stripped or 'Email page web' in stripped
-                            or 'Email site' in stripped):
-                        _scraper_job['emails_found'] += 1
-                    # Compter les téléphones trouvés sur site
-                    if 'Telephone trouve' in stripped or 'Téléphone trouvé' in stripped:
-                        _scraper_job['sites_found'] += 1
-                    # Compter TOUTE fiche traitée dans une passe unique
-                    if ('[REJETE]' in stripped
-                            or stripped.startswith('   [OK]')
-                            or stripped.startswith('   [--]')):
-                        if not m_global:  # éviter le double-comptage avec multi-passes
-                            _scraper_job['current'] += 1
-                    # Fallback DB toutes les 5 lignes
-                    if camp_id and len(_scraper_job['logs']) % 5 == 0:
-                        try:
-                            from database.db_manager import get_conn
-                            with get_conn() as c:
-                                cnt = c.execute(
-                                    "SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = ?",
-                                    (camp_id,)
-                                ).fetchone()
-                                if cnt and cnt[0] > 0:
-                                    _scraper_job['emails_found'] = cnt[0]
-                        except:
-                            pass
-                proc.wait()
-                _scraper_job['returncode'] = proc.returncode
-            except Exception as e:
-                _scraper_job['logs'].append(f'ERREUR: {e}')
-                _scraper_job['returncode'] = -1
-            finally:
-                _scraper_job['running'] = False
-
-        threading.Thread(target=_run, daemon=True).start()
-
-        msg = f'Scraping lancÃ© : {keyword} Ã  {city} ({limit} leads)'
-        if min_emails:
-            msg += f', objectif {min_emails} emails minimum'
-        
-        return jsonify({
-            'statut':  'lance',
-            'campaign_id': camp_id,
-            'cmd':     ' '.join(cmd),
-            'message': msg
-        })
-
-    except Exception as e:
-        logger.error(f"POST /api/scraper/launch â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/scraper/status')
-def api_scraper_status():
-    """Retourne le statut et les logs du scraping en cours avec stats live."""
-    camp_id = _scraper_job.get('campaign_id')
-    live = {}
-    if camp_id and _scraper_job.get('running'):
-        try:
-            with get_conn() as conn:
-                row = conn.execute("""
-                    SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = ?
-                """, (camp_id,)).fetchone()
-                live['scraped'] = row[0] if row else 0
-                row2 = conn.execute("""
-                    SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = ? AND site_web IS NOT NULL AND site_web != ''
-                """, (camp_id,)).fetchone()
-                live['with_site'] = row2[0] if row2 else 0
-                row3 = conn.execute("""
-                    SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = ? AND email IS NOT NULL AND email != ''
-                """, (camp_id,)).fetchone()
-                live['with_email'] = row3[0] if row3 else 0
-        except Exception as e:
-            logger.warning(f"Live stats error: {e}")
-    
-    return jsonify({
-        'running':    _scraper_job['running'],
-        'logs':       _scraper_job['logs'][-50:],
-        'returncode': _scraper_job['returncode'],
-        'campaign_id': camp_id,
-        'total':      _scraper_job.get('total', 0),
-        'current':    live.get('scraped', _scraper_job.get('current', 0)),
-        'with_site':  live.get('with_site', _scraper_job.get('sites_found', 0)),
-        'with_email': live.get('with_email', _scraper_job.get('emails_found', 0)),
-    })
-
-
-# âââââââââââââââââââââââââââââââââââââââââââââââ
 # POST /api/audit/cleanup
 @app.route('/api/audit/cleanup', methods=['POST'])
 def api_audit_cleanup():
@@ -1263,7 +470,7 @@ def api_audit_cleanup():
 
 
 # POST /api/audit/launch
-# ââââââââââââââââââââââââââââââââââââââââââââââââ
+# âââââââââââââââââââââââââââââââââââââââââââââââ
 
 _audit_job = {'running': False, 'logs': [], 'returncode': None, 'total': 0, 'current': 0, 'failed': 0}
 
@@ -1306,7 +513,7 @@ def api_audit_launch():
                         lead_noms_to_clean.append(lead['nom'])
             
             for lead_nom in lead_noms_to_clean:
-                # G\u00e9n\u00e9rer le slug align\u00e9 sur generate_slug() Python ET makeSlug() JS
+                # Générer le slug aligné sur generate_slug() Python ET makeSlug() JS
                 slug = re.sub(r'[^a-z0-9\s]', '', lead_nom.lower())
                 slug = re.sub(r'\s+', '-', slug).strip('-')[:50]
 
@@ -1338,7 +545,9 @@ def api_audit_launch():
             _audit_job['running']    = True
             _audit_job['logs']       = []
             _audit_job['returncode'] = None
-            _audit_job['total']      = 0
+            # Ne pas écraser 'total' s'il a déjà été fixé par lead_names/lead_ids/limit
+            if not _audit_job.get('total'):
+                _audit_job['total']  = 0
             _audit_job['current']    = 0
             _audit_job['failed']     = 0
             try:
@@ -1358,14 +567,18 @@ def api_audit_launch():
                             n = int(m.group(1))
                             if n > _audit_job['total']:
                                 _audit_job['total'] = n
-                    # Compteur de succès
-                    if 'Audit enregistré' in line_s or '[SQLite] Audit enregistré' in line_s:
+                    # Compteur de succès — détecter plusieurs variantes (encodage Windows)
+                    _line_lower = line_s.lower()
+                    if ('[sqlite] audit' in _line_lower and 'enregistr' in _line_lower) \
+                       or ('audit enregistr' in _line_lower) \
+                       or ('[ok] audit enregistr' in _line_lower):
                         _audit_job['current'] += 1
                     # Compteur d'échecs
-                    elif 'ÉCHOUÉ' in line_s or 'audit_echoue' in line_s:
+                    elif 'echoue' in _line_lower or 'audit_echoue' in _line_lower \
+                         or 'ÉCHOUÉ'.lower() in _line_lower or '[erreur] complet' in _line_lower:
                         _audit_job['failed'] += 1
                         _audit_job['current'] += 1  # compte quand même
-                    elif 'Terminé' in line_s and 'Audit' in line_s:
+                    elif ('termin' in _line_lower and 'audit' in _line_lower) or ('Terminé' in line_s and 'Audit' in line_s):
                         # Ligne finale: [Terminé] Audit SQLite terminé pour N lead(s)
                         import re as _re
                         m = _re.search(r'(\d+) lead', line_s)
@@ -1771,122 +984,495 @@ def api_email_status():
 # POST /api/email/test
 
 # POST /api/email/test  â Envoi email test vers soi-mÃªme
-# ââââââââââââââââââââââââââââââââââââââââââââââââââââ
-
-@app.route('/api/email/test', methods=['POST'])
-def api_email_test():
-    """
-    Envoie un email test Ã  jmedansi@incidenx.com pour prÃ©visualisation.
-    Body JSON : {objet: "...", corps: "...", lead_id: optional}
-    """
-    try:
-        data = request.get_json() or {}
-        objet = data.get('objet', '').strip()
-        corps = data.get('corps', '').strip()
-        lead_id = data.get('lead_id')
-        logger.error(f"[V16 DEBUG] api_email_test RECUE lead_id={lead_id} type={type(lead_id)}")
-
-        # Import resend_sender
-        sys.path.insert(0, os.path.join(ROOT, 'envoi'))
-        from resend_sender import send_prospecting_email
-
-        # Si lead_id fourni, récupérer l'email depuis la base
-        if lead_id:
-            from database.db_manager import get_conn
-            with get_conn() as conn:
-                row = conn.execute('SELECT email_objet, email_corps FROM leads_audites WHERE lead_id = ?', (lead_id,)).fetchone()
-                if row:
-                    objet = row[0] or objet
-                    corps = row[1] or corps
-
-        if not objet or not corps:
-            return jsonify({'error': 'objet et corps requis'}), 400
-
-        # Wrapper en HTML si nécessaire
-        if not corps.strip().startswith('<'):
-            html_premium = f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"></head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; padding: 20px;">
-{corps.replace('\n\n', '</p><p style="margin: 16px 0;">').replace('\n', '<br>')}
-</body></html>"""
-        else:
-            html_premium = corps
-
-        # Envoi vers soi-mÃªme
-        test_recipient = data.get('destinataire') or os.getenv("BREVO_SENDER_EMAIL")
-        prospect_name = data.get('prospect_nom', 'Test')
-        
-        # Get lien_rapport from DB if available
-        lien_rapport = data.get('lien_rapport', '')
-        if lead_id:
-            from database.db_manager import get_conn
-            with get_conn() as conn:
-                row = conn.execute('SELECT lien_rapport FROM leads_audites WHERE lead_id = ?', (lead_id,)).fetchone()
-                if row and row[0]:
-                    lien_rapport = row[0]
-        
-        result = send_prospecting_email(
-            prospect_email=test_recipient,
-            prospect_nom=prospect_name,
-            email_objet=objet,
-            email_corps=html_premium,
-            lien_rapport=lien_rapport,
-            dry_run=False
-        )
-
-        if result.get('success'):
-            # Enregistrer dans la base pour suivi
-            try:
-                from database.db_manager import insert_email_sent
-                insert_email_sent({
-                    'lead_id': lead_id,
-                    'message_id_resend': result.get('message_id', ''),
-                    'email_objet': objet,
-                    'email_corps': html_premium,
-                    'lien_rapport': lien_rapport,
-                    'email_destinataire': test_recipient,
-                    'statut_envoi': 'test',
-                })
-            except Exception as e:
-                logger.error(f"insert_email_sent(test): {e}")
-
-            return jsonify({
-                'success': True,
-                'message_id': result.get('message_id', ''),
-                'sent_to': test_recipient
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': result.get('erreur', 'Erreur envoi')
-            }), 500
-
-    except Exception as e:
-        logger.error(f"POST /api/email/test â {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# âââââââââââââââââââââââââââââââââââââââââââââââââââ
-# SYNC SHEETS EN ARRIÃRE-PLAN (toutes les heures)
-# âââââââââââââââââââââââââââââââââââââââââââââââ
-
-def _sync_worker():
-    """Thread de synchronisation SQLite â Google Sheets (toutes les heures)."""
-    time.sleep(300)  # DÃ©lai initial de 5 minutes aprÃ¨s dÃ©marrage
-    while True:
-        try:
-            from database.sheets_sync import sync_to_sheets
-            sync_to_sheets()
-        except Exception as e:
-            logger.error(f"sync_worker â {e}")
-            print(f"[Sync] Erreur : {e}")
-        time.sleep(3600)  # Toutes les heures
-
-
 # âââââââââââââââââââââââââââââââââââââââââââââââ
 # --------------------------------------------------------------------------------
 # LANCEMENT
 # --------------------------------------------------------------------------------
+
+
+
+# ─────────────────────────────────────────────────────────────────
+# PLANIFICATEUR
+# ─────────────────────────────────────────────────────────────────
+
+@app.route("/api/planning", methods=["GET"])
+def api_planning_list():
+    try:
+        with get_conn() as conn:
+            rows = conn.execute("""
+                SELECT * FROM planned_campaigns
+                ORDER BY date_planifiee ASC, heure ASC
+            """).fetchall()
+        return jsonify({"campaigns": [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/planning", methods=["POST"])
+def api_planning_add():
+    try:
+        data    = request.get_json() or {}
+        secteur = data.get("secteur", "").strip()
+        keyword = data.get("keyword", "").strip()
+        city    = data.get("city", "").strip()
+        limit   = int(data.get("limit_leads", 50))
+        date_p  = data.get("date_planifiee", "")
+        heure   = data.get("heure", "09:00")
+        if not keyword or not city or not date_p:
+            return jsonify({"error": "keyword, city et date_planifiee requis"}), 400
+        with get_conn() as conn:
+            cur = conn.execute(
+                "INSERT INTO planned_campaigns (secteur, keyword, city, limit_leads, date_planifiee, heure) VALUES (?,?,?,?,?,?)",
+                (secteur, keyword, city, limit, date_p, heure)
+            )
+            conn.commit()
+            new_id = cur.lastrowid
+        return jsonify({"success": True, "id": new_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/planning/<int:pid>", methods=["DELETE"])
+def api_planning_delete(pid):
+    try:
+        with get_conn() as conn:
+            conn.execute("UPDATE planned_campaigns SET statut='cancelled' WHERE id=?", (pid,))
+            conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/planning/<int:pid>/launch", methods=["POST"])
+def api_planning_launch_now(pid):
+    try:
+        with get_conn() as conn:
+            row = conn.execute("SELECT * FROM planned_campaigns WHERE id=?", (pid,)).fetchone()
+        if not row:
+            return jsonify({"error": "Introuvable"}), 404
+        c = dict(row)
+        from datetime import date as _date
+        campaign_name = f"{c["secteur"]} {c["city"]} {_date.today().isoformat()}"
+        camp_id = insert_campaign(campaign_name, c["secteur"] or c["keyword"], c["city"], nb_demande=c["limit_leads"])
+        min_e = c.get("min_emails") or c.get("limit_leads") or 20
+        cmd = [PYTHONW, os.path.join(ROOT, "scraper", "main.py"),
+               "--keyword", c["keyword"], "--city", c["city"],
+               "--limit", str(min_e * 4),
+               "--min-emails", str(min_e),
+               "--campaign-id", str(camp_id)]
+        CREATE_NO_WINDOW = 0x08000000 if sys.platform == 'win32' else 0
+        subprocess.Popen(cmd, cwd=ROOT, creationflags=CREATE_NO_WINDOW,
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        with get_conn() as conn:
+            conn.execute("UPDATE planned_campaigns SET statut='running', campaign_id=? WHERE id=?", (camp_id, pid))
+            conn.commit()
+        return jsonify({"success": True, "campaign_id": camp_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/planning/quota", methods=["GET"])
+def api_planning_quota():
+    try:
+        from scheduler import get_daily_quota, get_emails_sent_today
+        quota = get_daily_quota()
+        sent  = get_emails_sent_today()
+        return jsonify({"quota": quota, "sent": sent, "remaining": max(0, quota - sent)})
+    except Exception:
+        return jsonify({"quota": 100, "sent": 0, "remaining": 100})
+
+
+@app.route("/api/planning/quota", methods=["POST"])
+def api_planning_quota_update():
+    try:
+        data  = request.get_json() or {}
+        quota = max(1, min(300, int(data.get("daily_quota", 30))))
+        with get_conn() as conn:
+            conn.execute("UPDATE planning_settings SET value=? WHERE key='daily_quota'", (str(quota),))
+            conn.commit()
+        return jsonify({"success": True, "daily_quota": quota})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/planning/niche-stats", methods=["GET"])
+def api_planning_niche_stats():
+    try:
+        with get_conn() as conn:
+            rows = conn.execute("""
+                SELECT c.secteur as niche,
+                       COUNT(DISTINCT c.id) AS campagnes,
+                       COALESCE(SUM(c.leads_total), 0) AS leads_scrapes,
+                       COALESCE(SUM(c.emails_envoyes), 0) AS emails_envoyes,
+                       COALESCE(SUM(c.nb_reponses), 0) AS nb_reponses
+                FROM campagnes c
+                WHERE c.secteur IS NOT NULL AND c.secteur != ""
+                GROUP BY c.secteur ORDER BY emails_envoyes DESC
+            """).fetchall()
+        return jsonify({"stats": [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scraping-priorities", methods=["GET"])
+def api_get_scraping_priorities():
+    try:
+        with get_conn() as conn:
+            rows = conn.execute("""
+                SELECT id, secteur, keyword, ville, limit_leads, priorite,
+                       actif, frequence_jours, derniere_execution
+                FROM scraping_priorities
+                ORDER BY priorite ASC, secteur ASC, ville ASC
+            """).fetchall()
+        return jsonify({"priorities": [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scraping-priorities", methods=["POST"])
+def api_add_scraping_priority():
+    try:
+        d = request.get_json() or {}
+        with get_conn() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO scraping_priorities
+                    (secteur, keyword, ville, limit_leads, priorite, frequence_jours, actif)
+                VALUES (:secteur, :keyword, :ville, :limit_leads, :priorite, :frequence_jours, 1)
+            """, {
+                'secteur':        d.get('secteur', 'default'),
+                'keyword':        d['keyword'],
+                'ville':          d['ville'],
+                'limit_leads':    int(d.get('limit_leads', 50)),
+                'priorite':       int(d.get('priorite', 5)),
+                'frequence_jours':int(d.get('frequence_jours', 30)),
+            })
+            conn.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scraping-priorities/<int:pid>", methods=["DELETE"])
+def api_delete_scraping_priority(pid):
+    try:
+        with get_conn() as conn:
+            conn.execute("DELETE FROM scraping_priorities WHERE id=?", (pid,))
+            conn.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scraping-priorities/<int:pid>/toggle", methods=["POST"])
+def api_toggle_scraping_priority(pid):
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE scraping_priorities SET actif = 1 - actif WHERE id=?", (pid,)
+            )
+            conn.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/auto-plan/now", methods=["POST"])
+def api_auto_plan_now():
+    """Déclenche l'auto-planification manuellement."""
+    try:
+        from auto_planner import run_auto_plan, plan_week, plan_day
+        data  = request.get_json() or {}
+        mode  = data.get('mode', 'day')
+        force = data.get('force', False)
+        if mode == 'week':
+            results = plan_week()
+            total = sum(results.values())
+            return jsonify({"ok": True, "mode": "week", "added": total, "details": results})
+        else:
+            added = plan_day(force=force) if force else run_auto_plan()
+            return jsonify({"ok": True, "mode": "day", "added": added})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/auto-plan/backlog", methods=["GET"])
+def api_auto_plan_backlog():
+    """Retourne l'état du backlog pour affichage dans le dashboard."""
+    try:
+        from auto_planner import get_pipeline_backlog, get_auto_plan_settings
+        backlog   = get_pipeline_backlog()
+        settings  = get_auto_plan_settings()
+        daily_quota = settings['daily_quota']
+        backlog_days = round(backlog.get('leads_with_email', 0) / max(daily_quota, 1), 1)
+        return jsonify({
+            **backlog,
+            "backlog_days":   backlog_days,
+            "daily_quota":    daily_quota,
+            "max_backlog_days": settings['max_backlog_days'],
+            "status": (
+                "paused"   if backlog_days >= settings['max_backlog_days']     else
+                "slow"     if backlog_days >= settings['max_backlog_days'] - 1 else
+                "normal"
+            )
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/emails/send-batch", methods=["POST"])
+def api_emails_send_batch():
+    try:
+        from scheduler import get_quota_remaining
+        data  = request.get_json() or {}
+        limit = min(int(data.get("limit", 10)), get_quota_remaining())
+        if limit <= 0:
+            return jsonify({"sent": 0, "reason": "quota_atteint"})
+        with get_conn() as conn:
+            leads = conn.execute("""
+                SELECT lb.id FROM leads_bruts lb
+                JOIN leads_audites la ON la.lead_id = lb.id
+                WHERE lb.email IS NOT NULL AND lb.email != ""
+                  AND la.approuve = 1
+                  AND lb.statut NOT IN ('envoye', 'email_sent')
+                  AND lb.id NOT IN (SELECT DISTINCT lead_id FROM emails_envoyes WHERE lead_id IS NOT NULL)
+                ORDER BY la.score_urgence DESC LIMIT ?
+            """, (limit,)).fetchall()
+        sent = 0
+        for lead in leads:
+            try:
+                cmd = [sys.executable, os.path.join(ROOT, "envoi", "resend_sender.py"), "--lead-id", str(lead["id"])]
+                result = subprocess.run(cmd, cwd=ROOT, capture_output=True, timeout=30)
+                if result.returncode == 0:
+                    sent += 1
+            except Exception:
+                pass
+        return jsonify({"sent": sent, "attempted": len(leads)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/review")
+def pipeline_review():
+    """Page de review d'un batch pipeline : audits + emails à valider."""
+    ids_param = request.args.get("ids", "")
+    try:
+        lead_ids = [int(x) for x in ids_param.split(",") if x.strip().isdigit()]
+    except Exception:
+        lead_ids = []
+
+    if not lead_ids:
+        return "<h2>Aucun lead spécifié.</h2>", 400
+
+    leads = []
+    with get_conn() as conn:
+        for lid in lead_ids:
+            row = conn.execute("""
+                SELECT lb.id, lb.nom, lb.email, lb.site_web, lb.rating, lb.nb_avis,
+                       la.probleme_principal, la.score_urgence,
+                       la.email_objet, la.email_corps, la.lien_rapport,
+                       la.score_performance, la.score_seo
+                FROM leads_bruts lb
+                JOIN leads_audites la ON lb.id = la.lead_id
+                WHERE lb.id = ?
+            """, (lid,)).fetchone()
+            if row:
+                d = dict(row)
+                lien = d.get("lien_rapport") or ""
+                if lien.startswith("local://"):
+                    slug = lien.replace("local://", "").strip("/")
+                    d["preview_url"] = f"/previews/{slug}/"
+                elif lien.startswith("http"):
+                    d["preview_url"] = lien
+                else:
+                    d["preview_url"] = None
+                leads.append(d)
+
+    total = len(leads)
+    from markupsafe import escape
+
+    rows_html = ""
+    for i, l in enumerate(leads, 1):
+        rapport_btn = (
+            f'<a href="{escape(l["preview_url"])}" target="_blank" class="btn-rapport">Voir rapport</a>'
+            if l["preview_url"] else '<span class="no-rapport">—</span>'
+        )
+        corps = (l.get("email_corps") or "").replace("`", "&#96;").replace("</", "&lt;/")
+        rows_html += f"""
+        <div class="lead-card">
+          <div class="lead-header">
+            <span class="lead-num">{i}</span>
+            <div class="lead-info">
+              <strong>{escape(l['nom'])}</strong>
+              <span class="lead-email">{escape(l['email'] or '—')}</span>
+            </div>
+            <div class="lead-scores">
+              <span class="badge urgence">⚡ {l['score_urgence'] or '?'}/10</span>
+              {'<span class="badge rating">⭐ ' + str(l['rating'] or '') + ' (' + str(l['nb_avis'] or 0) + ' avis)</span>' if l.get('rating') else ''}
+            </div>
+            {rapport_btn}
+          </div>
+          <div class="lead-problem">{escape(l['probleme_principal'] or 'Non défini')}</div>
+          <div class="email-subject">📧 <em>{escape(l['email_objet'] or '—')}</em></div>
+          <details class="email-body">
+            <summary>Voir le corps du mail</summary>
+            <pre>{corps}</pre>
+          </details>
+        </div>"""
+
+    html = f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Review Pipeline — {total} leads</title>
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0c2832; color: #d0e8ec; padding: 20px; }}
+    h1 {{ font-size: 1.4rem; margin-bottom: 6px; color: #e8f4f7; }}
+    .subtitle {{ color: #6a9aaa; font-size: .85rem; margin-bottom: 20px; }}
+    .lead-card {{ background: #0f3040; border: 1px solid #1a4a5a; border-radius: 10px;
+                  padding: 14px 16px; margin-bottom: 12px; }}
+    .lead-header {{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }}
+    .lead-num {{ background: #1a4a5a; color: #7ab8c8; border-radius: 50%;
+                 width: 26px; height: 26px; display: flex; align-items: center;
+                 justify-content: center; font-size: .75rem; flex-shrink: 0; }}
+    .lead-info {{ flex: 1; }}
+    .lead-info strong {{ display: block; font-size: .95rem; color: #e8f4f7; }}
+    .lead-email {{ font-size: .78rem; color: #6a9aaa; }}
+    .lead-scores {{ display: flex; gap: 6px; flex-wrap: wrap; }}
+    .badge {{ font-size: .72rem; padding: 2px 8px; border-radius: 20px; }}
+    .badge.urgence {{ background: #3a1a1a; color: #ff8a7a; }}
+    .badge.rating {{ background: #0f3a2a; color: #7adca8; }}
+    .btn-rapport {{ background: #1a5a6a; color: #7ad4e8; border: 1px solid #2a7a8a;
+                    padding: 4px 12px; border-radius: 6px; font-size: .78rem;
+                    text-decoration: none; white-space: nowrap; }}
+    .btn-rapport:hover {{ background: #2a7a8a; }}
+    .no-rapport {{ color: #3a6a7a; font-size: .78rem; }}
+    .lead-problem {{ font-size: .82rem; color: #f0c060; margin-bottom: 6px;
+                     padding: 4px 8px; background: #1a2a10; border-radius: 4px; }}
+    .email-subject {{ font-size: .83rem; color: #8ab8c8; margin-bottom: 6px; }}
+    .email-body summary {{ font-size: .78rem; color: #4a8a9a; cursor: pointer; margin-top: 4px; }}
+    .email-body summary:hover {{ color: #7ab8c8; }}
+    .email-body pre {{ margin-top: 8px; font-size: .78rem; white-space: pre-wrap;
+                       color: #a8d0da; background: #081e28; padding: 10px;
+                       border-radius: 6px; border: 1px solid #1a4a5a; }}
+  </style>
+</head>
+<body>
+  <h1>Review Pipeline — {total} leads</h1>
+  <p class="subtitle">Validés ce soir · Envoi demain 10h + 14h</p>
+  {rows_html}
+</body>
+</html>"""
+    return html
+
+
+@app.route('/api/scraper/fill-quota', methods=['POST'])
+def api_fill_quota():
+    """Lance un top-up scraping si le pipeline est en dessous du quota journalier."""
+    try:
+        sys.path.insert(0, os.path.dirname(__file__))
+        from auto_planner import fill_quota_if_needed, get_pipeline_count, get_auto_plan_settings
+        settings = get_auto_plan_settings()
+        pipeline = get_pipeline_count()
+        deficit = max(0, settings['daily_quota'] - pipeline)
+        if deficit == 0:
+            return jsonify({'success': True, 'message': f'Quota atteint ({pipeline}/{settings["daily_quota"]})', 'deficit': 0})
+        fill_quota_if_needed(trigger_immediate=True)
+        return jsonify({'success': True, 'deficit': deficit, 'pipeline': pipeline, 'quota': settings['daily_quota']})
+    except Exception as e:
+        logger.error(f"POST /api/scraper/fill-quota → {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/bounces/check', methods=['POST'])
+def api_check_bounces():
+    """Interroge Resend pour mettre à jour les statuts bounce/spam dans la DB."""
+    try:
+        from envoi.resend_sender import check_bounces
+        stats = check_bounces()
+        if "error" in stats:
+            return jsonify({'success': False, 'error': stats['error']}), 400
+        return jsonify({'success': True, **stats})
+    except Exception as e:
+        logger.error(f"POST /api/bounces/check → {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ===========================================================
+# MODULE 5 : ANALYTICS & BUSINESS INTELLIGENCE
+# ===========================================================
+
+@app.route('/api/stats/funnel')
+def api_stats_funnel():
+    """Renvoie les données de l'entonnoir de prospection (Funnel)."""
+    try:
+        from database.db_manager import get_conn
+        with get_conn() as conn:
+            stats = conn.execute("""
+                SELECT 
+                    (SELECT COUNT(*) FROM leads_bruts) as total_scraped,
+                    (SELECT COUNT(*) FROM leads_audites) as total_audited,
+                    (SELECT COUNT(*) FROM emails_envoyes) as total_sent,
+                    (SELECT SUM(clique) FROM emails_envoyes) as total_clicked,
+                    (SELECT SUM(repondu) FROM emails_envoyes) as total_replied,
+                    (SELECT SUM(rdv_confirme) FROM emails_envoyes) as total_rdv
+            """).fetchone()
+            return jsonify(dict(stats))
+    except Exception as e:
+        logger.error(f"Erreur API Funnel: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats/niche')
+def api_stats_niche():
+    """Renvoie les performances par secteur/ville."""
+    try:
+        from database.db_manager import get_niche_performance
+        niches = get_niche_performance()
+        return jsonify([dict(n) for n in niches])
+    except Exception as e:
+        logger.error(f"Erreur API Niche: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats/export')
+def api_stats_export():
+    """Exporte les performances en CSV."""
+    import csv, io
+    from flask import make_response
+    try:
+        from database.db_manager import get_conn
+        with get_conn() as conn:
+            rows = conn.execute("""
+                SELECT ee.email_destinataire, lb.nom, lb.ville, lb.category, 
+                       ee.date_envoi, ee.ouvert, ee.clique, ee.repondu, ee.rdv_confirme
+                FROM emails_envoyes ee
+                JOIN leads_bruts lb ON ee.lead_id = lb.id
+            """).fetchall()
+
+        si = io.StringIO()
+        cw = csv.writer(si)
+        cw.writerow(['Email', 'Nom', 'Ville', 'Secteur', 'Date Envoi', 'Ouvert', 'Cliqué', 'Répondu', 'RDV'])
+        for r in rows:
+            cw.writerow(list(r))
+            
+        output = make_response(si.getvalue())
+        output.headers["Content-Disposition"] = "attachment; filename=export_prospection.csv"
+        output.headers["Content-type"] = "text/csv"
+        return output
+    except Exception as e:
+        logger.error(f"Erreur Export CSV: {e}")
+        return str(e), 500
+
+@app.route('/api/stats/ab_test')
+def api_stats_ab_test():
+    """Renvoie l'analyse A/B Testing."""
+    try:
+        from database.db_manager import get_ab_test_performance
+        results = get_ab_test_performance()
+        return jsonify([dict(r) for r in results])
+    except Exception as e:
+        logger.error(f"Erreur API AB Test: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("\n" + "="*55)
@@ -1894,10 +1480,22 @@ if __name__ == '__main__':
     print("  http://localhost:5001")
     print("  Source de donnees : SQLite (data/prospection.db)")
     print("="*55 + "\n")
-    
-    # Lancer le thread de synchronisation Sheets en arriÃ¨re-plan
+
+    # Scheduler planificateur
+    try:
+        from scheduler import init_scheduler
+        init_scheduler()
+        print("  [Scheduler] Planificateur démarré (scraping 08h, emails 9h-18h)")
+    except Exception as _se:
+        print(f"  [Scheduler] Non démarré : {_se}")
+
+
+    def _sync_worker():
+        import time
+        while True:
+            time.sleep(60)
+
     sync_thread = threading.Thread(target=_sync_worker, daemon=True)
     sync_thread.start()
-    print("  [Sync] Thread de synchronisation Sheets dÃ©marrÃ© (toutes les heures)")
-    
-    app.run(host='127.0.0.1', port=5001, debug=True)
+
+    app.run(host='127.0.0.1', port=5001, debug=False)

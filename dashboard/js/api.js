@@ -22,22 +22,11 @@ function _globalFilters(extra = {}) {
     return s ? '?' + s : '';
 }
 
-function changeGlobalDate() {
-    _activeDateStart = document.getElementById('global-date-start')?.value || null;
-    _activeDateEnd = document.getElementById('global-date-end')?.value || null;
-    if (_activeDateStart && _activeDateEnd) {
-        if (typeof showToast === 'function') showToast(`📅 Période : ${_activeDateStart} → ${_activeDateEnd}`);
-    }
-    refreshAll();
-}
 
 function clearGlobalDate() {
     _activeDateStart = null;
     _activeDateEnd = null;
-    const ds = document.getElementById('global-date-start');
-    const de = document.getElementById('global-date-end');
-    if (ds) ds.value = '';
-    if (de) de.value = '';
+    if (typeof _drpReset === 'function') _drpReset();
     if (typeof showToast === 'function') showToast('Période réinitialisée');
     refreshAll();
 }
@@ -62,14 +51,16 @@ async function loadStats() {
         const d = await r.json();
         if (d.error) return;
 
+        // Stats principales
         setText('stat-scrapes', d.pipeline.leads_scrapes);
         setText('stat-audites', d.pipeline.leads_audites);
         setText('stat-prets', d.pipeline.emails_prets);
         setText('stat-envoyes', d.pipeline.envoyes);
         setText('stat-scrapes-big', d.pipeline.leads_scrapes);
 
+        // Stats détaillées
         setText('stat-audits-total', d.pipeline.leads_audites);
-        setText('stat-pending-total', '+' + (d.pipeline.leads_scrapes - d.pipeline.leads_audites) + ' en attente');
+        setText('stat-pending-total', '+' + (d.leads_en_attente || 0) + ' en attente');
         
         // Sidebar stats
         setText('sidebar-stat-scrapes', d.pipeline.leads_scrapes || 0);
@@ -77,13 +68,24 @@ async function loadStats() {
         setText('sidebar-stat-emails', d.pipeline.emails_prets || 0);
         setText('sidebar-stat-sent', d.pipeline.envoyes || 0);
 
+        // Stats site
         const sitePct = d.pipeline.leads_scrapes > 0 ? Math.round((d.leads_site || 0) * 100 / d.pipeline.leads_scrapes) : 0;
         setText('stat-with-site-pct', sitePct + '%');
-        setText('stat-with-site', (d.leads_site || 0) + ' leads avec site');
+        setText('stat-with-site', (d.leads_site || 0) + ' avec site');
         setText('stat-with-site-2', (d.leads_site || 0));
 
+        // Stats emails
         setText('stat-sent-total', d.pipeline.envoyes);
         setText('stat-emails-found', d.emails_trouves || 0);
+        
+        // Stats supplémentaires (nouvelles)
+        setText('stat-sans-site', d.leads_sans_site || 0);
+        setText('stat-en-attente', d.leads_en_attente || 0);
+        
+        // Stats batches
+        setText('stat-batches-pending', d.batches?.pending || 0);
+        setText('stat-batches-queued', d.batches?.queued || 0);
+        setText('stat-emails-pending', d.batches?.emails_pending || 0);
 
         // Gauge performance cockpit
         const gauge = document.querySelector('#pg-cockpit svg circle:nth-child(2)');
@@ -110,14 +112,26 @@ async function loadStats() {
 
         // CRM Stats Cockpit
         if (d.email_stats) {
+            setText('crm-stat-envoyes', d.email_stats.nb_envoyes || 0);
             setText('crm-stat-ouvertures', (d.email_stats.taux_ouverture || 0) + '%');
             setText('crm-stat-clics', (d.email_stats.taux_clic || 0) + '%');
             setText('crm-stat-reponses', (d.email_stats.taux_reponse || 0) + '%');
             setText('crm-stat-positives', d.email_stats.reponses_positives || 0);
             setText('crm-stat-rdv', d.email_stats.rdv_obtenus || 0);
+            setText('crm-stat-bounces', d.email_stats.bounces || 0);
+            setText('crm-stat-spam', d.email_stats.spam || 0);
+
+            // Cockpit cards
+            const totalReponses = Math.round(d.pipeline.envoyes * (d.email_stats.taux_reponse || 0) / 100);
+            setText('stat-reponses', totalReponses);
+            setText('stat-reponses-positives', (d.email_stats.reponses_positives || 0) + ' positives');
+            setText('stat-rdv', d.email_stats.rdv_obtenus || 0);
+            // Pipeline
+            setText('stat-pipeline-reponses', d.email_stats.reponses_positives || 0);
+            setText('stat-pipeline-rdv', d.email_stats.rdv_obtenus || 0);
         }
 
-        const resendPct = Math.min(100, Math.round((d.quotas.resend || 0) / 300 * 100));
+        const resendPct = Math.min(100, Math.round((d.quotas.resend || 0) / 100 * 100));
         const groqPct = Math.min(100, Math.round((d.quotas.groq || 0) / 14400 * 100));
 
         const resFill = document.getElementById('quota-resend-fill');
@@ -193,3 +207,16 @@ async function refreshAll() {
         typeof loadCampaignTable === 'function' ? loadCampaignTable() : Promise.resolve()
     ]);
 }
+
+// --- Auto-refresh : stats sidebar + panneau latéral (intervalle unique) ---
+const _autoRefreshId = setInterval(async () => {
+    try { await loadStats(); } catch (e) {}
+    try {
+        if (_selectedLeadId && typeof loadPanelContent === 'function') {
+            const activeTab = document.querySelector('.side-panel-tab.active');
+            loadPanelContent(_selectedLeadId, activeTab ? activeTab.dataset.tab : 'audit');
+        }
+    } catch (e) {}
+}, 30000);
+
+window.addEventListener('beforeunload', () => clearInterval(_autoRefreshId));

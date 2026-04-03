@@ -84,7 +84,7 @@ async function previewReport(slug) {
 }
 
 async function pushReport(slug) {
-    if (!confirm('Publier ce rapport sur GitHub ?')) return;
+    if (!await showConfirm('Publier ce rapport sur GitHub Pages ?', { title: 'Publier le rapport', confirmText: 'Publier' })) return;
     
     try {
         const r = await fetch('/api/previews/push', {
@@ -117,7 +117,7 @@ async function pushAllReports() {
             return;
         }
         
-        if (!confirm(`Publier les ${locals.length} rapports locaux sur GitHub ?`)) return;
+        if (!await showConfirm(`Publier les ${locals.length} rapports locaux sur GitHub Pages ?`, { title: 'Publier tous les rapports', confirmText: 'Publier tout' })) return;
         
         const slugs = locals.map(p => p.slug);
         const r2 = await fetch('/api/previews/push', {

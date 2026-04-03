@@ -27,7 +27,7 @@ import psutil
 
 # Ajout du répertoire parent au sys.path pour importer config_manager
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config_manager import get_config, increment_usage, get_sheet
+from config_manager import get_config
 
 # Module de recherche email avancée (TOUTES les méthodes)
 try:
@@ -42,7 +42,7 @@ except ImportError:
 
 # --- Persistance SQLite (source de vérité principale) ---
 try:
-    from database.db_manager import insert_lead as db_insert_lead
+    from database.db_manager import insert_lead as db_insert_lead, get_conn as db_get_conn
     _DB_AVAILABLE = True
 except ImportError:
     _DB_AVAILABLE = False
@@ -60,6 +60,32 @@ logger = logging.getLogger(__name__)
 # ===========================================================
 # HELPERS — Extraction email
 # ===========================================================
+
+def _email_confidence(result: dict) -> int:
+    """Retourne un score de confiance 0-100 pour un résultat find_email_all_methods."""
+    if not result or not result.get('email'):
+        return 0
+    source = result.get('source', '')
+    priority = result.get('priority', 10)
+    # Base selon la source
+    if source.startswith('site:'):
+        base = 85
+    elif source.startswith('link:'):
+        base = 80
+    elif source.startswith('masked:'):
+        base = 75
+    elif source == 'hunter_api':
+        base = 90
+    elif source == 'smtp_guess':
+        base = 60
+    elif source == 'homepage_basic':
+        base = 50
+    else:
+        base = 40
+    # Bonus selon la priorité de l'alias (contact@ > info@ > …)
+    bonus = max(0, 10 - priority)
+    return min(100, base + bonus)
+
 
 def extract_domain(url):
     """Extrait le domaine d'une URL."""
@@ -130,310 +156,96 @@ def verify_email_mailcheck(email):
         return "Erreur"
 
 
-# ===========================================================
-# ÉCRITURE GOOGLE SHEETS
-# ===========================================================
-def write_leads_to_sheets(leads):
-    """Écrit une liste de leads dans la feuille unique 'Leads'."""
-    if not leads:
-        return
-    try:
-        from config_manager import get_sheet
-        sheet = get_sheet("Leads")
-        
-        # Structure à 18 colonnes
-        headers = [
-            "Date", "Mot-clé", "Nom", "Ville", "Site Web", "Téléphone", "Adresse", 
-            "Note Maps", "Avis Maps", "Lien Maps", 
-            "Résultats Technique", "Problèmes Détectés", "Résumé Stratégique", 
-            "Service Proposé", "Objet Email", "Corps Email", 
-            "Email Envoyé", "JSON Complet"
-        ]
-        if not sheet.get_all_values():
-            sheet.append_row(headers)
-            
-        rows = []
-        for p in leads:
-            import json
-            json_data = json.dumps(p, ensure_ascii=False)
-            rows.append([
-                datetime.now().strftime("%Y-%m-%d %H:%M"), # 1. Date
-                p.get('mot_cle', ''),                      # 2. Mot-clé
-                p.get("nom", "Inconnu"),                   # 3. Nom
-                p.get("ville", ""),                        # 4. Ville
-                p.get("site_web", ""),                     # 5. Site Web
-                p.get("telephone", ""),                    # 6. Téléphone
-                p.get("adresse", ""),                      # 7. Adresse
-                str(p.get("rating", "")),                  # 8. Note Maps
-                str(p.get("nb_avis", "")),                 # 9. Avis Maps
-                p.get("lien_maps", ""),                    # 10. Lien Maps
-                "",                                        # 11. Résultats Technique
-                "",                                        # 12. Problèmes Détectés
-                "",                                        # 13. Résumé Stratégique
-                "",                                        # 14. Service Proposé
-                "",                                        # 15. Objet Email
-                "",                                        # 16. Corps Email
-                "NON",                                     # 17. Email Envoyé
-                json_data                                  # 18. JSON Complet
-            ])
-        sheet.append_rows(rows)
-        print(f"   [Sheets] {len(rows)} leads écrits dans 'Leads'.")
-    except Exception as e:
-        logger.error(f"Erreur écriture Google Sheets: {e}")
-        print(f"   [ERREUR] Écriture Sheets: {e}")
 
 
 # ===========================================================
-# PLAYWRIGHT — Extraction des détails d'une fiche
+# GEMINI — Extraction Google Maps
 # ===========================================================
 
-async def extract_place_details(page):
+def scrape_google_maps(keyword, city, limit=20, known_names=None):
     """
-    Extrait les détails d'une fiche Google Maps ouverte dans le panneau.
-    Retourne un dict avec nom, rating, nb_avis, adresse, telephone, site_web, category.
-    Si un champ est introuvable -> None (pas d'erreur).
+    Scrape Google Maps via Gemini (Search Grounding).
+    Remplace l'ancienne approche Playwright qui était trop lourde.
     """
-    details = {
-        "nom": None,
-        "rating": None,
-        "nb_avis": None,
-        "adresse": None,
-        "telephone": None,
-        "site_web": None,
-        "category": None,
-        "lien_maps": page.url,
-    }
-
-    try:
-        try:
-            # Sélecteur chirurgical pour le nom (DUwDvf est propre à la fiche de détail)
-            el = await page.query_selector('h1.DUwDvf')
-            if not el:
-                # Fallback : essayer de trouver le h1 qui n'est PAS "Résultats"
-                h1s = await page.query_selector_all('h1')
-                for h in h1s:
-                    t = (await h.inner_text()).strip()
-                    if t.lower() not in ["résultats", "results", "recherche", "search"]:
-                        details["nom"] = t
-                        break
-            else:
-                details["nom"] = (await el.inner_text()).strip()
-        except Exception:
-            pass
-
-        # --- Rating (note) ---
-        try:
-            # Sélecteur spécifique pour la note (aria-label contient souvent la note)
-            el = await page.query_selector('span.ceNzR[role="img"], span[role="img"][aria-label*="toile"], span[role="img"][aria-label*="star"], div.F7ue9c div.fontDisplayLarge')
-            
-            if el:
-                aria = await el.get_attribute('aria-label') or ""
-                text = await el.inner_text() or ""
-                combined = aria + " " + text
-                match = re.search(r'([\d]+[.,][\d]+)', combined)
-                if match:
-                    details["rating"] = float(match.group(1).replace(',', '.'))
-        except Exception:
-            pass
-
-        # --- Nombre d'avis ---
-        try:
-            # Chercher dans l'en-tête pour le mot "avis" ou le format "(XXX)"
-            elements = await page.query_selector_all('span[aria-label*="avis"], span[aria-label*="reviews"], button[jsaction*="pane.rating.moreReviews"], div.F7ue9c span')
-            for el in elements:
-                aria = await el.get_attribute('aria-label') or ""
-                text = await el.inner_text() or ""
-                combined = aria + " " + text
-                
-                # Pattern "1 234 avis"
-                match = re.search(r'([\d\s\xa0\u202f]+)\s*(?:avis|review)', combined, re.IGNORECASE)
-                if match:
-                    nb_str = re.sub(r'[^\d]', '', match.group(1))
-                    if nb_str.isdigit() and int(nb_str) > 0:
-                        details["nb_avis"] = int(nb_str)
-                        break
-                
-                # Pattern "(1 234)" souvent présent à côté des étoiles
-                match2 = re.search(r'\(([\d\s\xa0\u202f]+)\)', combined)
-                if match2:
-                    nb_str = re.sub(r'[^\d]', '', match2.group(1))
-                    if nb_str.isdigit() and int(nb_str) > 0:
-                        details["nb_avis"] = int(nb_str)
-                        break
-        except Exception:
-            pass
-
-        # --- Adresse ---
-        try:
-            el = await page.query_selector('[data-item-id="address"] .Io6YTe')
-            if not el:
-                el = await page.query_selector('[data-item-id="address"]')
-            if el:
-                details["adresse"] = (await el.inner_text()).strip()
-        except Exception:
-            pass
-
-        # --- Telephone ---
-        try:
-            el = await page.query_selector('[data-item-id*="phone"] .Io6YTe')
-            if not el:
-                el = await page.query_selector('[data-item-id*="phone"]')
-            if el:
-                details["telephone"] = (await el.inner_text()).strip()
-        except Exception:
-            pass
-
-        # --- Site web ---
-        try:
-            el = await page.query_selector('a[data-item-id="authority"]')
-            if not el:
-                el = await page.query_selector('a[aria-label*="Site Web"], a[aria-label*="site Web"], a[aria-label*="Website"]')
-            if el:
-                href = await el.get_attribute('href')
-                if href:
-                    details["site_web"] = href
-        except Exception:
-            pass
-
-        # --- Categorie ---
-        try:
-            el = await page.query_selector('button.DkEaL')
-            if not el:
-                el = await page.query_selector('span[jsaction*="category"]')
-            if not el:
-                el = await page.query_selector('.DkEaL, [jsaction*="pane.rating.category"]')
-            if el:
-                details["category"] = (await el.inner_text()).strip()
-        except Exception:
-            pass
-
-    except Exception as e:
-        logger.error(f"Erreur extraction fiche: {e}")
-
-    return details
-
-
-# ===========================================================
-# PLAYWRIGHT — Scraping Google Maps
-# ===========================================================
-
-async def scrape_google_maps(keyword, city, limit=20):
-    """
-    Scrape Google Maps via Playwright headless + stealth.
-    Un seul contexte de navigateur reutilise pour tous les resultats.
-    """
-    from playwright.async_api import async_playwright
-    from playwright_stealth import Stealth
-
+    from google import genai
+    from google.genai import types
+    import json
+    
     places = []
-    # Pour éviter les doublons, on check la feuille unique "Leads"
-    try:
-        from config_manager import get_sheet
-        sheet_uni = get_sheet("Leads")
-        recs = sheet_uni.get_all_records()
-        seen_names = set(str(r.get("Nom", "")).strip().lower() for r in recs)
-    except Exception:
-        seen_names = set()
-
-    # Construction de l'URL Google Maps
-    query = quote(f"{keyword} {city}")
-    maps_url = f"https://www.google.com/maps/search/{query}"
-
-    print(f"\n[Playwright] Ouverture de Google Maps : {keyword} a {city}")
-    print(f"   URL : {maps_url}")
-
-    # Un seul contexte Playwright pour tout le scraping
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 900},
-            locale="fr-FR",
-        )
-        page = await context.new_page()
-
-        # Anti-detection via playwright-stealth
-        await Stealth().apply_stealth_async(page)
-
-        # OPTIMISATION : Bloquer les ressources inutiles (images, polices, media)
-        async def block_resources(route):
-            if route.request.resource_type in ["image", "font", "media"]:
-                await route.abort()
-            else:
-                await route.continue_()
+    seen_names = set(known_names) if known_names else set()
+    
+    print(f"\n[Gemini Maps] Ouverture de la recherche : {keyword} à {city}")
+    
+    config = get_config()
+    api_key = config.get("google_api_key")
+    if not api_key:
+        print("   [ERREUR] Aucune clé google_api_key (Gemini) trouvée. Ajoute là dans config_comptes.")
+        return places
         
-        await page.route("**/*", block_resources)
-
+    client = genai.Client(api_key=api_key)
+    
+    prompt = f"Effectue une recherche sur Google intégrant Google Maps pour trouver {limit} '{keyword}' à '{city}'. " \
+             f"Retourne les résultats STRICTEMENT au format JSON : une liste d'objets. Chaque objet DOIT contenir les clés " \
+             f" exactes suivantes: 'nom', 'rating' (float), 'nb_avis' (entier), 'adresse', 'telephone', 'site_web', 'category', 'lien_maps'. " \
+             f"Cherche de vrais professionnels locaux et retourne leurs vraies données. Limite-toi à {limit} résultats maximum."
+             
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-lite',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[{"google_search": {}}],
+                response_mime_type="application/json",
+                temperature=0.1
+            )
+        )
+        
         try:
-            # 1. Ouvrir Google Maps
-            await page.goto(maps_url, wait_until="domcontentloaded", timeout=30000)
-
-            # Accepter les cookies Google si le popup apparait
-            try:
-                accept_btn = await page.query_selector('button[aria-label*="Tout accepter"], button[aria-label*="Accept all"]')
-                if accept_btn:
-                    await accept_btn.click()
-                    await page.wait_for_timeout(1500)
-            except Exception:
-                pass
-
-            # 2. Attendre que les resultats chargent
-            try:
-                await page.wait_for_selector('[role="feed"]', timeout=15000)
-            except Exception:
-                print("   [WARN] Le flux de resultats ne s'est pas charge. Tentative de continuer...")
-
-            # 3. Scroll pour charger plus de resultats
-            feed = await page.query_selector('[role="feed"]')
-            if feed:
-                # Calcul du nombre de scrolls nécessaires
-                # Google Maps charge environ 20 résultats par scroll
-                max_scrolls = max(10, (limit // 15) + 5)
-                scroll_attempts = 0
-                prev_count = 0
-                no_change_streak = 0
+            results = json.loads(response.text)
+        except Exception as e:
+            print(f"   [ERREUR] Erreur de parsing JSON de la réponse Gemini: {e}")
+            logger.error(f"Gemini output parsing failed: {response.text}")
+            return places
+            
+        if not isinstance(results, list):
+            results = [results]
+            
+        print(f"\n   [OK] {len(results)} fiches extraites par Gemini")
+        
+        for details in results:
+            if not isinstance(details, dict): continue
+            
+            nom = details.get("nom")
+            if not nom: continue
+            
+            nom_clean = nom.strip()
+            if nom_clean.lower() not in seen_names:
+                seen_names.add(nom_clean.lower())
                 
-                while scroll_attempts < max_scrolls:
-                    # Compter les résultats visibles
-                    items = await feed.query_selector_all(':scope > div > div > a')
-                    if not items:
-                        items = await feed.query_selector_all('[jsaction*="mouseover:pane"]')
-                    visible_count = len(items)
-                    print(f"   [Scroll] {visible_count} resultats charges (scroll {scroll_attempts + 1}/{max_scrolls})")
+                try: details["rating"] = float(details.get("rating") or 0)
+                except: details["rating"] = 0.0
+                
+                try: details["nb_avis"] = int(details.get("nb_avis") or 0)
+                except: details["nb_avis"] = 0
+                
+                details["nom"] = nom_clean
+                details["mot_cle"] = keyword
+                details["ville"] = city
+                
+                places.append(details)
+                
+                site = details.get("site_web")
+                rating = details.get("rating", "?")
+                nb_avis = details.get("nb_avis", 0)
+                status = f"OK] {nom_clean} | {site}" if site else f"--] {nom_clean} | PAS DE SITE"
+                print(f"   [{status} | {rating}/5 | {nb_avis} avis")
+                
+    except Exception as e:
+        logger.error(f"Erreur globale Gemini Maps: {e}")
+        print(f"   [ERREUR] Erreur globale Gemini : {e}")
 
-                    if visible_count >= limit:
-                        print(f"   [Scroll] Limite {limit} atteinte, arrêt du scroll.")
-                        break
-                    
-                    # Détecter la fin de la liste (marqueur Google Maps)
-                    end_marker = await feed.query_selector('p.fontBodyMedium span')
-                    if end_marker:
-                        end_text = (await end_marker.inner_text()).strip()
-                        if "fin de la liste" in end_text.lower() or "you've reached" in end_text.lower():
-                            print(f"   [Scroll] Fin de liste détectée après {visible_count} résultats.")
-                            break
-                    
-                    # Détecter si le nombre ne change plus
-                    if visible_count == prev_count:
-                        no_change_streak += 1
-                        if no_change_streak >= 3:
-                            print(f"   [Scroll] Plus de nouveaux résultats ({no_change_streak} scrolls sans changement).")
-                            break
-                    else:
-                        no_change_streak = 0
-                    
-                    prev_count = visible_count
-                    # Scroller le panneau gauche (pas la carte)
-                    await feed.evaluate('el => el.scrollTop = el.scrollHeight')
-                    await page.wait_for_timeout(2000)
-                    scroll_attempts += 1
+    return places
 
-            # 4. Recuperer la liste de toutes les fiches cliquables
-            feed = await page.query_selector('[role="feed"]')
-            if not feed:
-                print("   [ERREUR] Aucun resultat trouve sur la page.")
-                await browser.close()
-                return places
 
             # 4. Recuperer les liens de toutes les fiches
             links = await feed.query_selector_all('a.hfpxzc')
@@ -457,7 +269,6 @@ async def scrape_google_maps(keyword, city, limit=20):
                     # Créer une nouvelle page pour chaque worker afin d'éviter les conflits de navigation
                     # mais réutiliser le même contexte pour garder les cookies/session
                     new_page = await context.new_page()
-                    await Stealth().apply_stealth_async(new_page)
                     await new_page.route("**/*", block_resources)
                     
                     try:
@@ -516,16 +327,14 @@ def main():
     parser.add_argument("--city", required=True, help="La ville (ex: 'Cotonou')")
     parser.add_argument("--limit", type=int, default=20, help="Nombre max de resultats (defaut: 20)")
     parser.add_argument("--min-emails", type=int, default=None, help="Nombre minimum de leads avec email requis. Le scraper continue jusqu'à trouver ce nombre")
-    parser.add_argument("--dry-run", action="store_true", help="Ne pas ecrire dans Google Sheets")
     parser.add_argument("--campaign-id", type=int, default=None, help="ID de la campagne rattachée")
     parser.add_argument("--multi-zone", action="store_true", help="Utiliser l'agent de zones pour explorer les quartiers")
     args = parser.parse_args()
 
-    # Calculer la limite finale : si min_emails est spécifié, ajouter une marge
-    # On suppose ~50% des leads ont un email, donc on demande 2x le min_emails
-    effective_limit = args.limit
-    if args.min_emails:
-        effective_limit = max(args.limit, args.min_emails * 2)
+    # Quand min_emails est spécifié, effective_limit n'est pas une limite dure :
+    # le scraper continue jusqu'à trouver min_emails emails, peu importe le nombre
+    # de leads à inspecter. effective_limit sert uniquement de taille par zone.
+    effective_limit = args.limit if args.limit else (args.min_emails * 4 if args.min_emails else 80)
     
     print("=" * 60)
     print("Scraper Google Maps - Playwright Headless")
@@ -533,8 +342,6 @@ def main():
     print(f"   Limite : {effective_limit} resultats")
     if args.min_emails:
         print(f"   Objectif emails : {args.min_emails} minimum")
-    mode_label = "DRY RUN" if args.dry_run else "PRODUCTION"
-    print(f"   Mode : {mode_label}")
     print("=" * 60)
 
     start_time = time.time()
@@ -545,19 +352,30 @@ def main():
     MAX_PAR_PASSE    = 120
     MIN_EMAILS_CIBLE = args.min_emails  # None si non spécifié
 
-    # Config + API (une seule fois)
-    config = None
-    if not args.dry_run:
-        try:
-            config = get_config()
-        except Exception as e:
-            print(f"   [WARN] Config non chargee : {e}")
+    # Config API (clés Hunter, etc.)
+    try:
+        get_config()
+    except Exception as e:
+        print(f"   [WARN] Config non chargee : {e}")
 
     date_scraping    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    valid_leads      = []
-    unwritten_leads  = []
-    seen_noms_global = set()
-    emails_count     = 0
+    valid_leads  = []
+    emails_count = 0
+
+    # Mémoire DB : charger les noms déjà connus pour ne pas re-scraper ni re-enrichir
+    if _DB_AVAILABLE:
+        try:
+            with db_get_conn() as _conn:
+                _rows = _conn.execute(
+                    "SELECT LOWER(TRIM(nom)) FROM leads_bruts WHERE nom IS NOT NULL AND nom != ''"
+                ).fetchall()
+            seen_noms_global = set(r[0] for r in _rows if r[0])
+            print(f"   [DB] Mémoire chargée : {len(seen_noms_global)} leads déjà connus (seront ignorés).")
+        except Exception as _e:
+            seen_noms_global = set()
+            print(f"   [WARN] Mémoire DB non chargée : {_e}")
+    else:
+        seen_noms_global = set()
 
     # ================================================================
     # Construction de la file de zones à explorer
@@ -605,6 +423,7 @@ def main():
         website = place.get("site_web")
         email   = None
         statut_email = None
+        _email_result = None
 
         if website:
             domain = extract_domain(website)
@@ -616,21 +435,26 @@ def main():
                 domain  = None
 
             if domain:
+                _email_result = None
                 if _EMAIL_FINDER_AVAILABLE:
-                    result = find_email_all_methods(website, verbose=True)
-                    if result['email']:
-                        email  = result['email']
-                        source = result.get('source', 'site')
-                        print(f"   [{nom}] Email trouvé ({source}) : {email}")
+                    _email_result = find_email_all_methods(website, verbose=True)  # noqa
+                    if _email_result['email']:
+                        email  = _email_result['email']
+                        source = _email_result.get('source', 'site')
+                        confidence = _email_confidence(_email_result)
+                        print(f"   [{nom}] Email trouvé ({source}, confiance {confidence}%) : {email}")
                 elif website:
                     email = search_email_on_website(website)
                     if email:
                         print(f"   [{nom}] Email page web (legacy) : {email}")
 
+        email_source_info = None
         if email:
             statut_email = verify_email_mailcheck(email)
             if statut_email != "valid":
                 print(f"   [{nom}] Email {email} -> statut: {statut_email}")
+            if _email_result and _email_result.get('email'):
+                email_source_info = f"{_email_result.get('source','?')}|conf:{_email_confidence(_email_result)}"
 
         telephone = place.get('telephone', '')
         if not telephone and website:
@@ -649,9 +473,10 @@ def main():
             'site_web':     website or '',
             'telephone':    telephone,
             'rating':       place.get('rating', ''),
-            'nb_avis':      place.get('nb_avis', ''),
+            'nb_avis':      int(place.get('nb_avis') or 0),
             'email':        email or '',
             'statut_email': statut_email or '',
+            'email_source': email_source_info or '',
             'date_scraping': date_scraping,
             'mot_cle':      args.keyword,
             'ville':        args.city,
@@ -689,8 +514,8 @@ def main():
         print(f"{'='*60}")
 
         try:
-            batch_places = asyncio.run(
-                scrape_google_maps(args.keyword, zone, limit_zone)
+            batch_places = 
+                scrape_google_maps(args.keyword, zone, limit_zone, known_names=seen_noms_global
             )
         except Exception as e:
             print(f"   [ERREUR] Scraping zone '{zone}' : {e}")
@@ -721,7 +546,6 @@ def main():
                 emails_count += 1
 
             valid_leads.append(lead)
-            unwritten_leads.append(lead)
 
             # SQLite immédiat
             if _DB_AVAILABLE:
@@ -730,21 +554,45 @@ def main():
                 except Exception as e:
                     logger.error(f"SQLite insert_lead({lead['nom']}): {e}")
 
-            # Sheets par lots de 5
-            if not args.dry_run and len(unwritten_leads) >= 5:
-                write_leads_to_sheets(unwritten_leads)
-                unwritten_leads = []
-
             if MIN_EMAILS_CIBLE:
                 print(f"   [PROGRESSION] emails={emails_count}/{MIN_EMAILS_CIBLE}  leads={len(valid_leads)} (total: {len(valid_leads)})")
             else:
                 print(f"   [PROGRESSION] leads={len(valid_leads)}/{effective_limit} (total: {len(valid_leads)})")
 
-        time.sleep(2)
+        # Si la file est épuisée mais l'objectif n'est pas atteint,
+        # ajouter automatiquement des zones de repli (évite l'arrêt prématuré
+        # quand la zone principale contenait surtout des leads déjà connus)
+        if not zones_queue and not _objectif_atteint() and not args.multi_zone:
+            _fallbacks = [
+                f"{args.city} centre",
+                f"{args.city} nord", f"{args.city} sud",
+                f"{args.city} est",  f"{args.city} ouest",
+                f"{args.city} 1er arrondissement", f"{args.city} 2ème arrondissement",
+                f"{args.city} 3ème arrondissement", f"{args.city} 4ème arrondissement",
+                f"{args.city} 5ème arrondissement", f"{args.city} 6ème arrondissement",
+                f"{args.city} 7ème arrondissement", f"{args.city} 8ème arrondissement",
+                f"{args.city} 9ème arrondissement", f"{args.city} 10ème arrondissement",
+                f"{args.city} 11ème arrondissement", f"{args.city} 12ème arrondissement",
+                f"{args.city} 13ème arrondissement", f"{args.city} 14ème arrondissement",
+                f"{args.city} 15ème arrondissement", f"{args.city} 16ème arrondissement",
+                f"{args.city} 17ème arrondissement", f"{args.city} 18ème arrondissement",
+                f"{args.city} 19ème arrondissement", f"{args.city} 20ème arrondissement",
+            ]
+            _new_zones = [z for z in _fallbacks if z.lower() not in zones_used]
+            if _new_zones:
+                if MIN_EMAILS_CIBLE:
+                    manque = MIN_EMAILS_CIBLE - emails_count
+                    print(f"\n   [AUTO-ZONE] Objectif emails non atteint ({emails_count}/{MIN_EMAILS_CIBLE}, "
+                          f"encore {manque} email(s) à trouver). "
+                          f"Ajout de {len(_new_zones)} zones de repli...")
+                else:
+                    manque = effective_limit - len(valid_leads)
+                    print(f"\n   [AUTO-ZONE] Objectif non atteint ({len(valid_leads)}/{effective_limit}, "
+                          f"encore {manque} lead(s) à trouver). "
+                          f"Ajout de {len(_new_zones)} zones de repli...")
+                zones_queue.extend(_new_zones)
 
-    # Écriture des derniers leads en buffer
-    if not args.dry_run and unwritten_leads:
-        write_leads_to_sheets(unwritten_leads)
+        time.sleep(2)
 
     # ================================================================
     # RÉSUMÉ FINAL
@@ -778,8 +626,6 @@ def main():
     print(f"   Passes effectuées: {passe_num}")
     print(f"   Durée            : {elapsed:.1f}s")
     print(f"   RAM utilisée     : {mem_mb:.1f} Mo")
-    if args.dry_run:
-        print(f"   Mode DRY RUN — rien écrit.")
     print("=" * 60)
 
 

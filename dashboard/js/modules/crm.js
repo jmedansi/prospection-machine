@@ -100,7 +100,7 @@ function viewCurrentAudit() {
     const e = _emailsData[_currentIndex];
     const lien = e.lien_rapport;
     if (lien) window.open(lien, '_blank');
-    else alert('Aucun rapport d\'audit disponible pour ce prospect');
+    else showToast("Aucun rapport d'audit disponible pour ce prospect", 'info');
 }
 
 function openEditEmail(index) {
@@ -126,7 +126,7 @@ async function openCRMEdit(emailId) {
     try {
         const r = await fetch('/api/emails/' + emailId);
         const e = await r.json();
-        if (e.error) return alert(e.error);
+        if (e.error) { showToast(e.error, 'error'); return; }
 
         if (typeof setText === 'function') {
             setText('crm-prospect-nom', e.prospect_nom || '—');
@@ -164,7 +164,7 @@ async function openCRMEdit(emailId) {
         if (typeof openModal === 'function') openModal('modal-crm-details');
     } catch (err) {
         console.error("openCRMEdit error:", err);
-        alert("Erreur lors du chargement des détails.");
+        showToast("Erreur lors du chargement des détails", 'error');
     }
 }
 
@@ -180,7 +180,7 @@ async function saveCRMNotes() {
         if (r.ok) { 
             if (typeof showToast === 'function') showToast('✅ Note sauvegardée');
             if (typeof loadCRM === 'function') loadCRM();
-        } else alert("Erreur de sauvegarde note.");
+        } else showToast("Erreur de sauvegarde de la note", 'error');
     } catch (e) { console.error(e); }
 }
 
@@ -207,7 +207,7 @@ async function saveEmail() {
             loadEmails(); 
             if (typeof loadLeads === 'function') loadLeads(); 
         }
-        else alert("Erreur de sauvegarde email.");
+        else showToast("Erreur de sauvegarde de l'email", 'error');
     } catch (e) { console.error(e); }
 }
 
@@ -301,13 +301,13 @@ async function sendApproved() {
             if (btn) { btn.textContent = 'Envoyer approuvés'; btn.disabled = false; }
         }
     } catch (e) {
-        alert('❌ Erreur réseau: ' + e.message);
+        showToast('Erreur réseau: ' + e.message, 'error');
         if (btn) { btn.textContent = 'Envoyer approuvés'; btn.disabled = false; }
     }
 }
 
 async function approveAll() {
-    if (!confirm('Approuver tous les emails ?')) return;
+    if (!await showConfirm('Approuver tous les emails générés pour envoi ?', { title: 'Approuver tout', confirmText: 'Approuver' })) return;
     const promises = _emailsData.map(e => fetch('/api/email/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -377,6 +377,24 @@ async function loadTracking() {
 
 let _activeCRMFilter = 'tous';
 
+async function loadCRMCounts() {
+    try {
+        const url = '/api/crm/counts' + _globalFilters();
+        const r = await fetch(url);
+        const d = await r.json();
+        if (d.error) return;
+        
+        const filters = ['tous', 'ouverts', 'cliques', 'repondus', 'positifs', 'bounces', 'spam'];
+        filters.forEach(f => {
+            const btn = document.querySelector(`#crm-filters button[onclick*="'${f}'"]`);
+            if (btn) {
+                const label = btn.textContent.replace(/\s*\(\d+\)$/, '');
+                btn.textContent = `${label} (${d[f] || 0})`;
+            }
+        });
+    } catch (e) { console.error('loadCRMCounts:', e); }
+}
+
 function setCRMFilter(f, el) {
     _activeCRMFilter = f;
     const parent = document.getElementById('crm-filters');
@@ -385,6 +403,7 @@ function setCRMFilter(f, el) {
     }
     if (el) el.classList.add('active');
     loadCRM();
+    loadCRMCounts();
 }
 
 // --- Fonctions de Pipeline CRM ---
@@ -422,4 +441,47 @@ async function loadCRM() {
         }).join('');
         setInner('tbody-crm', rows || '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--ink3)">Aucun envoi à suivre pour le moment</td></tr>');
     } catch (e) { console.error('loadCRM error:', e); }
+}
+
+async function loadRoiData() {
+    try {
+        const [funnelRes, nichesRes] = await Promise.all([
+            fetch('/api/stats/funnel'),
+            fetch('/api/stats/niches')
+        ]);
+        
+        const funnel = await funnelRes.json();
+        const niches = await nichesRes.json();
+        
+        const sent = funnel.total_sent || 0;
+        const clicked = funnel.total_clicked || 0;
+        const replied = funnel.total_replied || 0;
+        const rdv = funnel.total_rdv || 0;
+        
+        const ctr = sent > 0 ? ((clicked / sent) * 100).toFixed(1) : 0;
+        const replyRate = sent > 0 ? ((replied / sent) * 100).toFixed(1) : 0;
+        
+        setInner('roi-ctr', ctr + '%');
+        setInner('roi-reply', replyRate + '%');
+        setInner('roi-rdv', rdv);
+        setInner('roi-sent', sent);
+        
+        setInner('roi-scraped', funnel.total_scraped || 0);
+        setInner('roi-audited', funnel.total_audited || 0);
+        setInner('roi-sent2', sent);
+        setInner('roi-clicked', clicked);
+        setInner('roi-replied', replied);
+        
+        const nicheRows = niches.slice(0, 10).map(n => `
+            <tr>
+                <td>${n.category || '—'}</td>
+                <td>${n.ville || '—'}</td>
+                <td>${n.envois}</td>
+                <td>${n.clics}</td>
+                <td style="font-weight:600;color:var(--accent)">${(n.taux_clic || 0).toFixed(1)}%</td>
+            </tr>
+        `).join('');
+        setInner('tbody-niches', nicheRows || '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--ink3)">Aucune donnée</td></tr>');
+        
+    } catch (e) { console.error('loadRoiData error:', e); }
 }

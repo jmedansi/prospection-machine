@@ -21,7 +21,7 @@ async function auditLead(nom) {
         const r = await fetch('/api/audit/launch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lead_ids: [nom] })
+            body: JSON.stringify({ lead_names: [nom] })
         });
         const d = await r.json();
         if (d.error) {
@@ -49,19 +49,19 @@ async function auditLead(nom) {
 async function auditSelected() {
     if (typeof getSelectedLeadNoms !== 'function') return;
     const noms = getSelectedLeadNoms();
-    if (!noms.length) return alert('Sélectionner au moins un lead');
+    if (!noms.length) { showToast('Sélectionner au moins un lead', 'warning'); return; }
     await auditMultiple(noms);
 }
 
 function auditAllPending() {
     if (!_allLeads || !_allLeads.length) return;
     const pending = _allLeads.filter(l => l.statut === 'en_attente').map(l => l.nom);
-    if (!pending.length) return alert('Aucun lead en attente');
+    if (!pending.length) { showToast('Aucun lead en attente', 'info'); return; }
     auditMultiple(pending);
 }
 
 async function auditMultiple(noms) {
-    if (_auditInterval) return alert("Un audit est déjà en cours.");
+    if (_auditInterval) { showToast('Un audit est déjà en cours', 'warning'); return; }
     showToast(`Lancement de l'audit pour ${noms.length} lead(s)...`, 'info');
     const globalProgress = document.getElementById('sidebar-audit');
     if (globalProgress) {
@@ -73,7 +73,7 @@ async function auditMultiple(noms) {
         const r = await fetch('/api/audit/launch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lead_ids: noms })
+            body: JSON.stringify({ lead_names: noms })
         });
         const d = await r.json();
         if (d.error) {

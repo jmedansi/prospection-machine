@@ -36,3 +36,20 @@ python run_machine.py --keyword "VOTRE_METIER" --city "VOTRE_VILLE" --limit 10
 
 ---
 *Machine de prospection développée avec Antigravity.*
+
+
+## Relances Automatiques (Suivi & Relance sans action manuelle)
+
+Un service dédié lance automatiquement le worker de relances toutes les heures, sans intervention manuelle.
+
+### Lancer le service de relances
+
+```powershell
+python -m workers.sequence_service
+```
+
+Le service tourne en tâche de fond, relance le worker de relances planifiées chaque heure, et redémarre en cas d'erreur.
+
+**Astuce :** Ajoutez cette commande dans `start_machine.bat` pour démarrer la relance automatique au boot.
+
+Les logs sont écrits dans `sequence_service.log`.

@@ -65,9 +65,9 @@ async function saveSettings() {
             body: JSON.stringify(data)
         });
         const d = await r.json();
-        if (d.success) alert('✅ Paramètres sauvegardés (Interface)');
-        else alert('❌ Erreur');
-    } catch (e) { alert('❌ Erreur réseau'); }
+        if (d.success) showToast('Paramètres sauvegardés', 'success');
+        else showToast('Erreur lors de la sauvegarde', 'error');
+    } catch (e) { showToast('Erreur réseau', 'error'); }
 }
 
 async function saveIdentity() {
@@ -96,5 +96,5 @@ async function saveIdentity() {
 }
 
 async function testConnections() {
-    alert('Vérification des APIs (Hunter, Groq, Brevo)... \n(Cette fonction sera implémentée en backend prochainement)');
+    showToast('Vérification des APIs — fonctionnalité à venir', 'info');
 }
