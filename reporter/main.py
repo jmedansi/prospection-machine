@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 from types import SimpleNamespace
 from jinja2 import Environment, FileSystemLoader
-from playwright.async_api import async_playwright
+from core.browser import cdp_tab_headless as cdp_headless, cdp_tab_headless_async as cdp_headless_async
 
 # Configuration des imports pour trouver config_manager.py au root
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +26,24 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+def safe_float(value, default=0.0):
+    try:
+        if value is None or value == "":
+            return float(default)
+        return float(value)
+    except Exception:
+        return float(default)
+
+
+def safe_int(value, default=0):
+    try:
+        if value is None or value == "":
+            return int(default)
+        return int(float(value))
+    except Exception:
+        return int(default)
 
 # Forcer l'encodage UTF-8 pour Windows
 if sys.stdout.encoding.lower() != 'utf-8':
@@ -166,11 +184,16 @@ def detect_sector(category: str) -> str:
 
 def get_status(value, metric: str, benchmarks: dict) -> dict:
     bench = benchmarks.get(metric)
-    if not bench or value is None: 
+    # Treat missing or empty values as unavailable
+    if not bench or value is None or value == "":
         return {"statut": "⚠️ Donnée indisponible", "couleur": "#6b7280", "ecart": "Scan incomplet"}
-    
+
     inverted = ["lcp_ms", "page_size_kb", "render_blocking_scripts", "images_without_alt"]
-    val = float(value)
+    try:
+        val = float(value)
+    except Exception:
+        return {"statut": "⚠️ Donnée indisponible", "couleur": "#6b7280", "ecart": "Scan incomplet"}
+
     if metric in inverted:
         if val <= bench["bon"]:
             statut, couleur = "✅ Excellent", "#16a34a"
@@ -260,25 +283,24 @@ def enrich_data(audit_data: dict) -> dict:
     
     # GMB
     rating_raw = audit_data.get("rating")
-    rating = float(rating_raw) if rating_raw is not None else 0.0
-    
+    rating = safe_float(rating_raw, 0.0)
+
     data["rating"] = rating
-    data["gmb_score"] = int(rating / 5 * 100) if rating is not None else 0
-    data["grade_gmb"] = "A" if rating and rating >= 4.7 else "B" if rating and rating >= 4.2 else "C" if rating and rating >= 3.5 else "D"
-    
+    data["gmb_score"] = int(rating / 5 * 100)
+    data["grade_gmb"] = "A" if rating >= 4.7 else "B" if rating >= 4.2 else "C" if rating >= 3.5 else "D"
+
     # UX
     m_score_val = m_score if m_score is not None else 0
     data["grade_ux"] = "A" if m_score_val >= 85 else "B" if m_score_val >= 65 else "C" if m_score_val >= 45 else "D"
-    
-    # Valeurs brutes pour le template
-    data["lcp_ms"] = int(float(audit_data.get("lcp_ms", 3000)))
-    data["fcp_ms"] = int(float(audit_data.get("fcp_ms", data["lcp_ms"] * 0.6)))
-    data["cls"] = float(audit_data.get("cls", 0.14))
-    data["render_blocking_scripts"] = int(audit_data.get("render_blocking_scripts", 0))
-    data["page_size_kb"] = int(audit_data.get("page_size_kb", 1500))
-    data["meta_description_extract"] = audit_data.get("meta_description", "")
-    data["title_length"] = int(audit_data.get("title_length", 0))
 
+    # Valeurs brutes pour le template
+    data["lcp_ms"] = safe_int(audit_data.get("lcp_ms"), 3000)
+    data["fcp_ms"] = safe_int(audit_data.get("fcp_ms"), data["lcp_ms"] * 0.6)
+    data["cls"] = safe_float(audit_data.get("cls"), 0.14)
+    data["render_blocking_scripts"] = safe_int(audit_data.get("render_blocking_scripts"), 0)
+    data["page_size_kb"] = safe_int(audit_data.get("page_size_kb"), 1500)
+    data["meta_description_extract"] = audit_data.get("meta_description", "")
+    data["title_length"] = safe_int(audit_data.get("title_length"), 0)
     # --- Logique de Dynamisation Avancée (User Request) ---
     def get_color_score(v):
         if v >= 70: return "#16a34a" # Vert
@@ -343,8 +365,8 @@ def enrich_data(audit_data: dict) -> dict:
                 "Performance — La vitesse de chargement affecte aussi votre classement Google."
             ]
         else:  # audit ou fallback
-            m_score_val = int(float(audit_data.get("mobile_score", 0)))
-            lcp_val = int(float(audit_data.get("lcp_ms", 3000)))
+            m_score_val = safe_int(audit_data.get("mobile_score"), 0)
+            lcp_val = safe_int(audit_data.get("lcp_ms"), 3000)
             thomas_opps = [
                 f"Performance Mobile — Score {m_score_val}/100, vos visiteurs repartent sans voir votre offre.",
                 f"Vitesse Chargement — LCP de {lcp_val}ms, au-dela des 3 secondes recommandees.",
@@ -355,10 +377,10 @@ def enrich_data(audit_data: dict) -> dict:
     data["arguments"] = thomas_opps[:3]
 
     # Score Priorité & Urgence
-    score = float(audit_data.get("score_priorite", 5))
+    score = safe_float(audit_data.get("score_priorite"), 5)
     # Si non fourni, on peut l'estimer grossièrement par l'inverse du mobile_score
     if not audit_data.get("score_priorite"):
-        m_score_calc = int(float(audit_data.get("mobile_score", 0)))
+        m_score_calc = safe_int(audit_data.get("mobile_score"), 0)
         score = max(1, 10 - (m_score_calc // 10))
     
     data["score_priorite"] = score
@@ -408,16 +430,16 @@ def enrich_data(audit_data: dict) -> dict:
         data["verdict"] = "Bonne santé : Votre site dispose d'une base technique solide, quelques optimisations légères suffiront."
 
     # Métriques détaillées
-    data["lcp_ms"] = int(float(audit_data.get("lcp_ms", 3000)))
+    data["lcp_ms"] = safe_int(audit_data.get("lcp_ms"), 3000)
     data["couleur_lcp"] = "#16a34a" if data["lcp_ms"] < 2500 else "#d97706" if data["lcp_ms"] < 4000 else "#dc2626"
     
-    data["fcp_ms"] = int(float(audit_data.get("fcp_ms", 1800)))
+    data["fcp_ms"] = safe_int(audit_data.get("fcp_ms"), 1800)
     data["couleur_fcp"] = "#16a34a" if data["fcp_ms"] < 1800 else "#d97706" if data["fcp_ms"] < 3000 else "#dc2626"
     
-    data["cls"] = float(audit_data.get("cls", 0.1))
+    data["cls"] = safe_float(audit_data.get("cls"), 0.1)
     data["couleur_cls"] = "#16a34a" if data["cls"] < 0.1 else "#d97706" if data["cls"] < 0.25 else "#dc2626"
     
-    data["render_blocking_scripts"] = int(audit_data.get("render_blocking_scripts", 0))
+    data["render_blocking_scripts"] = safe_int(audit_data.get("render_blocking_scripts"), 0)
     # Merge render_blocking_scripts into existing metrics SimpleNamespace
     data["metrics"].render_blocking_scripts = SimpleNamespace(
         couleur="#16a34a" if data["render_blocking_scripts"] == 0 else "#d97706" if data["render_blocking_scripts"] < 3 else "#dc2626"
@@ -503,40 +525,37 @@ async def generate_and_publish_report(audit_data: Dict[str, Any]) -> str:
     desktop_path = audit_data.get("screenshot_desktop", "") or enriched.get("screenshot_desktop", "")
     mobile_path = audit_data.get("screenshot_mobile", "") or enriched.get("screenshot_mobile", "")
     
+    # Définir reports_dir ici pour qu'il soit toujours dans le scope
+    reports_dir = os.path.join(os.path.dirname(__file__), "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    
     if not desktop_path and site_url and enriched.get("has_site"):
         try:
             import asyncio
             from playwright.async_api import async_playwright
-            reports_dir = os.path.join(os.path.dirname(__file__), "reports")
-            os.makedirs(reports_dir, exist_ok=True)
             
             async def capture_screenshots_for_report():
-                async with async_playwright() as p:
-                    browser = await p.chromium.launch(headless=True)
-                    
+                async with cdp_headless_async() as page:
                     # Screenshot Desktop
                     desktop_path = os.path.join(reports_dir, f"desktop_{lead_id}.png")
-                    page = await browser.new_page(viewport={'width': 1280, 'height': 800})
+                    await page.set_viewport_size({'width': 1280, 'height': 800})
                     try:
                         await page.goto(site_url, timeout=15000, wait_until="networkidle")
                         await page.screenshot(path=desktop_path, full_page=False)
                     except Exception as e:
                         logger.warning(f"Desktop screenshot failed: {e}")
                         desktop_path = None
-                    await page.close()
                     
                     # Screenshot Mobile
                     mobile_path = os.path.join(reports_dir, f"mobile_{lead_id}.png")
-                    page = await browser.new_page(viewport={'width': 375, 'height': 812})
+                    await page.set_viewport_size({'width': 375, 'height': 812})
                     try:
                         await page.goto(site_url, timeout=15000, wait_until="networkidle")
                         await page.screenshot(path=mobile_path, full_page=False)
                     except Exception as e:
                         logger.warning(f"Mobile screenshot failed: {e}")
                         mobile_path = None
-                    await page.close()
                     
-                    await browser.close()
                     return desktop_path, mobile_path
             
             desktop_path, mobile_path = await capture_screenshots_for_report()
@@ -631,15 +650,13 @@ async def generate_and_publish_report(audit_data: Dict[str, Any]) -> str:
 
 # --- GÉNÉRATION PDF ---
 async def capture_screenshot(url: str, output_path: str):
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page(viewport={'width': 1280, 'height': 720})
-        try:
+    try:
+        async with cdp_headless_async(viewport={'width': 1280, 'height': 720}) as page:
             await page.goto(url, timeout=30000, wait_until="networkidle")
             await page.screenshot(path=output_path)
             return True
-        except: return False
-        finally: await browser.close()
+    except:
+        return False
 
 async def generate_pdf(audit_data: Dict[str, Any], output_pdf_path: str):
     enriched = enrich_data(audit_data)
@@ -664,13 +681,10 @@ async def generate_pdf(audit_data: Dict[str, Any], output_pdf_path: str):
     enriched["screenshot_path"] = img_tag
     html_content = template.render(**enriched)
     
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+    async with cdp_headless_async() as page:
         await page.set_content(html_content)
         await asyncio.sleep(1)
         await page.pdf(path=output_pdf_path, format="A4", print_background=True)
-        await browser.close()
     return True
 
 async def main_execute(limit=None):

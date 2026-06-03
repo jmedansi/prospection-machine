@@ -1,0 +1,283 @@
+<!-- Sources Header with Autonomous Controls -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:15px">
+    <div>
+        <h2 style="margin:0;font-size:1.1rem;font-weight:700">Sources</h2>
+        <p style="margin:4px 0 0;font-size:12px;color:var(--ink3)">Gérez vos flux de leads et automatisez le remplissage
+            du stock.</p>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <!-- Maps Toggle -->
+        <div class="source-config-row">
+            <span style="font-size:11px;font-weight:700;color:var(--ink2)">MAPS</span>
+            <label class="switch">
+                <input type="checkbox" id="src-toggle-maps-auto" onchange="sourcesToggleAuto('maps', this.checked)">
+                <span class="slider round"></span>
+            </label>
+            <input type="number" id="src-quota-maps" class="source-quota-input" value="50"
+                onchange="sourcesSaveQuota('maps', this.value)" title="Quota journalier Maps">
+        </div>
+
+        <!-- Ads Toggle -->
+        <div class="source-config-row">
+            <span style="font-size:11px;font-weight:700;color:var(--ink2)">ADS</span>
+            <label class="switch">
+                <input type="checkbox" id="src-toggle-ads-auto" onchange="sourcesToggleAuto('ads', this.checked)">
+                <span class="slider round ads"></span>
+            </label>
+            <input type="number" id="src-quota-ads" class="source-quota-input" value="20"
+                onchange="sourcesSaveQuota('ads', this.value)" title="Quota journalier Google Ads">
+        </div>
+
+        <!-- E-com Toggle -->
+        <div class="source-config-row">
+            <span style="font-size:11px;font-weight:700;color:var(--ink2)">ECOM</span>
+            <label class="switch">
+                <input type="checkbox" id="src-toggle-ecom-auto" onchange="sourcesToggleAuto('ecom', this.checked)">
+                <span class="slider round tech"></span>
+            </label>
+            <input type="number" id="src-quota-ecom" class="source-quota-input" value="20"
+                onchange="sourcesSaveQuota('ecom', this.value)" title="Quota journalier E-commerce">
+        </div>
+    </div>
+</div>
+
+
+<!-- Grille de cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:2rem">
+
+    <!-- Maps -->
+    <div class="card src-card" onclick="sourcesOpenPanel('maps')"
+        style="cursor:pointer;padding:18px 20px;transition:box-shadow .15s,transform .15s">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:1.6rem">🗺</div>
+            <div style="display:flex;align-items:center;gap:5px">
+                <div id="src-dot-maps" style="width:7px;height:7px;border-radius:50%;background:#9ca3af"></div>
+                <span id="src-badge-maps" style="font-size:10px;color:var(--ink3);font-weight:600">Inactif</span>
+            </div>
+        </div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:3px">Google Maps</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:10px">PME locales via Google Maps & GMB</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="src-count-maps" style="font-size:11px;font-weight:700;color:#4285f4">— leads</span>
+            <span style="font-size:11px;color:var(--ink3)">Ouvrir →</span>
+        </div>
+    </div>
+
+    <!-- Google Ads -->
+    <div class="card src-card" onclick="sourcesOpenPanel('ads')"
+        style="cursor:pointer;padding:18px 20px;transition:box-shadow .15s,transform .15s">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:1.6rem">📢</div>
+            <div style="display:flex;align-items:center;gap:5px">
+                <div id="src-dot-ads" style="width:7px;height:7px;border-radius:50%;background:#9ca3af"></div>
+                <span id="src-badge-ads" style="font-size:10px;color:var(--ink3);font-weight:600">Inactif</span>
+            </div>
+        </div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:3px">Google Ads</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:10px">Annonceurs actifs sur Google</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="src-count-ads" style="font-size:11px;font-weight:700;color:#f97316">— leads</span>
+            <span style="font-size:11px;color:var(--ink3)">Ouvrir →</span>
+        </div>
+    </div>
+
+    <!-- FB Ads -->
+    <div class="card src-card" onclick="sourcesOpenPanel('fb_ads')"
+        style="cursor:pointer;padding:18px 20px;transition:box-shadow .15s,transform .15s">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:1.6rem">📘</div>
+            <div style="display:flex;align-items:center;gap:5px">
+                <div id="src-dot-fb_ads" style="width:7px;height:7px;border-radius:50%;background:#9ca3af"></div>
+                <span id="src-badge-fb_ads" style="font-size:10px;color:var(--ink3);font-weight:600">Inactif</span>
+            </div>
+        </div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:3px">Facebook Ads</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:10px">Annonceurs actifs sur Meta</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="src-count-fb_ads" style="font-size:11px;font-weight:700;color:#1877f2">— leads</span>
+            <span style="font-size:11px;color:var(--ink3)">Ouvrir →</span>
+        </div>
+    </div>
+
+    <!-- Tech / E-com -->
+    <div class="card src-card" onclick="sourcesOpenPanel('tech')"
+        style="cursor:pointer;padding:18px 20px;transition:box-shadow .15s,transform .15s">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:1.6rem">⚙️</div>
+            <div style="display:flex;align-items:center;gap:5px">
+                <div id="src-dot-tech" style="width:7px;height:7px;border-radius:50%;background:#9ca3af"></div>
+                <span id="src-badge-tech" style="font-size:10px;color:var(--ink3);font-weight:600">Inactif</span>
+            </div>
+        </div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:3px">Tech / E-com</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:10px">Sites e-commerce et stacks ciblées</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="src-count-tech" style="font-size:11px;font-weight:700;color:#8b5cf6">— leads</span>
+            <span style="font-size:11px;color:var(--ink3)">Ouvrir →</span>
+        </div>
+    </div>
+
+    <!-- Jobs -->
+    <div class="card src-card" onclick="sourcesOpenPanel('jobs')"
+        style="cursor:pointer;padding:18px 20px;transition:box-shadow .15s,transform .15s">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:1.6rem">💼</div>
+            <div style="display:flex;align-items:center;gap:5px">
+                <div id="src-dot-jobs" style="width:7px;height:7px;border-radius:50%;background:#9ca3af"></div>
+                <span id="src-badge-jobs" style="font-size:10px;color:var(--ink3);font-weight:600">Inactif</span>
+            </div>
+        </div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:3px">Offres d'emploi</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:10px">Entreprises qui recrutent</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="src-count-jobs" style="font-size:11px;font-weight:700;color:#06b6d4">— leads</span>
+            <span style="font-size:11px;color:var(--ink3)">Ouvrir →</span>
+        </div>
+    </div>
+
+    <!-- BODACC -->
+    <div class="card src-card" onclick="sourcesOpenPanel('bodacc')"
+        style="cursor:pointer;padding:18px 20px;transition:box-shadow .15s,transform .15s">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:1.6rem">🏛</div>
+            <div style="display:flex;align-items:center;gap:5px">
+                <div id="src-dot-bodacc" style="width:7px;height:7px;border-radius:50%;background:#9ca3af"></div>
+                <span id="src-badge-bodacc" style="font-size:10px;color:var(--ink3);font-weight:600">Auto 7h</span>
+            </div>
+        </div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:3px">BODACC</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:10px">Nouvelles nominations de dirigeants</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="src-count-bodacc" style="font-size:11px;font-weight:700;color:#10b981">— leads</span>
+            <span style="font-size:11px;color:var(--ink3)">Ouvrir →</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─── Récapitulatif des campagnes lancées ─── -->
+<div class="card" style="padding:0;overflow:hidden">
+    <div
+        style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div>
+            <h3 style="margin:0;font-size:.9rem;font-weight:700">Dernières campagnes lancées</h3>
+            <p style="margin:2px 0 0;font-size:11px;color:var(--ink3)">Historique des scrapings par ID décroissant</p>
+        </div>
+        <button class="btn sm bg2" onclick="sourcesLoadCampaigns()">Actualiser</button>
+    </div>
+    <div class="table-scroll">
+        <table class="campaign-table" style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+                <tr style="background:var(--surface2);text-align:left">
+                    <th style="padding:12px 20px;width:60px">ID</th>
+                    <th style="padding:12px 20px">Nom de la campagne</th>
+                    <th style="padding:12px 20px">Source</th>
+                    <th style="padding:12px 20px">Date</th>
+                    <th style="padding:12px 20px">Leads</th>
+                    <th style="padding:12px 20px">Statut</th>
+                    <th style="padding:12px 20px;text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="sources-campaigns-tbody">
+                <tr>
+                    <td colspan="7" style="padding:40px;text-align:center;color:var(--ink3)">
+                        Chargement des campagnes...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ─── Panneau slide-in (partagé entre toutes les sources) ─────────────────── -->
+<div id="sources-panel-overlay" onclick="sourcesClosePanel()"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:299;transition:opacity .2s">
+</div>
+
+<div id="sources-panel" style="position:fixed;top:0;right:0;height:100vh;width:420px;max-width:96vw;
+            background:var(--surface);border-left:1px solid var(--border);
+            box-shadow:-4px 0 24px rgba(0,0,0,.12);z-index:300;
+            transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+            display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Header panneau -->
+    <div
+        style="display:flex;align-items:center;justify-content:space-between;padding:20px 22px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <div>
+            <div id="sources-panel-title" style="font-weight:700;font-size:1rem">Source</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:2px">Configurer et lancer le scraper</div>
+        </div>
+        <button onclick="sourcesClosePanel()"
+            style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--ink3);line-height:1;padding:4px">✕</button>
+    </div>
+
+    <!-- Contenu dynamique -->
+    <div id="sources-panel-content" style="flex:1;overflow-y:auto;padding:20px 22px">
+        <!-- Rempli par sources.js -->
+    </div>
+
+</div>
+
+<!-- Modal Détails Campagne -->
+<div id="campaign-modal-overlay" onclick="closeCampaignModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;transition:opacity .2s"></div>
+<div id="campaign-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:var(--surface);border-radius:12px;width:600px;max-width:90vw;max-height:85vh;box-shadow:0 10px 40px rgba(0,0,0,.2);z-index:1000;overflow:hidden;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px;border-bottom:1px solid var(--border);">
+        <h3 id="campaign-modal-title" style="margin:0;font-size:1.1rem;font-weight:700">Détails de la campagne</h3>
+        <button onclick="closeCampaignModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--ink3)">✕</button>
+    </div>
+    <div id="campaign-modal-content" style="padding:20px;overflow-y:auto;flex:1;">
+        <!-- Rempli par JS -->
+    </div>
+</div>
+
+<style>
+    /* Panneau ouvert */
+    #sources-panel.open {
+        transform: translateX(0);
+    }
+
+    /* Formulaire dans le panneau */
+    .src-form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .src-form-row label {
+        font-size: 11px;
+        color: var(--ink3);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+        letter-spacing: .03em;
+    }
+
+    .src-form-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+    }
+
+    .src-log {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 11px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+        color: var(--ink2);
+        line-height: 1.5;
+    }
+
+    /* Hover card */
+    .src-card:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+        transform: translateY(-2px);
+    }
+</style>

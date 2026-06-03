@@ -11,10 +11,9 @@ import logging
 import requests
 from typing import Dict, Any, Optional
 
-from dotenv import load_dotenv
-
+from core.config import ensure_env
 # Chargement du .env (dossier parent)
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+ensure_env()
 
 # Logging vers errors.log à la racine du projet
 log_path = os.path.join(os.path.dirname(__file__), '..', 'errors.log')
@@ -89,7 +88,6 @@ def send_prospecting_email(
         acc = get_next_resend_account()
         if not acc:
             import sys
-            sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
             from config_manager import get_config
             config = get_config()
             resend_key = config.get("resend_key")
@@ -123,9 +121,11 @@ def send_prospecting_email(
     else:
         html_content = email_corps.replace("\n", "<br>")
     
+    to_emails = [e.strip() for e in prospect_email.split(',')] if ',' in prospect_email else [prospect_email]
+    
     payload = {
         "from": f"{sender_name} <onboarding@resend.dev>" if "resend.dev" in sender_email else f"{sender_name} <{sender_email}>",
-        "to": [prospect_email],
+        "to": to_emails,
         "subject": email_objet,
         "html": html_content
     }
@@ -170,7 +170,6 @@ def schedule_email_batch(lead_ids: list, scheduled_at) -> list:
     Retourne la liste des message_ids Resend (un par email réussi).
     """
     import sys, json
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from config_manager import get_config
     from database.db_manager import get_conn
 
@@ -198,7 +197,7 @@ def schedule_email_batch(lead_ids: list, scheduled_at) -> list:
     with get_conn() as conn:
         for lead_id in lead_ids:
             row = conn.execute("""
-                SELECT lb.email, lb.nom, la.email_objet, la.email_corps, la.lien_rapport, la.template_variant
+                SELECT lb.email, lb.email_2, lb.nom, la.email_objet, la.email_corps, la.lien_rapport, la.template_variant
                 FROM leads_bruts lb
                 JOIN leads_audites la ON la.lead_id = lb.id
                 WHERE lb.id = ?
@@ -218,9 +217,12 @@ def schedule_email_batch(lead_ids: list, scheduled_at) -> list:
                 logger.warning(f"schedule_email_batch: lead #{lead_id} déjà dans emails_envoyes — ignoré")
                 continue
 
+            to_emails = [e.strip() for e in row['email'].split(',')] if ',' in row['email'] else [row['email']]
+            if row['email_2'] and row['email_2'].strip():
+                to_emails.append(row['email_2'].strip())
             payload = {
                 "from":         f"{sender_name} <{sender_email}>",
-                "to":           [row['email']],
+                "to":           to_emails,
                 "subject":      row['email_objet'] or "(sans objet)",
                 "html":         row['email_corps'],
                 "scheduled_at": scheduled_at_str,
@@ -256,7 +258,6 @@ def cancel_batch(message_ids: list) -> int:
     Retourne le nombre d'annulations réussies.
     """
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from config_manager import get_config
 
     api_key = get_config().get("resend_key")
@@ -286,7 +287,6 @@ def list_scheduled_emails() -> dict:
     Retourne un dict avec la liste des emails et compteurs.
     """
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from config_manager import get_config
 
     config = get_config()
@@ -336,7 +336,6 @@ def sync_tracking() -> dict:
     Statuts Resend: sent, delivered, opened, clicked, bounced, complained
     """
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from config_manager import get_config
     from database.db_manager import get_conn
 
@@ -440,7 +439,6 @@ def check_bounces() -> dict:
     Retourne un dict avec les compteurs : checked, bounced, spam, errors
     """
     import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from config_manager import get_config
     from database.db_manager import get_conn
 
@@ -500,7 +498,6 @@ def check_bounces() -> dict:
 
 if __name__ == "__main__":
     import argparse
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
     parser = argparse.ArgumentParser(description="Resend sender - CLI")
     parser.add_argument("--lead-id", type=int, help="ID du lead dans leads_bruts")
@@ -522,7 +519,7 @@ if __name__ == "__main__":
 
     with get_conn() as conn:
         row = conn.execute("""
-            SELECT lb.email, lb.nom, la.email_objet, la.email_corps, la.lien_rapport, la.template_variant
+            SELECT lb.email, lb.email_2, lb.nom, la.email_objet, la.email_corps, la.lien_rapport, la.template_variant
             FROM leads_bruts lb
             JOIN leads_audites la ON la.lead_id = lb.id
             WHERE lb.id = ? AND la.approuve = 1
@@ -534,8 +531,12 @@ if __name__ == "__main__":
         sys.exit(1)
 
     d = dict(row)
+    # Construire la liste des destinataires (email principal + email_2 si présent)
+    emails_to_send = d['email']
+    if d.get('email_2') and d['email_2'].strip():
+        emails_to_send = f"{d['email']},{d['email_2'].strip()}"
     result = send_prospecting_email(
-        prospect_email=d['email'],
+        prospect_email=emails_to_send,
         prospect_nom=d['nom'],
         email_objet=d['email_objet'],
         email_corps=d['email_corps'],

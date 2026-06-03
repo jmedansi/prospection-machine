@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide de Référence — Dashboard Prospection B2B</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface-hover: #232733;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #2d3344;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --purple: #a855f7;
+            --cyan: #06b6d4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-title::before {
+            content: '◆';
+            color: var(--accent);
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--surface-hover);
+            color: var(--accent);
+            border-left-color: var(--accent);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem 3rem;
+            max-width: 1200px;
+        }
+
+        .section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--accent);
+            display: inline-block;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            color: #c9d1d9;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--surface);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover td {
+            background: var(--surface-hover);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-success { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-error { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+        .badge-accent { background: rgba(59, 130, 246, 0.2); color: var(--accent); }
+        .badge-purple { background: rgba(168, 85, 247, 0.2); color: var(--purple); }
+        .badge-cyan { background: rgba(6, 182, 212, 0.2); color: var(--cyan); }
+
+        /* Lists */
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        .feature-list li strong {
+            color: var(--accent);
+        }
+
+        /* ASCII Art */
+        .ascii-art {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: pre;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+
+        .ascii-art .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .ascii-art .pipeline-maps {
+            color: var(--warning);
+        }
+
+        .ascii-art .pipeline-sniper {
+            color: var(--accent);
+        }
+
+        /* Grid for cards */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        /* Mobile menu */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 200;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 1.5rem;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Hover effects for cards */
+        .card {
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Animations keyframes */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px var(--accent); }
+            50% { box-shadow: 0 0 20px var(--accent), 0 0 30px var(--accent); }
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.4s ease forwards;
+        }
+
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .animate-glow {
+            animation: glow 2s infinite;
+        }
+
+        /* Staggered animations */
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+
+        /* Interactive quiz */
+        .quiz-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .quiz-question {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .quiz-option {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--accent);
+            background: var(--surface-hover);
+        }
+
+        .quiz-option.correct {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .quiz-option.incorrect {
+            border-color: var(--error);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .quiz-option.selected {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Progress bar */
+        .progress-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--cyan));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Counter animation */
+        .counter {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: inline-block;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Interactive diagram */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            padding: 1rem;
+        }
+
+        .flow-step {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .flow-step:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .flow-arrow {
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        /* Accordion */
+        .accordion-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: var(--surface);
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .accordion-header:hover {
+            background: var(--surface-hover);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: var(--bg);
+        }
+
+        .accordion-content.open {
+            max-height: 500px;
+        }
+
+        .accordion-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* Tabs */
+        .tabs-container {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .tabs-header {
+            display: flex;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background: var(--surface-hover);
+        }
+
+        .tab-btn.active {
+            background: var(--bg);
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Search highlight */
+        .highlight {
+            background: rgba(59, 130, 246, 0.3);
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰ Menu</button>
+    
+    <div class="layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Dashboard Prospection</div>
+            </div>
+            <nav>
+                <ul class="nav-list">
+                    <li class="nav-item active" data-section="overview">1. Vue d'ensemble</li>
+                    <li class="nav-item" data-section="sniper-sources">2. Section Sniper — Sources</li>
+                    <li class="nav-item" data-section="sniper-enrich">3. Section Sniper — Enrichissement</li>
+                    <li class="nav-item" data-section="sniper-contact">4. Section Sniper — Politique</li>
+                    <li class="nav-item" data-section="maps">5. Section Maps — Pipeline</li>
+                    <li class="nav-item" data-section="filters">6. Filtres et Tri</li>
+                    <li class="nav-item" data-section="quotas">7. Quotas et Limites</li>
+                    <li class="nav-item" data-section="scheduler">8. Scheduler</li>
+                    <li class="nav-item" data-section="database">9. Base de Données</li>
+                    <li class="nav-item" data-section="limits">10. Limites</li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main">
+            <!-- SECTION 1: VUE D'ENSEMBLE -->
+            <section class="section" id="overview">
+                <h2 class="section-title">1. Vue d'ensemble</h2>
+                <p>Le système est une machine de prospection B2B full-automatisée avec deux pipelines distincts qui partagent la même base SQLite.</p>
+                
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-title">Pipeline Maps (Ancien)</div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Google Maps → Scrape → Audit PageSpeed → Copywriter → Email → Resend/Brevo</p>
+                    <p style="margin-top: 0.5rem;">Cible : PME locales avec email valide trouvé sur Maps</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">Pipeline Sniper (Nouveau)</div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">6 sources d'annonceurs → Enrichissement CEO + SMTP → Scoring → Email généré → Envoi step 1 → Rapport step 2</p>
+                    <p style="margin-top: 0.5rem;">Cible : Entreprises qui dépensent déjà en pub, donc convaincues du ROI digital</p>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 1.5rem;">
+                    <div class="stat-card" onclick="animateCounter(this)" style="cursor: pointer;">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">Pipelines actifs</div>
+                    </div>
+                    <div class="stat-card" onclick="animateCounter(this)" style="cursor: pointer;">
+                        <div class="stat-value">6</div>
+                        <div class="stat-label">Sources leads</div>
+                    </div>
+                    <div class="stat-card" onclick="animateCounter(this)" style="cursor: pointer;">
+                        <div class="stat-value">100</div>
+                        <div class="stat-label">Emails/jour max</div>
+                    </div>
+                    <div class="stat-card" onclick="animateCounter(this)" style="cursor: pointer;">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">Profils détectés</div>
+                    </div>
+                </div>
+
+<h3 class="section-subtitle">Testez vos connaissances</h3>
+                <div class="quiz-container">
+                    <div class="quiz-question">Quelle est la limite quotidienne d'emails via Resend (plan gratuit) ?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">50 emails/jour</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, true)">100 emails/jour</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">200 emails/jour</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">Illimité</div>
+                    </div>
+                </div>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">Quel pipeline cible les annonceurs actifs (dépensent en pub) ?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="checkAnswer(this, true)">Pipeline Sniper</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">Pipeline Maps</div>
+                        <div class="quiz-option" onclick="checkAnswer(this, false)">Les deux</div>
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">Progression de votre formation</span>
+                        <span id="progress-text" style="color: var(--accent);">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+<h3 class="section-subtitle">Schéma visuel ��� Flux de données</h3>
+                <div class="card">
+                    <pre class="ascii-art" style="color: var(--warning);">=============================================================
+ PIPELINE MAPS
+=============================================================
+ keywords    +----------+    +----------+    +-----------+    +--------+
+ + villes  =>| Scraper |===>|  Leads   |===>|  Audit    |===>| Copy-  |
+            | Maps    |    |  bruts   |    | PageSpeed |    | writer |
+            +----------+    +----------+    +-----------+    +--------+
+                                     |
+                      +--------------+-------------+
+                      |                              |
+                      =                              =
+                +----------+              +----------+
+                |  Resend  |              | Brevo     |
+                | (100/j)  |              |(fallback)|
+                +----------+              +----------</pre>
+                    <pre class="ascii-art" style="color: var(--accent); margin-top: 1rem;">=============================================================
+ PIPELINE SNIPER
+=============================================================
+
+ +------+  +-------+  +-------+  +------+  +-------+
+ | ADS  |  |FB Ads |  |E-COM  |  | JOBS |  |BODACC|
+ +--+---+  +---+---+  +---+---+  +--+---+  +-------+
+    |         |         |         |         |
+    +---------+---------+---------+---------+
+                      |
+                 +----+
+                 | Extraction Domaines
+                 +----+
+                      |
+                 +----+
+                 | Pré-filtre (TTFB, GTM)
+                 +----+
+                      |
+                 +----+
+                 | Enrichissement CEO + Email
+                 +----+
+                      |
+                 +----+
+                 | PageSpeed + Wappalyzer
+                 +----+
+                      |
+                 +----+
+                 | Scoring (Tag + Niveau)
+                 +----+
+                      |
+                 +----+
+                 | Insert DB
+                 +----+
+                      |
+                 +----------------+
+                 | Génération email|
+                 | auto (batch)   |
+                 +----+-----------+
+                      |
+    +------------------+------------------+------------------+
+    =                  =                  =                  =
+ +----------+   +----------+      +----------+
+ | Resend   |   | LinkedIn |      | Tel      |
+ | (email)  |   | (catch)  |      |(manual)  |
+ +----------+   +----------+      +----------</pre>
+                </div>
+            </section>
+
+            <!-- SECTION 2: SNIPER SOURCES -->
+            <section class="section" id="sniper-sources">
+                <h2 class="section-title">2. Section Sniper — Sources</h2>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">ADS (Google/Bing)</div>
+                        <ul class="feature-list">
+                            <li><strong>Ce qu'elle fait :</strong> Scrape les pages de résultats Google via Playwright</li>
+                            <li><strong>Configuration :</strong> headless, IPv4 forcé (--disable-ipv6)</li>
+                            <li><strong>Pagination :</strong> Jusqu'à épuisement (2 pages vides consécutives, plafond 100 pages)</li>
+                            <li><strong>Volume :</strong> ~3-6 annonceurs par page</li>
+                            <li><strong>Qualité :</strong> Leads des pages profondes = meilleurs (petit budget, pas d'équipe technique)</li>
+                            <li><strong>Contrainte :</strong> VPN français actif requis</li>
+                            <li><strong>Banque :</strong> 125 mots-clés, 10 secteurs, rotation par seed date</li>
+                        </ul>
+                        <div class="badge badge-warning">Force : Cible qualifié</div>
+                        <div class="badge badge-error" style="margin-left: 0.5rem;">Limite : VPN obligatoire</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">FB ADS (Meta Ad Library)</div>
+                        <ul class="feature-list">
+                            <li><strong>Ce qu'elle fait :</strong> Appel API officielle /ads_archive</li>
+                            <li><strong>Token :</strong> Graph Explorer (~1-2h court terme) ou 60 jours (long-lived via App Secret)</li>
+                            <li><strong>Champs :</strong> page_name, website, fan_count, ad_creative</li>
+                            <li><strong>Filtrage :</strong> Leads sans site → tag creation si fan_count≥100 et pub active depuis ≥7 jours</li>
+                        </ul>
+                        <div class="badge badge-accent">Force : Données officielles</div>
+                        <div class="badge badge-error" style="margin-left: 0.5rem;">Limite : Token expire</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">E-COM</div>
+                        <ul class="feature-list">
+                            <li><strong>Ce qu'elle fait :</strong> Scrape les entreprises e-commerce françaises via codes NAF</li>
+                            <li><strong>Détection :</strong> Shopify / WooCommerce / Prestashop</li>
+                            <li><strong>Cible :</strong> Boutiques avec panier moyen élevé mais site non optimisé</li>
+                        </ul>
+                        <div class="badge badge-accent">Force : Panier élevé</div>
+                        <div class="badge badge-warning" style="margin-left: 0.5rem;">Limite : Détection CMS</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">JOBS</div>
+                        <ul class="feature-list">
+                            <li><strong>Ce qu'elle fait :</strong> Scrape les offres d'emploi (développeur, webmaster, marketing digital)</li>
+                            <li><strong>Signal fort :</strong> Chercher quelqu'un = pas d'équipe interne = besoin de prestataire</li>
+                        </ul>
+                        <div class="badge badge-success">Force : Signal intent</div>
+                        <div class="badge badge-warning" style="margin-left: 0.5rem;">Limite : Volume faible</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">MAPS (Google Maps)</div>
+                        <ul class="feature-list">
+                            <li><strong>Source du pipeline classique</strong>, toujours actif</li>
+                            <li>Scrape les établissements locaux sur Google Maps pour un keyword + ville</li>
+                            <li>~60-120 leads par recherche</li>
+                            <li>Signal : présence Maps = clientèle locale existante</li>
+                            <li>Email trouvé directement sur leur site</li>
+                            <li>Leads filtrés par validation SMTP</li>
+                            <li>Pipeline séparé du Sniper mais base de données partagée</li>
+                        </ul>
+                        <div class="badge badge-accent">Force : Volume local</div>
+                        <div class="badge badge-warning" style="margin-left: 0.5rem;">Limite : Email générique</div>
+                    </div>
+
+                    <div class="card" style="grid-column: span 2;">
+                        <div class="card-title">BODACC</div>
+                        <ul class="feature-list">
+                            <li><strong>Ce qu'elle fait :</strong> Scrape le Bulletin Officiel des Annonces Civiles et Commerciales</li>
+                            <li><strong>Détection :</strong> Nouvelles nominations de dirigeants</li>
+                            <li><strong>Signal :</strong> Nouveau CEO = nouveau regard sur les outils digitaux</li>
+                        </ul>
+                        <div class="badge badge-purple">Force : Signal changement</div>
+                        <div class="badge badge-warning" style="margin-left: 0.5rem;">Limite : Données brutes</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: SNIPER ENRICHISSEMENT -->
+            <section class="section" id="sniper-enrich">
+                <h2 class="section-title">3. Section Sniper — Pipeline d'Enrichissement</h2>
+                
+                <div class="card">
+                    <div class="card-title">Phase 1 — Extraction</div>
+                    <p style="color: var(--text-muted);">Selon la source, collecte les domaines annonceurs bruts.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Phase 1.5 — Pré-filtre</div>
+                    <ul class="feature-list">
+                        <li>Mesure TTFB (Time To First Byte)</li>
+                        <li>Détecte GTM/GA (présence = tracké = maturité digitale)</li>
+                        <li>Rejette les grosses marques (score de chaleur 0-12)</li>
+                        <li>Pour source=ads : min_score=0 (annonceurs ont forcément GTM)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Phase 1.5 — Enrichissement Contact</div>
+                    <ul class="feature-list">
+                        <li><strong>contact_finder :</strong> Scrape page /contact, footer, mentions légales</li>
+                        <li><strong>ceo_finder :</strong> Google dork + Ollama local</li>
+                        <li><strong>email_permutations :</strong> Génère prenom.nom@domaine.fr, etc.</li>
+                        <li><strong>smtp_validator :</strong> Vérifie SMTP sans envoyer</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Phase 2 — PageSpeed + Wappalyzer</div>
+                    <p>Analyse perf mobile/desktop, LCP, détecte CMS.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Phase 3 — Scoring</div>
+                    <ul class="feature-list">
+                        <li><strong>score_lead() →</strong> Tag urgence + niveau 1-5</li>
+                        <li>Tags : perf / securite / perf+securite / creation</li>
+                        <li>Rejeté si score insuffisant</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Phase 4 — DB</div>
+                    <p>insert_lead() avec déduplication par nom+ville, téléphone, site_web (clé naturelle Sniper).</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Phase 5 — Génération email automatique</div>
+                    <p>generate_sniper_emails_batch() se déclenche automatiquement après le scoring. Copywriter adapte le ton selon le tag et le mode (email valide / catch-all / sans contact).</p>
+                </div>
+            </section>
+
+            <!-- SECTION 4: SNIPER POLITIQUE CONTACT -->
+            <section class="section" id="sniper-contact">
+                <h2 class="section-title">4. Section Sniper — Politique de Contact</h2>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>Canal</th>
+                                <th>Logique</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge badge-success">Email SMTP valide</span></td>
+                                <td>Email step 1</td>
+                                <td>Envoi direct via Resend</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-warning">Catch-all</span></td>
+                                <td>LinkedIn</td>
+                                <td>linkedin_agent.py déclenché en thread</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-accent">Téléphone disponible</span></td>
+                                <td>Téléphone</td>
+                                <td>Affiché dans le panel, action manuelle</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-error">Aucun contact</span></td>
+                                <td>Formulaire / LinkedIn manuel</td>
+                                <td>Panel indique "action manuelle requise"</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-title">Step 2 — Rapport PDF</div>
+                    <ul class="feature-list">
+                        <li>Hébergement : Vercel / GitHub Pages</li>
+                        <li>Envoi : Uniquement après réponse au step 1</li>
+                        <li>Déclenchement : Manuel depuis dashboard ou par validation Telegram</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- SECTION 5: MAPS PIPELINE -->
+            <section class="section" id="maps">
+                <h2 class="section-title">5. Section Maps — Pipeline Classique</h2>
+                
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">C'est le pipeline originel du système, toujours actif et complémentaire au Sniper. Il cible les PME locales référencées sur Google Maps — artisans, commerces, professions libérales — qui ont une présence Maps mais un site web non optimisé.</p>
+
+                <div class="card">
+                    <div class="card-title">Scraper (scraper/)</div>
+                    <ul class="feature-list">
+                        <li>Playwright + patchright navigue sur Google Maps</li>
+                        <li>Input : mot-clé + ville</li>
+                        <li>Extrait : nom, adresse, téléphone, site web, email (depuis le site), note, nombre d'avis, catégorie, lien Maps</li>
+                        <li>Limite naturelle : ~60-120 résultats par recherche Maps selon la densité locale</li>
+                        <li>Déduplication : par nom+ville ou téléphone</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Validation email</div>
+                    <ul class="feature-list">
+                        <li>email_validator.py vérifie via SMTP sans envoyer</li>
+                        <li>Leads filtrés selon email_valide = 'Valide'</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Audit (auditeur/)</div>
+                    <ul class="feature-list">
+                        <li><strong>PageSpeed Insights API</strong> (mobile + desktop) : LCP, CLS, FID, score performance, score SEO</li>
+                        <li><strong>Google My Business</strong> : vérifie photos, horaires, réponses aux avis</li>
+                        <li><strong>Score urgence</strong> (0-10) : combine perf mobile + ancienneté site + CMS détecté</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Copywriter (copywriter/) — 8 situations S1 à S8</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Situation</th>
+                                    <th>Angle email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><span class="badge badge-success">S1</span></td><td>Site rapide, bon GMB</td><td>Pas de lead (trop bien)</td></tr>
+                                <tr><td><span class="badge badge-warning">S2</span></td><td>Site lent, pas de GMB</td><td>Double problème = urgence</td></tr>
+                                <tr><td><span class="badge badge-warning">S3</span></td><td>Site lent, bon GMB</td><td>Perf = argent perdu</td></tr>
+                                <tr><td><span class="badge badge-error">S4</span></td><td>Site rapide, mauvais GMB</td><td>Réputation en danger</td></tr>
+                                <tr><td><span class="badge badge-accent">S5</span></td><td>Pas de site</td><td>Proposition création</td></tr>
+                                <tr><td><span class="badge badge-purple">S6</span></td><td>Site lent + vieux CMS</td><td>Migration + perf</td></tr>
+                                <tr><td><span class="badge badge-cyan">S7</span></td><td>Bon score mais SEO faible</td><td>Visibilité = croissance</td></tr>
+                                <tr><td><span class="badge badge-warning">S8</span></td><td>Site récent mais non optimisé</td><td>Quick wins possibles</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p style="margin-top: 1rem; color: var(--text-muted);">Templates A/B/C/D : 4 tons différents (direct/soft/technique/ROI). Le copywriter choisit selon S1-S8 + profil de l'entreprise.</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Envoi (envoi/)</div>
+                    <ul class="feature-list">
+                        <li><strong>Resend</strong> : provider principal, 100 emails/jour gratuit, tracking webhooks (open, click, bounce, delivered)</li>
+                        <li><strong>Brevo</strong> : fallback si Resend épuisé ou en erreur</li>
+                        <li>Retry automatique avec backoff exponentiel</li>
+                        <li>Fenêtre d'envoi configurable (par défaut 9h-18h)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Planification (dashboard/pipeline/)</div>
+                    <ul class="feature-list">
+                        <li>Campagnes planifiées dans planned_campaigns avec date_planifiee</li>
+                        <li>Batch scheduler : remplit les slots disponibles selon quota restant</li>
+                        <li>Auto-approval après 5h si pas de validation manuelle (configurable)</li>
+                        <li>Relances automatiques (sequence_worker) selon délai configuré</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Suivi et séquence</div>
+                    <ul class="feature-list">
+                        <li>Webhooks Resend → email_events : open, click, bounce, spam</li>
+                        <li>IMAP polling toutes les 15 min pour détecter les réponses</li>
+                        <li>Notification Telegram pour chaque lead qui répond</li>
+                        <li>Step 2 déclenché manuellement ou par validation Telegram (callback sniper_step2_ID)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Différences clés Maps vs Sniper</div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Critère</th>
+                                    <th>Maps</th>
+                                    <th>Sniper</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Source leads</td><td>Google Maps (référencement local)</td><td>Annonceurs actifs (pub payante)</td></tr>
+                                <tr><td>Signal de qualification</td><td>Mauvais site + bon référencement local</td><td>Dépense pub = conviction ROI</td></tr>
+                                <tr><td>Volume</td><td>60-120/recherche</td><td>Illimité (jusqu'à épuisement Google)</td></tr>
+                                <tr><td>Email trouvé via</td><td>Scraping site web du lead</td><td>SMTP validation + permutations</td></tr>
+                                <tr><td>CEO ciblé</td><td>Non (email générique)</td><td>Oui (ceo_finder + LinkedIn)</td></tr>
+                                <tr><td>Step 2</td><td>Non (email unique)</td><td>Oui (rapport PDF personnalisé)</td></tr>
+                                <tr><td>Meilleur pour</td><td>Volume + secteurs locaux</td><td>Qualification + ROI mesurable</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Limites Maps</div>
+                    <ul class="feature-list">
+                        <li>Dépend de la densité des résultats Maps (ville petite = peu de leads)</li>
+                        <li>Email souvent générique (contact@, info@) — moins précis que Sniper</li>
+                        <li>Pas de ciblage CEO</li>
+                        <li>Un seul email par lead (pas de step 2 structuré)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- SECTION 6: FILTRES -->
+            <section class="section" id="filters">
+                <h2 class="section-title">6. Filtres et Tri des Leads</h2>
+                
+                <div class="card">
+                    <div class="card-title">Filtres disponibles dans la table Sniper</div>
+                    <ul class="feature-list">
+                        <li><strong>Source :</strong> MAPS / ADS / FB Ads / E-COM / Jobs / BODACC</li>
+                        <li><strong>Statut prospection :</strong> À contacter / Step 1 envoyé / Répondu / Rapport livré / LinkedIn envoyé</li>
+                        <li><strong>Tag urgence :</strong> Perf mobile / Sécurité / Double impact / Création site</li>
+                        <li><strong>Contact :</strong> ✅ Email valide / ⚠️ Catch-all / ❌ Sans email</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Panel détail (clic sur une ligne)</div>
+                    <p>Affiche tout : scores, CEO, email généré complet, CMS, LCP, problème principal, politique de contact recommandée.</p>
+                </div>
+            </section>
+
+            <!-- SECTION 7: QUOTAS -->
+            <section class="section" id="quotas">
+                <h2 class="section-title">7. Quotas et Limites</h2>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ressource</th>
+                                <th>Limite</th>
+                                <th>Raison</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Resend</td>
+                                <td><span class="badge badge-warning">100 emails/jour</span></td>
+                                <td>Plan gratuit</td>
+                            </tr>
+                            <tr>
+                                <td>Google Ads scraping</td>
+                                <td>~3-6 ads/page, jusqu'à épuisement</td>
+                                <td>Structure HTML Google</td>
+                            </tr>
+                            <tr>
+                                <td>Pages Google par keyword</td>
+                                <td>Illimité (stop sur 2 pages vides)</td>
+                                <td>Sécurité anti-ban</td>
+                            </tr>
+                            <tr>
+                                <td>Pause entre pages Google</td>
+                                <td>3 secondes</td>
+                                <td>Éviter rate-limit</td>
+                            </tr>
+                            <tr>
+                                <td>Pause entre keywords</td>
+                                <td>8 secondes</td>
+                                <td>Anti-détection</td>
+                            </tr>
+                            <tr>
+                                <td>FB Ads token</td>
+                                <td>~1-2h (Explorer) ou 60j (long-lived)</td>
+                                <td>Meta Graph API</td>
+                            </tr>
+                            <tr>
+                                <td>Enrichissement parallèle</td>
+                                <td>3 threads (configurable)</td>
+                                <td>Éviter blocages IP</td>
+                            </tr>
+                            <tr>
+                                <td>Leads en DB</td>
+                                <td>Illimité</td>
+                                <td>SQLite</td>
+                            </tr>
+                            <tr>
+                                <td>Déduplication</td>
+                                <td>Automatique</td>
+                                <td>Pas de doublon</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SECTION 8: SCHEDULER -->
+            <section class="section" id="scheduler">
+                <h2 class="section-title">8. Scheduler Automatique</h2>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Heure</th>
+                                <th>Job</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge badge-accent">7h00</span></td>
+                                <td>Scan BODACC</td>
+                                <td>Quotidien</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-accent">8h00</span></td>
+                                <td>Génération emails Sniper</td>
+                                <td>Si activé</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-accent">8h30</span></td>
+                                <td>Envoi step 1 Sniper</td>
+                                <td>Si activé</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-accent">9h00</span></td>
+                                <td>Scraping Google Ads</td>
+                                <td>Si activé, VPN requis</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-purple">Toutes les 15 min</span></td>
+                                <td>Poll IMAP</td>
+                                <td>Détection réponses</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-purple">Toutes les 2 min</span></td>
+                                <td>Vérification Telegram</td>
+                                <td>Validations</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-purple">Toutes les 15 min</span></td>
+                                <td>Vérification batches Maps</td>
+                                <td>Statut envoi</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card" style="margin-top: 1rem;">
+                    <div class="card-title">Toggles dans le dashboard</div>
+                    <ul class="feature-list">
+                        <li>scraping_auto_9h</li>
+                        <li>sniper_auto_generate</li>
+                        <li>sniper_auto_send</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- SECTION 9: DATABASE -->
+            <section class="section" id="database">
+                <h2 class="section-title">9. Base de Données</h2>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">leads_bruts</div>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Tous les leads (Maps + Sniper)</p>
+                        <p style="margin-top: 0.5rem;"><strong>Colonnes clés :</strong></p>
+                        <ul class="feature-list" style="font-size: 0.85rem;">
+                            <li>source</li>
+                            <li>statut</li>
+                            <li>tag_urgence</li>
+                            <li>niveau_urgence</li>
+                            <li>donnees_audit (JSON)</li>
+                            <li>site_web</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">leads_audites</div>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Résultats d'audit + email généré</p>
+                        <p style="margin-top: 0.5rem;"><strong>Colonnes clés :</strong></p>
+                        <ul class="feature-list" style="font-size: 0.85rem;">
+                            <li>mobile_score</li>
+                            <li>ceo_prenom / ceo_nom</li>
+                            <li>email_valide</li>
+                            <li>email_objet</li>
+                            <li>email_corps</li>
+                            <li>statut_prospection</li>
+                            <li>is_catch_all</li>
+                            <li>copywriting_mode</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">emails_envoyes</div>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Historique des envois avec tracking</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">campagnes</div>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Toutes les campagnes scraping avec stats</p>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 1rem;">
+                    <div class="card-title">Autres tables</div>
+                    <ul class="feature-list">
+                        <li>planning_settings : configuration système (quotas, toggles)</li>
+                        <li>scheduler_log : trace des jobs planifiés</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="margin-top: 1rem;">
+                    <div class="card-title">Statuts valides (Machine d'état)</div>
+                    <p style="color: var(--text-muted); margin-bottom: 0.5rem;">scrape → en_attente → audite → email_genere → scheduled → envoye → repondu → rdv / bounced → archive</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <span class="badge badge-accent">scrape</span>
+                        <span class="badge badge-warning">en_attente</span>
+                        <span class="badge badge-purple">audite</span>
+                        <span class="badge badge-cyan">email_genere</span>
+                        <span class="badge badge-accent">scheduled</span>
+                        <span class="badge badge-success">envoye</span>
+                        <span class="badge badge-success">respondu</span>
+                        <span class="badge badge-success">rdv</span>
+                        <span class="badge badge-error">bounced</span>
+                        <span class="badge badge-error">archive</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 10: LIMITS -->
+            <section class="section" id="limits">
+                <h2 class="section-title">10. Ce qu'on peut et ne peut pas faire</h2>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title" style="color: var(--success);">Peut faire</div>
+                        <ul class="feature-list">
+                            <li>Scraper tous les secteurs en France simultanément</li>
+                            <li>Collecter jusqu'à ~100 leads qualifiés par jour (avec VPN + scraping auto)</li>
+                            <li>Enrichir automatiquement CEO, email, téléphone</li>
+                            <li>Générer un email personnalisé par lead automatiquement</li>
+                            <li>Envoyer step 1 dans le quota quotidien</li>
+                            <li>Tracker opens/clicks via webhooks</li>
+                            <li>Basculer sur LinkedIn automatiquement pour les catch-all</li>
+                            <li>Voir en temps réel le nombre de leads collectés pendant un run</li>
+                            <li>Filtrer par qualité de contact et trier par urgence</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title" style="color: var(--error);">Ne peut pas faire (encore)</div>
+                        <ul class="feature-list">
+                            <li>Dépasser 100 emails/jour sans changer de plan Resend</li>
+                            <li>Scraper Google sans IP française (VPN obligatoire)</li>
+                            <li>Utiliser FB Ads plus de 2h sans renouveler le token (ou configurer long-lived)</li>
+                            <li>Envoyer automatiquement sans validation humaine (step 1 auto désactivé par défaut)</li>
+                            <li>Détecter les réponses en temps réel (poll IMAP toutes les 15 min)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const sectionId = item.dataset.section;
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth' });
+                    navItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Highlight active section on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navItems.forEach(i => i.classList.remove('active'));
+                    const activeNav = document.querySelector(`[data-section="${entry.target.id}"]`);
+                    if (activeNav) {
+                        activeNav.classList.add('active');
+                    }
+                }
+            });
+        }, { threshold: 0.3 });
+
+        sections.forEach(section => observer.observe(section));
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.remove('open');
+        }
+
+        // Copy button functionality
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const codeBlock = btn.parentElement;
+                const code = codeBlock.querySelector('code').textContent;
+                navigator.clipboard.writeText(code).then(() => {
+                    btn.textContent = 'Copié !';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = 'Copier';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        });
+
+        // Quiz functionality
+        let correctAnswers = 0;
+        const totalQuestions = 2;
+
+        function checkAnswer(element, isCorrect) {
+            const parent = element.parentElement;
+            const options = parent.querySelectorAll('.quiz-option');
+            
+            options.forEach(opt => {
+                opt.classList.remove('selected', 'correct', 'incorrect');
+                opt.style.pointerEvents = 'none';
+            });
+            
+            if (isCorrect) {
+                element.classList.add('correct');
+                correctAnswers++;
+            } else {
+                element.classList.add('incorrect');
+                options.forEach(opt => {
+                    if (opt.onclick.toString().includes('true')) {
+                        opt.classList.add('correct');
+                    }
+                });
+            }
+            
+            const progress = Math.round((correctAnswers / totalQuestions) * 100);
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = progress + '%';
+            
+            if (progress === 100) {
+                document.getElementById('progress-text').textContent = 'Félicitations !';
+                document.getElementById('progress-text').style.color = 'var(--success)';
+            }
+        }
+
+        // Counter animation
+        function animateCounter(element) {
+            const valueEl = element.querySelector('.stat-value');
+            const target = parseInt(valueEl.textContent);
+            let current = 0;
+            const duration = 1000;
+            const step = target / (duration / 16);
+            
+            valueEl.style.animation = 'countUp 0.3s ease';
+            
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                valueEl.textContent = Math.floor(current);
+            }, 16);
+        }
+
+        // Accordion functionality
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                const arrow = header.querySelector('.accordion-arrow');
+                
+                content.classList.toggle('open');
+                arrow.classList.toggle('rotate');
+            });
+        });
+
+        // Tabs functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Add interactive flow diagram click effects
+        document.querySelectorAll('.flow-step').forEach(step => {
+            step.addEventListener('click', () => {
+                step.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    step.style.transform = 'scale(1.05)';
+                }, 100);
+            });
+        });
+
+        // Intersection Observer for scroll animations
+        const animateOnScroll = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease';
+            animateOnScroll.observe(card);
+        });
+
+        // Parallax effect on cards
+        document.addEventListener('mousemove', (e) => {
+            const cards = document.querySelectorAll('.card');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            cards.forEach(card => {
+                const depth = 0.05;
+                const moveX = (x - 0.5) * depth * 100;
+                const moveY = (y - 0.5) * depth * 100;
+                card.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    </script>
+</body>
+</html>

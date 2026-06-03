@@ -1,0 +1,230 @@
+<div id="section-sniper" class="v-section">
+    <div
+        style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+            <div>
+                <h2 style="margin:0;font-size:1.1rem;font-weight:700">Sniper B2B</h2>
+                <p style="margin:4px 0 0;font-size:13px;color:var(--ink3)">4 sources · enrichissement CEO · email
+                    2-steps · LinkedIn catch-all</p>
+            </div>
+            <span id="sniper-running-badge"
+                style="display:none;align-items:center;gap:5px;background:rgba(251,191,36,0.15);color:#f59e0b;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px">
+                <span
+                    style="width:6px;height:6px;background:#f59e0b;border-radius:50%;animation:pulse 1.2s infinite"></span>
+                En cours
+            </span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer"
+                title="Lance automatiquement le scraping Google Ads chaque jour à 9h">
+                <input type="checkbox" id="sniper-auto-scrape-toggle" onchange="sniperToggleAutoScrape(this.checked)"
+                    style="width:14px;height:14px">
+                Ads 9h
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer"
+                title="Lance automatiquement le scraping E-com (boutiques en ligne) chaque jour à 9h30">
+                <input type="checkbox" id="sniper-ecom-scrape-toggle" onchange="sniperToggleEcomScrape(this.checked)"
+                    style="width:14px;height:14px">
+                E-com 9h30
+            </label>
+            <button class="btn bg2 sm" onclick="sniperPollImap()">Vérifier réponses</button>
+            <button class="btn bg1 sm" onclick="sniperGenerateEmails()">Générer emails</button>
+            <button class="btn bg1 sm" onclick="sniperSendStep1()">Envoyer step 1</button>
+        </div>
+    </div>
+
+    <!-- Sources row -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1rem">
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em">ADS</div>
+                <div id="sniper-src-ads" style="font-size:1.2rem;font-weight:800">—</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+                <button id="sniper-btn-ads" class="btn accent sm" style="font-size:11px"
+                    onclick="showSniperLaunchModal()">Manuel</button>
+                <button class="btn bg1 sm" style="font-size:10px" onclick="sniperLaunchTodayBatch()">Batch du
+                    jour</button>
+            </div>
+            <button class="btn sm" style="font-size:10px;background:#ef4444;color:#fff;margin-left:4px"
+                onclick="sniperStop('ads')" title="Arrêter Ads">⏹</button>
+        </div>
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em">FB ADS</div>
+                <div id="sniper-src-fb-ads" style="font-size:1.2rem;font-weight:800">—</div>
+            </div>
+            <div style="display:flex;gap:4px">
+                <button id="sniper-btn-fb-ads" class="btn accent sm" style="font-size:11px"
+                    onclick="sniperLaunchFbAds()">Lancer</button>
+                <button class="btn sm" style="font-size:10px;background:#ef4444;color:#fff"
+                    onclick="sniperStop('fb_ads')" title="Arrêter FB Ads">⏹</button>
+            </div>
+        </div>
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em">E-COM</div>
+                <div id="sniper-src-ecom" style="font-size:1.2rem;font-weight:800">—</div>
+            </div>
+            <div style="display:flex;gap:4px">
+                <button id="sniper-btn-ecom" class="btn accent sm" style="font-size:11px"
+                    onclick="sniperLaunchTech()">Lancer</button>
+                <button class="btn sm" style="font-size:10px;background:#ef4444;color:#fff" onclick="sniperStop('tech')"
+                    title="Arrêter Tech">⏹</button>
+            </div>
+        </div>
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em">JOBS</div>
+                <div id="sniper-src-jobs" style="font-size:1.2rem;font-weight:800">—</div>
+            </div>
+            <div style="display:flex;gap:4px">
+                <button id="sniper-btn-jobs" class="btn accent sm" style="font-size:11px"
+                    onclick="sniperLaunchJobs()">Lancer</button>
+                <button class="btn sm" style="font-size:10px;background:#ef4444;color:#fff" onclick="sniperStop('jobs')"
+                    title="Arrêter Jobs">⏹</button>
+            </div>
+        </div>
+        <div class="card" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em">BODACC</div>
+                <div id="sniper-src-bodacc" style="font-size:1.2rem;font-weight:800">—</div>
+            </div>
+            <div style="display:flex;gap:4px">
+                <button id="sniper-btn-bodacc" class="btn bg1 sm" style="font-size:11px"
+                    onclick="sniperLaunchBodacc()">Scanner</button>
+                <button class="btn sm" style="font-size:10px;background:#ef4444;color:#fff"
+                    onclick="sniperStop('bodacc')" title="Arrêter BODACC">⏹</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:1.5rem">
+        <div class="card" style="padding:16px;text-align:center">
+            <div id="sniper-stat-leads" style="font-size:1.6rem;font-weight:800;color:var(--accent)">—</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Leads qualifiés</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+            <div id="sniper-stat-emails" style="font-size:1.6rem;font-weight:800;color:#3b82f6">—</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Emails générés</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+            <div id="sniper-stat-envoyes" style="font-size:1.6rem;font-weight:800;color:#8b5cf6">—</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Step 1 envoyés</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+            <div id="sniper-stat-reponses" style="font-size:1.6rem;font-weight:800;color:#f59e0b">—</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Réponses</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center">
+            <div id="sniper-stat-step2" style="font-size:1.6rem;font-weight:800;color:#10b981">—</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Rapports livrés</div>
+        </div>
+        <div class="card" style="padding:16px;text-align:center;cursor:pointer" onclick="sniperSetQuota()"
+            title="Cliquer pour modifier le quota">
+            <div id="sniper-stat-quota" style="font-size:1.6rem;font-weight:800;color:#6366f1">—</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Quota restant</div>
+        </div>
+    </div>
+
+    <!-- Table leads sniper -->
+    <div class="card" style="padding:0;overflow:hidden">
+        <div
+            style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:600">Leads Sniper</span>
+            <span id="sniper-leads-count"
+                style="font-size:11px;color:var(--ink3);background:var(--surface2);padding:2px 8px;border-radius:10px"></span>
+            <div style="flex:1"></div>
+            <select id="sniper-filter-source"
+                style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);width:130px"
+                onchange="sniperLoadLeads()">
+                <option value="">Toutes sources</option>
+                <option value="ads">Ads (Google)</option>
+                <option value="fb_ads">FB Ads (Meta)</option>
+                <option value="tech">E-COM</option>
+                <option value="jobs">Jobs</option>
+                <option value="bodacc">BODACC</option>
+            </select>
+            <select id="sniper-filter-statut"
+                style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);width:150px"
+                onchange="sniperLoadLeads()">
+                <option value="">Tous statuts</option>
+                <option value="a_contacter">À contacter</option>
+                <option value="step1_envoye">Step 1 envoyé</option>
+                <option value="repondu">Répondu</option>
+                <option value="lien_envoye">Rapport livré</option>
+                <option value="linkedin_envoye">LinkedIn envoyé</option>
+            </select>
+            <select id="sniper-filter-tag"
+                style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);width:140px"
+                onchange="sniperLoadLeads()">
+                <option value="">Tous tags</option>
+                <option value="perf">Perf mobile</option>
+                <option value="securite">Sécurité</option>
+                <option value="perf+securite">Double impact</option>
+            </select>
+            <select id="sniper-filter-contact"
+                style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);width:140px"
+                onchange="sniperLoadLeads()">
+                <option value="">Tous contacts</option>
+                <option value="avec">✅ Email valide</option>
+                <option value="catchall">⚠️ Catch-all</option>
+                <option value="sans">❌ Sans email</option>
+            </select>
+        </div>
+        <div class="table-scroll">
+            <table class="campaign-table">
+                <thead>
+                    <tr>
+                        <th>Entreprise</th>
+                        <th>Source</th>
+                        <th>CEO</th>
+                        <th>Email validé</th>
+                        <th>Tag</th>
+                        <th>Score</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sniper-leads-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align:center;padding:24px;color:var(--ink3)">Chargement…</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Log pipeline + compteurs live -->
+    <div class="card" style="margin-top:1rem;padding:16px">
+        <div
+            style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <span style="font-size:13px;font-weight:600">Log pipeline</span>
+            <!-- Compteurs live (visibles seulement pendant un run) -->
+            <div id="sniper-live-counters" style="display:none;gap:16px;align-items:center">
+                <span style="font-size:11px;color:var(--ink3)">
+                    Mot-clé : <strong id="sniper-live-kw" style="color:var(--ink)">—</strong>
+                </span>
+                <span style="font-size:11px;color:var(--ink3)">
+                    Extraits : <strong id="sniper-live-total" style="color:var(--accent)">0</strong>
+                </span>
+                <span style="font-size:11px;color:var(--ink3)">
+                    Qualifiés : <strong id="sniper-live-accepted" style="color:#10b981">0</strong>
+                </span>
+                <span style="font-size:11px;color:var(--ink3)">
+                    Emails : <strong id="sniper-live-emails" style="color:#3b82f6">0</strong>
+                </span>
+                <span
+                    style="font-size:11px;background:rgba(251,191,36,0.15);color:#f59e0b;padding:2px 8px;border-radius:10px;font-weight:600"
+                    id="sniper-live-phase">—</span>
+            </div>
+            <button class="btn bg2 sm" onclick="sniperLoadStatus()">Rafraîchir</button>
+        </div>
+        <div id="sniper-log"
+            style="font-family:monospace;font-size:12px;line-height:1.6;color:var(--ink2);max-height:240px;overflow-y:auto;background:var(--surface2);padding:10px;border-radius:6px">
+            En attente de lancement…
+        </div>
+    </div>
+
+</div>

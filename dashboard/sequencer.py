@@ -3,7 +3,6 @@ import os
 import json
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
 
 from database.db_manager import get_conn
 

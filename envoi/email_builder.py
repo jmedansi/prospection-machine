@@ -104,44 +104,61 @@ def build_premium_email(lead_data, verify_link: bool = True):
             else:
                 return None
 
-    # Template filename
-    template_filename = f"template_profil_{profile.lower()}_{template_variant}.html"
+    from core.template_renderer import render_template
+
+    # Résolution du template avec fallbacks variantes
     template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates', 'emails')
-    template_path = os.path.join(template_dir, template_filename)
-    
-    if not os.path.exists(template_path):
-        # Fallback to v1 if the variant file isn't found
-        template_filename = f"template_profil_{profile.lower()}_v1.html"
-        template_path = os.path.join(template_dir, template_filename)
-        if not os.path.exists(template_path):
-            return f"Erreur: Template {template_filename} introuvable dans {template_dir}"
+    template_path = None
+    for suffix in (f"_{template_variant}", "_v1", ""):
+        candidate = os.path.join(template_dir, f"template_profil_{profile.lower()}{suffix}.html")
+        if os.path.exists(candidate):
+            template_path = candidate
+            break
+    if not template_path:
+        return f"Erreur: Template profil_{profile.lower()} introuvable dans {template_dir}"
 
-    with open(template_path, 'r', encoding='utf-8') as f:
-        html = f.read()
-
-    # Variables communes
-    html = html.replace('{{NOM}}', nom)
-    html = html.replace('{{VILLE}}', ville)
-    html = html.replace('{{CATEGORY}}', category)
-    html = html.replace('{{LIEN_RAPPORT}}', lien_rapport)
-
+    # Salutation
     prenom = lead_data.get('prenom_gerant')
-    nom_etablissement = lead_data.get('nom', 'votre établissement')
     salutation = f"Bonjour {prenom}," if prenom else "Bonjour,"
-    html = html.replace('[salutation]', salutation)
 
-
+    # Paragraphe d'impact (Profile B uniquement)
+    impact_paragraph = ""
     if profile == "B":
-        html = html.replace('{{LCP}}', str(lcp_s))
+        source_lead = lead_data.get('source', '')
+        if source_lead == 'ecom':
+            try:
+                import json
+                donnees = json.loads(lead_data.get('donnees_audit') or '{}')
+                reason = donnees.get('reason', '')
+                first_arg = reason.split('|')[0].strip() if reason else ''
+                if first_arg:
+                    impact_paragraph = first_arg.capitalize() + "."
+            except Exception:
+                pass
+            if not impact_paragraph:
+                impact_paragraph = (
+                    "Sur mobile, 53% des acheteurs quittent un site qui charge en plus de 3 secondes "
+                    "— avant même d'avoir vu vos produits. Chaque seconde perdue coûte 7% de CA."
+                )
+        else:
+            impact_paragraph = (
+                f"La plupart de vos clients cherchent un {category} depuis leur téléphone. "
+                f"Au-delà de 3 secondes, plus de la moitié repartent sans avoir vu "
+                f"vos coordonnées ni vos services."
+            )
 
-    elif profile == "C":
-        html = html.replace('{{RATING}}', str(rating))
-        html = html.replace('{{REVIEWS}}', str(reviews))
-
-    screenshot_url = lien_rapport + "preview.png"
-    html = html.replace('[screenshot_url]', screenshot_url)
-
-    return html
+    return render_template(template_path, {
+        "{{NOM}}":              nom,
+        "{{VILLE}}":            ville,
+        "{{CATEGORY}}":         category,
+        "{{LIEN_RAPPORT}}":     lien_rapport,
+        "[salutation]":         salutation,
+        "{{LCP}}":              str(lcp_s),
+        "{{IMPACT_PARAGRAPH}}": impact_paragraph,
+        "{{RATING}}":           str(rating),
+        "{{REVIEWS}}":          str(reviews),
+        "[screenshot_url]":     lien_rapport + "preview.png",
+    })
 
 
 def build_followup_email(lead_nom):

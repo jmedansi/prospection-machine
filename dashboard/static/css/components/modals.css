@@ -1,0 +1,184 @@
+/* 
+    dashboard/static/css/components/modals.css
+    Styles des Fenêtres Modales et Formulaires (Design Premium Incidenx)
+*/
+
+/* Modal Overlay & Backdrop */
+.modal-overlay,
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2500;
+    padding: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active,
+.modal-backdrop.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* Modal Content */
+.modal-content {
+    background: var(--surface);
+    width: 600px;
+    max-width: 95%;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0) scale(1);
+}
+
+/* Modal Header */
+.mh {
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mh-t {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+}
+
+/* Modal Body */
+.mb {
+    padding: 28px;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+
+/* Modal Footer */
+.mf {
+    padding: 20px 28px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: var(--bg-app);
+}
+
+/* FORMS STANDARDS */
+.form-grp {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-grp label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.inp {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+    background: var(--surface);
+    color: var(--ink);
+    transition: all 0.2s;
+    outline: none;
+    font-family: var(--font-main);
+}
+
+.inp:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+textarea.inp {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* GRID HELPERS */
+.g2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* ── Responsive Modals ──────────────────────────────────── */
+@media (max-width: 640px) {
+    .modal-overlay {
+        padding: 16px;
+        align-items: center;
+    }
+    
+    .modal-content {
+        width: 100%;
+        max-width: 480px;
+        border-radius: 20px;
+        transform: translateY(20px) scale(0.95);
+    }
+    
+    .modal-overlay.active .modal-content {
+        transform: translateY(0) scale(1);
+    }
+    
+    .mh { padding: 18px 20px; }
+    .mb { padding: 20px; max-height: 70vh; }
+    .mf { padding: 20px; flex-direction: column-reverse; }
+    .mf button { width: 100%; }
+}
+
+/* ── Custom Modal Elements ─────────────────────────────── */
+.recap-list {
+    background: var(--bg-app);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.recap-list p {
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--ink2);
+}
+
+.modal-content .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.modal-content .btn-ghost {
+    background: transparent;
+    color: var(--ink3);
+    border: 1px solid var(--border);
+}
+
+.modal-content .btn-danger {
+    background: var(--red);
+    color: white;
+    border: none;
+}

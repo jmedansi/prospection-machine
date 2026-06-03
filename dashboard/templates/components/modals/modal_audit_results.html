@@ -1,0 +1,42 @@
+<!-- Modal: Audit Results -->
+<div id="modal-audit-results" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>📊 Résultats de l'audit</h3>
+            <button class="modal-close" onclick="closeModal('modal-audit-results')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 20px; text-align: center;">
+            <div id="audit-results-icon" style="font-size: 48px; margin-bottom: 15px;">✅</div>
+            <h4 id="audit-results-title" style="margin-bottom: 10px;">Audit terminé</h4>
+            <p id="audit-results-summary" style="color: var(--ink2); margin-bottom: 20px;">
+                Tous les leads sélectionnés ont été analysés.
+            </p>
+            
+            <div class="audit-stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                <div style="background: var(--bg2); padding: 15px; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--green);" id="audit-stat-success">0</div>
+                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase;">Réussis</div>
+                </div>
+                <div style="background: var(--bg2); padding: 15px; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--red);" id="audit-stat-failed">0</div>
+                    <div style="font-size: 11px; color: var(--ink3); text-transform: uppercase;">Échecs</div>
+                </div>
+            </div>
+
+            <div id="audit-results-logs" style="text-align: left; background: #1a1a1a; color: #00ff00; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 4px; max-height: 150px; overflow-y: auto; margin-top: 10px; display: none;">
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: center; gap: 10px;">
+            <button class="btn bg2" onclick="closeModal('modal-audit-results')">Fermer</button>
+            <button class="btn accent" onclick="refreshAfterAudit()">Voir les leads</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshAfterAudit() {
+    closeModal('modal-audit-results');
+    if (typeof refreshAll === 'function') refreshAll();
+    if (typeof unifiedLeadsLoad === 'function') unifiedLeadsLoad();
+}
+</script>

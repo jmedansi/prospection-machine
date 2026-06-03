@@ -7,21 +7,12 @@ Zéro dépendance Gemini — 100% Python + outils spécialisés.
 import sys
 import os
 import argparse
-import asyncio
-
-# Forcer l'encodage UTF-8 pour la sortie standard (Windows support)
-if sys.stdout.encoding.lower() != 'utf-8':
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-    except AttributeError:
-        pass
-import logging
-import re
-import time
 import random
+import time
 from datetime import datetime
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
 
+import logging
 import requests
 import psutil
 
@@ -74,8 +65,6 @@ def _email_confidence(result: dict) -> int:
         base = 80
     elif source.startswith('masked:'):
         base = 75
-    elif source == 'hunter_api':
-        base = 90
     elif source == 'smtp_guess':
         base = 60
     elif source == 'homepage_basic':
@@ -91,34 +80,8 @@ def extract_domain(url):
     """Extrait le domaine d'une URL."""
     if not url:
         return None
-    try:
-        if not url.startswith(('http://', 'https://')):
-            url = 'http://' + url
-        parsed = urlparse(url)
-        domain = parsed.netloc
-        if domain.startswith('www.'):
-            domain = domain[4:]
-        return domain
-    except Exception as e:
-        logger.error(f"Erreur extraction domaine depuis {url}: {e}")
-        return None
-
-
-def search_email_hunter(domain, api_key):
-    """Cherche un email pour le domaine via Hunter.io."""
-    url = "https://api.hunter.io/v2/domain-search"
-    params = {"domain": domain, "api_key": api_key}
-    try:
-        response = requests.get(url, params=params, timeout=15)
-        response.raise_for_status()
-        data = response.json()
-        emails = data.get('data', {}).get('emails', [])
-        if emails:
-            return emails[0].get('value')
-        return None
-    except Exception as e:
-        logger.error(f"Erreur Hunter.io pour {domain}: {e}")
-        return None
+    from core.domain import extract_domain as _extract
+    return _extract(url)
 
 
 def search_phone_on_website(url):
@@ -156,163 +119,248 @@ def verify_email_mailcheck(email):
         return "Erreur"
 
 
+# ─── Rotation session ─────────────────────────────────────────────────────────
+# (Désactivé : on utilise désormais le navigateur CDP via core.browser)
+# _SESSION_PORT = [9300]
+# _USER_AGENTS = [
+#     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+#     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+#     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+#     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+# ]
+#
+# def _next_port():
+#     _SESSION_PORT[0] += 1
+#     return _SESSION_PORT[0]
+#
+# def _random_ua():
+#     return random.choice(_USER_AGENTS)
 
 
 # ===========================================================
 # GEMINI — Extraction Google Maps
 # ===========================================================
+async def scrape_google_maps(keyword, city, limit=20, known_names=None):
+    """
+    Scrape Google Maps via Playwright headless dédié (évite les conflits CDP).
+    """
+    from urllib.parse import quote
+    from core.browser import _JS_IS_CAPTCHA, handle_captcha_async
+    from playwright.async_api import async_playwright
 
-def scrape_google_maps(keyword, city, limit=20, known_names=None):
-    """
-    Scrape Google Maps via Gemini (Search Grounding).
-    Remplace l'ancienne approche Playwright qui était trop lourde.
-    """
-    from google import genai
-    from google.genai import types
-    import json
-    
     places = []
     seen_names = set(known_names) if known_names else set()
-    
-    print(f"\n[Gemini Maps] Ouverture de la recherche : {keyword} à {city}")
-    
-    config = get_config()
-    api_key = config.get("google_api_key")
-    if not api_key:
-        print("   [ERREUR] Aucune clé google_api_key (Gemini) trouvée. Ajoute là dans config_comptes.")
-        return places
-        
-    client = genai.Client(api_key=api_key)
-    
-    prompt = f"Effectue une recherche sur Google intégrant Google Maps pour trouver {limit} '{keyword}' à '{city}'. " \
-             f"Retourne les résultats STRICTEMENT au format JSON : une liste d'objets. Chaque objet DOIT contenir les clés " \
-             f" exactes suivantes: 'nom', 'rating' (float), 'nb_avis' (entier), 'adresse', 'telephone', 'site_web', 'category', 'lien_maps'. " \
-             f"Cherche de vrais professionnels locaux et retourne leurs vraies données. Limite-toi à {limit} résultats maximum."
-             
+
+    print(f"\n[Maps] Ouverture de la recherche : {keyword} à {city}")
+
+    port = _next_port()
+    ua = _random_ua()
+    print(f"   session port={port} ua={ua[:60]}...")
+
+    pw = await async_playwright().__aenter__()
+    browser = await pw.chromium.launch(
+        headless=True,
+        args=[
+            '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote',
+            f'--remote-debugging-port={port}',
+            '--disable-blink-features=AutomationControlled',
+        ]
+    )
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash-lite',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                tools=[{"google_search": {}}],
-                response_mime_type="application/json",
-                temperature=0.1
-            )
+        ctx = await browser.new_context(
+            locale="fr-FR",
+            viewport={"width": 1920, "height": 1080},
+            user_agent=ua,
         )
-        
+        page = await ctx.new_page()
+
+        search_query = quote(f"{keyword} {city}")
+        url = f"https://www.google.com/maps/search/{search_query}"
+
+        await page.goto(url, wait_until="domcontentloaded", timeout=45_000)
+        await page.wait_for_timeout(3000)
+
+        if await page.evaluate(_JS_IS_CAPTCHA):
+            print("   [Maps] Captcha détecté, attente résolution...")
+            await handle_captcha_async(page, label="Google Maps")
+
         try:
-            results = json.loads(response.text)
-        except Exception as e:
-            print(f"   [ERREUR] Erreur de parsing JSON de la réponse Gemini: {e}")
-            logger.error(f"Gemini output parsing failed: {response.text}")
-            return places
-            
-        if not isinstance(results, list):
-            results = [results]
-            
-        print(f"\n   [OK] {len(results)} fiches extraites par Gemini")
-        
-        for details in results:
-            if not isinstance(details, dict): continue
-            
-            nom = details.get("nom")
-            if not nom: continue
-            
-            nom_clean = nom.strip()
-            if nom_clean.lower() not in seen_names:
-                seen_names.add(nom_clean.lower())
-                
-                try: details["rating"] = float(details.get("rating") or 0)
-                except: details["rating"] = 0.0
-                
-                try: details["nb_avis"] = int(details.get("nb_avis") or 0)
-                except: details["nb_avis"] = 0
-                
-                details["nom"] = nom_clean
-                details["mot_cle"] = keyword
-                details["ville"] = city
-                
-                places.append(details)
-                
-                site = details.get("site_web")
-                rating = details.get("rating", "?")
-                nb_avis = details.get("nb_avis", 0)
-                status = f"OK] {nom_clean} | {site}" if site else f"--] {nom_clean} | PAS DE SITE"
-                print(f"   [{status} | {rating}/5 | {nb_avis} avis")
-                
-    except Exception as e:
-        logger.error(f"Erreur globale Gemini Maps: {e}")
-        print(f"   [ERREUR] Erreur globale Gemini : {e}")
+            await page.wait_for_selector('div[role="feed"]', timeout=10_000)
+            for _ in range(8):
+                await page.evaluate("() => { const f = document.querySelector('div[role=\"feed\"]'); if(f) f.scrollBy(0, 3000); }")
+                await page.wait_for_timeout(1200)
+        except:
+            pass
 
-    return places
+        print("   [Maps] Extraction de la liste des résultats...")
+        list_data = await page.evaluate(r'''() => {
+            const results = [];
+            const items = document.querySelectorAll('div[role="article"]');
+            items.forEach((item, index) => {
+                const titleEl = item.querySelector('.fontHeadlineSmall');
+                const linkEl = item.querySelector('a.hfpxzc');
+                if (!titleEl || !linkEl) return;
 
+                let rating = 0, nb_avis = 0;
 
-            # 4. Recuperer les liens de toutes les fiches
-            links = await feed.query_selector_all('a.hfpxzc')
-            if not links:
-                links = await feed.query_selector_all('a[href*="/maps/place/"]')
-            
-            place_urls = []
-            for link in links:
-                href = await link.get_attribute('href')
-                if href and "/maps/place/" in href:
-                    place_urls.append(href)
-            
-            total = min(len(place_urls), limit)
-            print(f"\n   [OK] {total} fiches a extraire (sur {len(place_urls)} trouvees)")
+                // Rating from aria-label
+                const ratingAria = item.querySelector('[aria-label*="\u00e9toiles"], [aria-label*="stars"]');
+                if (ratingAria) {
+                    const label = ratingAria.getAttribute('aria-label') || '';
+                    const starM = label.match(/([\d.,]+)/);
+                    if (starM) rating = parseFloat(starM[1].replace(',', '.'));
+                }
 
-            # 5. Extraction parallèle des fiches
-            semaphore = asyncio.Semaphore(3)  # Max 3 workers en parallèle
+                // Review count: get the container text (parent element contains the review info)
+                const container = item.parentElement;
+                const containerText = container ? container.innerText : item.innerText;
 
-            async def process_url(url, idx):
-                async with semaphore:
-                    # Créer une nouvelle page pour chaque worker afin d'éviter les conflits de navigation
-                    # mais réutiliser le même contexte pour garder les cookies/session
-                    new_page = await context.new_page()
-                    await new_page.route("**/*", block_resources)
-                    
-                    try:
-                        print(f"   [Worker {idx+1}] Navigation vers : {url[:50]}...")
-                        # Utiliser wait_until="commit" ou "domcontentloaded" pour plus de vitesse
-                        await new_page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                        await new_page.wait_for_timeout(2000)
-                        
-                        details = await extract_place_details(new_page)
-                        if details and details.get("nom"):
-                            details["mot_cle"] = keyword
-                            details["ville"] = city
-                            return details
-                        return None
-                    except Exception as e:
-                        logger.error(f"Erreur worker {idx+1} pour {url}: {e}")
-                        return None
-                    finally:
-                        await new_page.close()
+                // Strategy 1: "• X" pattern (current Google Maps France format)
+                const bulletMatch = containerText.match(/[\u00b7\u2022]\s*(\d+)/);
+                if (bulletMatch) {
+                    nb_avis = parseInt(bulletMatch[1]);
+                }
 
-            tasks = [process_url(url, i) for i, url in enumerate(place_urls[:limit])]
-            results = await asyncio.gather(*tasks)
+                // Strategy 2: parenthesized patterns (fallback)
+                if (!nb_avis) {
+                    const parenMatch = containerText.match(/\((\d[\d\s]*)\s*avis\)/i) || containerText.match(/\((\d+)\)/);
+                    if (parenMatch) nb_avis = parseInt(parenMatch[1].replace(/\s/g, ''));
+                }
 
-            for details in results:
-                if details and details.get("nom"):
-                    nom = details["nom"]
-                    if nom not in seen_names:
-                        seen_names.add(nom)
-                        places.append(details)
-                        
-                        site = details.get("site_web")
-                        rating = details.get("rating", "?")
-                        nb_avis = details.get("nb_avis", 0)
-                        status = f"OK] {nom} | {site}" if site else f"--] {nom} | PAS DE SITE"
-                        print(f"   [{status} | {rating}/5 | {nb_avis} avis")
+                // Strategy 3: aria-label on any child element
+                if (!nb_avis) {
+                    const ariaEls = item.querySelectorAll('[aria-label]');
+                    for (const el of ariaEls) {
+                        const label = el.getAttribute('aria-label') || '';
+                        const m = label.match(/(\d[\d\s]*)\s*avis/i) || label.match(/\((\d+)\)/);
+                        if (m) { nb_avis = parseInt(m[1].replace(/\s/g, '')); if (nb_avis) break; }
+                    }
+                }
 
-        except Exception as e:
-            logger.error(f"Erreur globale scraping: {e}")
-            print(f"   [ERREUR] Erreur globale : {e}")
+                results.push({
+                    index: index, nom: titleEl.innerText, lien: linkEl.href,
+                    rating: rating, nb_avis: nb_avis
+                });
+            });
+            return results;
+        }''')
 
-        finally:
-            # Fermeture propre du navigateur
-            await browser.close()
-            print(f"\n   [OK] Navigateur ferme proprement.")
+        print(f"   [Maps] {len(list_data)} établissements trouvés. Extraction des détails...")
+
+        count = 0
+        for item in list_data:
+            if count >= limit: break
+            if item['nom'].lower() in seen_names: continue
+            try:
+                await page.goto(item["lien"], wait_until="domcontentloaded", timeout=30_000)
+                await page.wait_for_timeout(2000)
+
+                details = await page.evaluate(r'''() => {
+                    const d = { site_web: "", telephone: "", adresse: "", rating: 0, nb_avis: 0, category: "" };
+                    const anchors = document.querySelectorAll('a[href]');
+                    for (const a of anchors) {
+                        const txt = (a.innerText || a.getAttribute('aria-label') || '').toLowerCase().trim();
+                        if ((txt.includes('site web') || txt.includes('site internet')) && a.href && !a.href.includes('google.') && !a.href.includes('maps.')) {
+                            d.site_web = a.href; break;
+                        }
+                    }
+                    if (!d.site_web) {
+                        for (const a of anchors) {
+                            if (a.href && !a.href.includes('google.') && !a.href.includes('maps.') && !a.href.startsWith('javascript:') && !a.href.startsWith('#') && a.href.startsWith('http')) {
+                                d.site_web = a.href; break;
+                            }
+                        }
+                    }
+                    const telBtn = document.querySelector('button[data-item-id^="phone:tel:"]');
+                    if (telBtn) d.telephone = telBtn.getAttribute('data-item-id').replace('phone:tel:', '');
+                    else {
+                        const telLink = document.querySelector('a[href^="tel:"]');
+                        if (telLink) d.telephone = telLink.getAttribute('href').replace('tel:', '');
+                    }
+                    const addrEl = document.querySelector('button[data-item-id="address"]');
+                    if (addrEl) d.adresse = addrEl.innerText;
+                    const ratingEl = document.querySelector('div.F7nice span span[aria-hidden="true"]');
+                    if (ratingEl) d.rating = parseFloat(ratingEl.innerText.replace(',', '.'));
+
+                    // Review count: multiple strategies
+                    const bodyText = document.body.innerText;
+
+                    // Strategy 1: "X avis / X évaluations" text patterns (most reliable)
+                    const avisMatch = bodyText.match(/(\d[\d\s]*)\s*avis/i) || bodyText.match(/(\d[\d\s]*)\s*\u00e9valuations?/i);
+                    if (avisMatch) {
+                        d.nb_avis = parseInt(avisMatch[1].replace(/\s/g, ''));
+                    }
+
+                    // Strategy 2: "• X" pattern (generic bullet — fragile, only use as fallback)
+                    if (!d.nb_avis) {
+                        const bulletMatch = bodyText.match(/[\u00b7\u2022]\s*(\d+)/);
+                        if (bulletMatch) {
+                            d.nb_avis = parseInt(bulletMatch[1]);
+                        }
+                    }
+
+                    // Strategy 3: button with review action
+                    if (!d.nb_avis) {
+                        const reviewBtn = document.querySelector('button[jsaction*="moreReviews"], button[jsaction*="review"], [aria-label*="avis" i]');
+                        if (reviewBtn) {
+                            const btnText = reviewBtn.innerText || reviewBtn.getAttribute('aria-label') || '';
+                            const m = btnText.match(/(\d[\d\s]*)\s*avis/i) || btnText.match(/\((\d+)\)/);
+                            if (m) d.nb_avis = parseInt(m[1].replace(/\s/g, ''));
+                        }
+                    }
+
+                    // Strategy 4: rating section aria-label
+                    if (!d.nb_avis) {
+                        const sec = document.querySelector('[aria-label*="\u00e9toile" i], [aria-label*="star" i]');
+                        if (sec) {
+                            const label = sec.getAttribute('aria-label') || '';
+                            const m = label.match(/\((\d[\d\s]*)\)/);
+                            if (m) d.nb_avis = parseInt(m[1].replace(/\s/g, ''));
+                        }
+                    }
+                    const catEl = document.querySelector('button[jsaction="pane.rating.category"]');
+                    if (catEl) d.category = catEl.innerText;
+
+                    // Debug: capture text snippet around "avis" or rating area
+                    const ratingArea = document.querySelector('[aria-label*="étoile" i], [aria-label*="star" i], div.F7nice');
+                    d._debug_text = '';
+                    if (ratingArea) {
+                        d._debug_text = (ratingArea.getAttribute('aria-label') || ratingArea.innerText || '').trim();
+                    }
+                    if (!d._debug_text) {
+                        d._debug_text = (document.querySelector('[class*="review"]') || document.querySelector('[class*="rating"]') || {}).innerText || '';
+                    }
+                    if (d.nb_avis > 0) d._debug_text = '';
+
+                    return d;
+                }''')
+                if not details.get('nb_avis'):
+                    details['nb_avis'] = item.get('nb_avis', 0)
+                if not details.get('rating') or details.get('rating') == 0:
+                    details['rating'] = item.get('rating', 0)
+
+                if not details.get('nb_avis'):
+                    debug_snippet = details.get('_debug_text', '')[:200] if details.get('_debug_text') else ''
+                    print(f"   [WARN] nb_avis=0 pour {item['nom'][:40]} (search={item.get('nb_avis',0)}, rating={details.get('rating',0)})")
+
+                places.append({
+                    'nom': item['nom'], 'site_web': details['site_web'],
+                    'telephone': details['telephone'], 'adresse': details['adresse'],
+                    'rating': details['rating'], 'nb_avis': details['nb_avis'],
+                    'category': details['category'], 'lien_maps': item['lien'],
+                    'mot_cle': keyword, 'ville': city
+                })
+                seen_names.add(item['nom'].lower())
+                count += 1
+                status = "OK" if details['site_web'] else "--"
+                print(f"   [{status}] {item['nom']} | {details['site_web'] or 'PAS DE SITE'} | {details['telephone'] or 'PAS DE TEL'}")
+            except Exception as e:
+                print(f"   [WARN] Erreur détails pour {item['nom']} : {e}")
+    finally:
+        try: await browser.close()
+        except: pass
+        try: await pw.stop()
+        except: pass
 
     return places
 
@@ -321,110 +369,80 @@ def scrape_google_maps(keyword, city, limit=20, known_names=None):
 # MAIN — Point d'entree
 # ===========================================================
 
-def main():
+async def main_async(argv=None):
+    import argparse
+    import asyncio
     parser = argparse.ArgumentParser(description="Scraper Google Maps via Playwright")
     parser.add_argument("--keyword", required=True, help="Le metier (ex: 'restaurant')")
     parser.add_argument("--city", required=True, help="La ville (ex: 'Cotonou')")
     parser.add_argument("--limit", type=int, default=20, help="Nombre max de resultats (defaut: 20)")
-    parser.add_argument("--min-emails", type=int, default=None, help="Nombre minimum de leads avec email requis. Le scraper continue jusqu'à trouver ce nombre")
+    parser.add_argument("--min-emails", type=int, default=None, help="Nombre minimum de leads avec email requis")
     parser.add_argument("--campaign-id", type=int, default=None, help="ID de la campagne rattachée")
-    parser.add_argument("--multi-zone", action="store_true", help="Utiliser l'agent de zones pour explorer les quartiers")
-    args = parser.parse_args()
+    parser.add_argument("--multi-zone", action="store_true", help="Utiliser l'agent de zones")
+    parser.add_argument("--offset", type=int, default=0, help="Nombre de résultats à ignorer")
+    parser.add_argument("--min-reviews", type=int, default=0, help="Nombre minimum d'avis requis")
+    parser.add_argument("--secteur", type=str, default="", help="Étiquette secteur (ex: immobilier)")
+    if argv is not None:
+        args = parser.parse_args(argv)
+    else:
+        args = parser.parse_args()
 
-    # Quand min_emails est spécifié, effective_limit n'est pas une limite dure :
-    # le scraper continue jusqu'à trouver min_emails emails, peu importe le nombre
-    # de leads à inspecter. effective_limit sert uniquement de taille par zone.
-    effective_limit = args.limit if args.limit else (args.min_emails * 4 if args.min_emails else 80)
+    effective_limit = (args.limit - args.offset) if args.limit else (args.min_emails * 4 if args.min_emails else 80)
     
     print("=" * 60)
     print("Scraper Google Maps - Playwright Headless")
     print(f"   Recherche : {args.keyword} a {args.city}")
     print(f"   Limite : {effective_limit} resultats")
-    if args.min_emails:
-        print(f"   Objectif emails : {args.min_emails} minimum")
     print("=" * 60)
 
     start_time = time.time()
-
-    # ================================================================
-    # CONFIG GLOBALE DE LA SESSION
-    # ================================================================
     MAX_PAR_PASSE    = 120
-    MIN_EMAILS_CIBLE = args.min_emails  # None si non spécifié
+    MIN_EMAILS_CIBLE = args.min_emails
 
-    # Config API (clés Hunter, etc.)
-    try:
-        get_config()
-    except Exception as e:
-        print(f"   [WARN] Config non chargee : {e}")
+    try: get_config()
+    except: pass
 
     date_scraping    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     valid_leads  = []
     emails_count = 0
 
-    # Mémoire DB : charger les noms déjà connus pour ne pas re-scraper ni re-enrichir
+    # Mémoire DB
+    seen_noms_global = set()
     if _DB_AVAILABLE:
         try:
             with db_get_conn() as _conn:
-                _rows = _conn.execute(
-                    "SELECT LOWER(TRIM(nom)) FROM leads_bruts WHERE nom IS NOT NULL AND nom != ''"
-                ).fetchall()
+                if args.secteur:
+                    _rows = _conn.execute("SELECT LOWER(TRIM(nom)) FROM leads_bruts WHERE nom IS NOT NULL AND secteur=?", (args.secteur,)).fetchall()
+                else:
+                    _rows = _conn.execute("SELECT LOWER(TRIM(nom)) FROM leads_bruts WHERE nom IS NOT NULL").fetchall()
             seen_noms_global = set(r[0] for r in _rows if r[0])
-            print(f"   [DB] Mémoire chargée : {len(seen_noms_global)} leads déjà connus (seront ignorés).")
-        except Exception as _e:
-            seen_noms_global = set()
-            print(f"   [WARN] Mémoire DB non chargée : {_e}")
-    else:
-        seen_noms_global = set()
+            print(f"   [DB] Mémoire chargée : {len(seen_noms_global)} leads (secteur={args.secteur or 'tous'})")
+        except: pass
 
-    # ================================================================
-    # Construction de la file de zones à explorer
-    # ================================================================
     zones_queue = [args.city]
     zones_used  = set()
 
     if args.multi_zone:
         try:
             from scraper.zone_agent import get_city_subdivisions
-        except ImportError:
-            try:
-                from zone_agent import get_city_subdivisions
-            except ImportError:
-                get_city_subdivisions = None
-
-        if get_city_subdivisions:
-            print(f"\n[ZoneAgent] Découverte des sous-zones de '{args.city}'...")
-            nb_zones   = max(15, (effective_limit // MAX_PAR_PASSE) + 5)
+            nb_zones = max(15, (effective_limit // MAX_PAR_PASSE) + 5)
             sous_zones = get_city_subdivisions(args.city, max_zones=nb_zones)
             zones_queue.extend(sous_zones)
-            print(f"[ZoneAgent] {len(sous_zones)} zones disponibles.")
-        else:
-            print("   [WARN] ZoneAgent non disponible. Variantes génériques utilisées.")
-            zones_queue += [
-                f"{args.city} centre", f"{args.city} nord",
-                f"{args.city} sud",    f"{args.city} est", f"{args.city} ouest",
-            ]
+        except:
+            zones_queue += [f"{args.city} centre", f"{args.city} nord", f"{args.city} sud", f"{args.city} est", f"{args.city} ouest"]
 
-    # Dédupliquer la file tout en préservant l'ordre
     seen_z = set()
-    zones_queue = [z for z in zones_queue
-                   if not (z.lower() in seen_z or seen_z.add(z.lower()))]
+    zones_queue = [z for z in zones_queue if not (z.lower() in seen_z or seen_z.add(z.lower()))]
 
-    # ================================================================
-    # HELPERS
-    # ================================================================
     def _objectif_atteint() -> bool:
-        if MIN_EMAILS_CIBLE:
-            return emails_count >= MIN_EMAILS_CIBLE
+        if MIN_EMAILS_CIBLE: return emails_count >= MIN_EMAILS_CIBLE
         return len(valid_leads) >= effective_limit
 
     def _enrichir_place(place: dict):
         nom     = place.get("nom", "Inconnu")
         website = place.get("site_web")
-        email   = None
-        statut_email = None
-        _email_result = None
 
+        # Blacklist social media / annuaire sites
         if website:
             domain = extract_domain(website)
             blacklist = ["google.com", "facebook.com", "instagram.com",
@@ -432,51 +450,17 @@ def main():
             if domain and any(bd in domain.lower() for bd in blacklist):
                 place["site_web"] = None
                 website = None
-                domain  = None
-
-            if domain:
-                _email_result = None
-                if _EMAIL_FINDER_AVAILABLE:
-                    _email_result = find_email_all_methods(website, verbose=True)  # noqa
-                    if _email_result['email']:
-                        email  = _email_result['email']
-                        source = _email_result.get('source', 'site')
-                        confidence = _email_confidence(_email_result)
-                        print(f"   [{nom}] Email trouvé ({source}, confiance {confidence}%) : {email}")
-                elif website:
-                    email = search_email_on_website(website)
-                    if email:
-                        print(f"   [{nom}] Email page web (legacy) : {email}")
-
-        email_source_info = None
-        if email:
-            statut_email = verify_email_mailcheck(email)
-            if statut_email != "valid":
-                print(f"   [{nom}] Email {email} -> statut: {statut_email}")
-            if _email_result and _email_result.get('email'):
-                email_source_info = f"{_email_result.get('source','?')}|conf:{_email_confidence(_email_result)}"
-
-        telephone = place.get('telephone', '')
-        if not telephone and website:
-            tel_web = search_phone_on_website(website)
-            if tel_web:
-                telephone = tel_web
-                print(f"   [{nom}] Téléphone trouvé sur site : {telephone}")
-
-        if not email and not telephone:
-            print(f"   [{nom}] [REJETE] Aucun email ni téléphone trouvé.")
-            return None
 
         return {
             'nom':          nom,
             'adresse':      place.get('adresse', ''),
             'site_web':     website or '',
-            'telephone':    telephone,
+            'telephone':    place.get('telephone', ''),
             'rating':       place.get('rating', ''),
             'nb_avis':      int(place.get('nb_avis') or 0),
-            'email':        email or '',
-            'statut_email': statut_email or '',
-            'email_source': email_source_info or '',
+            'email':        '',
+            'statut_email': '',
+            'email_source': '',
             'date_scraping': date_scraping,
             'mot_cle':      args.keyword,
             'ville':        args.city,
@@ -485,16 +469,18 @@ def main():
             'campaign_id':  args.campaign_id,
         }
 
-    # ================================================================
-    # BOUCLE PRINCIPALE — ne s'arrête que si l'objectif est atteint
-    # ou si toutes les zones sont épuisées
-    # ================================================================
     passe_num = 0
+    _STOP_FLAG = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'maps_stop.flag')
 
     while zones_queue and not _objectif_atteint():
+        if os.path.exists(_STOP_FLAG):
+            try: os.remove(_STOP_FLAG)
+            except: pass
+            print("\n   [STOP] Arrêt demandé depuis le dashboard.")
+            break
+
         zone = zones_queue.pop(0)
-        if zone.lower() in zones_used:
-            continue
+        if zone.lower() in zones_used: continue
         zones_used.add(zone.lower())
         passe_num += 1
 
@@ -514,122 +500,104 @@ def main():
         print(f"{'='*60}")
 
         try:
-            batch_places = 
-                scrape_google_maps(args.keyword, zone, limit_zone, known_names=seen_noms_global
-            )
-        except Exception as e:
-            print(f"   [ERREUR] Scraping zone '{zone}' : {e}")
-            time.sleep(3)
-            continue
-
-        if not batch_places:
-            print(f"   [WARN] Aucun résultat pour '{zone}'.")
-            continue
-
-        # Déduplication
-        nouveaux = [p for p in batch_places
-                    if p.get('nom', '').strip().lower() not in seen_noms_global
-                    and not seen_noms_global.add(p.get('nom', '').strip().lower())]
-
-        print(f"   -> {len(nouveaux)} nouveaux lieux (sur {len(batch_places)} trouvés)")
-
-        for place in nouveaux:
-            if _objectif_atteint():
-                print(f"\n   [OK] Objectif atteint → arrêt immédiat.")
-                break
-
-            lead = _enrichir_place(place)
-            if lead is None:
+            batch_places = await scrape_google_maps(args.keyword, zone, limit_zone, known_names=seen_noms_global)
+            if not batch_places:
+                print(f"   [WARN] Aucun résultat pour '{zone}'.")
                 continue
 
-            if lead['email']:
-                emails_count += 1
+            # Déduplication
+            nouveaux = [p for p in batch_places
+                        if p.get('nom', '').strip().lower() not in seen_noms_global
+                        and not seen_noms_global.add(p.get('nom', '').strip().lower())]
 
-            valid_leads.append(lead)
+            print(f"   -> {len(nouveaux)} nouveaux lieux (sur {len(batch_places)} trouvés)")
 
-            # SQLite immédiat
-            if _DB_AVAILABLE:
-                try:
-                    db_insert_lead(lead)
-                except Exception as e:
-                    logger.error(f"SQLite insert_lead({lead['nom']}): {e}")
+            for place in nouveaux:
+                if _objectif_atteint():
+                    print(f"\n   [OK] Objectif atteint → arrêt immédiat.")
+                    break
 
-            if MIN_EMAILS_CIBLE:
-                print(f"   [PROGRESSION] emails={emails_count}/{MIN_EMAILS_CIBLE}  leads={len(valid_leads)} (total: {len(valid_leads)})")
-            else:
-                print(f"   [PROGRESSION] leads={len(valid_leads)}/{effective_limit} (total: {len(valid_leads)})")
+                # Filtre min-reviews
+                if args.min_reviews > 0 and (place.get('nb_avis') or 0) < args.min_reviews:
+                    continue
 
-        # Si la file est épuisée mais l'objectif n'est pas atteint,
-        # ajouter automatiquement des zones de repli (évite l'arrêt prématuré
-        # quand la zone principale contenait surtout des leads déjà connus)
+                lead = await asyncio.to_thread(_enrichir_place, place)
+                if lead is None:
+                    continue
+
+                # Propager secteur
+                if args.secteur:
+                    lead['secteur'] = args.secteur
+
+                if lead['email']:
+                    emails_count += 1
+
+                valid_leads.append(lead)
+
+                # SQLite immédiat
+                if _DB_AVAILABLE:
+                    try:
+                        db_insert_lead(lead)
+                    except Exception as e:
+                        logger.error(f"SQLite insert_lead({lead['nom']}): {e}")
+
+                if MIN_EMAILS_CIBLE:
+                    print(f"   [PROGRESSION] emails={emails_count}/{MIN_EMAILS_CIBLE}  leads={len(valid_leads)} (total: {len(valid_leads)})")
+                else:
+                    print(f"   [PROGRESSION] leads={len(valid_leads)}/{effective_limit} (total: {len(valid_leads)})")
+
+                # Direct campaign tracker update (in-process mode)
+                if args.campaign_id:
+                    try:
+                        from services.campaign_tracker import update_progress
+                        update_progress(
+                            args.campaign_id,
+                            processed=len(valid_leads),
+                            total=effective_limit,
+                            emails_found=emails_count,
+                            phase='scraping',
+                        )
+                    except Exception:
+                        pass
+
+        except Exception as e:
+            print(f"   [ERREUR] Scraping zone '{zone}' : {e}")
+            await asyncio.sleep(3)
+
+        # Fallback zones (uniquement hors multi-zone, arrêts aux 5 directions)
         if not zones_queue and not _objectif_atteint() and not args.multi_zone:
             _fallbacks = [
-                f"{args.city} centre",
-                f"{args.city} nord", f"{args.city} sud",
-                f"{args.city} est",  f"{args.city} ouest",
-                f"{args.city} 1er arrondissement", f"{args.city} 2ème arrondissement",
-                f"{args.city} 3ème arrondissement", f"{args.city} 4ème arrondissement",
-                f"{args.city} 5ème arrondissement", f"{args.city} 6ème arrondissement",
-                f"{args.city} 7ème arrondissement", f"{args.city} 8ème arrondissement",
-                f"{args.city} 9ème arrondissement", f"{args.city} 10ème arrondissement",
-                f"{args.city} 11ème arrondissement", f"{args.city} 12ème arrondissement",
-                f"{args.city} 13ème arrondissement", f"{args.city} 14ème arrondissement",
-                f"{args.city} 15ème arrondissement", f"{args.city} 16ème arrondissement",
-                f"{args.city} 17ème arrondissement", f"{args.city} 18ème arrondissement",
-                f"{args.city} 19ème arrondissement", f"{args.city} 20ème arrondissement",
+                f"{args.city} centre", f"{args.city} nord", f"{args.city} sud",
+                f"{args.city} est", f"{args.city} ouest",
             ]
             _new_zones = [z for z in _fallbacks if z.lower() not in zones_used]
             if _new_zones:
-                if MIN_EMAILS_CIBLE:
-                    manque = MIN_EMAILS_CIBLE - emails_count
-                    print(f"\n   [AUTO-ZONE] Objectif emails non atteint ({emails_count}/{MIN_EMAILS_CIBLE}, "
-                          f"encore {manque} email(s) à trouver). "
-                          f"Ajout de {len(_new_zones)} zones de repli...")
-                else:
-                    manque = effective_limit - len(valid_leads)
-                    print(f"\n   [AUTO-ZONE] Objectif non atteint ({len(valid_leads)}/{effective_limit}, "
-                          f"encore {manque} lead(s) à trouver). "
-                          f"Ajout de {len(_new_zones)} zones de repli...")
+                print(f"\n   [AUTO-ZONE] Ajout de {len(_new_zones)} zones de repli...")
                 zones_queue.extend(_new_zones)
 
-        time.sleep(2)
+        await asyncio.sleep(2)
 
-    # ================================================================
-    # RÉSUMÉ FINAL
-    # ================================================================
+    # Résumé final
     elapsed = time.time() - start_time
-    try:
-        mem_mb = psutil.Process().memory_info().rss / 1024 / 1024
-    except:
-        mem_mb = 0
+    process = psutil.Process(os.getpid())
+    mem_mb = process.memory_info().rss / (1024 * 1024)
 
-    print("")
-    print("=" * 60)
-    nb_avec_site  = sum(1 for l in valid_leads if l['site_web'])
-    nb_sans_site  = sum(1 for l in valid_leads if not l['site_web'])
-    nb_avec_email = sum(1 for l in valid_leads if l['email'])
-
-    if MIN_EMAILS_CIBLE and nb_avec_email < MIN_EMAILS_CIBLE:
-        print(f"[PARTIEL] Objectif {MIN_EMAILS_CIBLE} emails NON ATTEINT.")
-        print(f"   Emails trouvés  : {nb_avec_email} / {MIN_EMAILS_CIBLE}")
-        print(f"   Zones explorées : {len(zones_used)}")
-        print(f"   [CONSEIL] Activez 'Multi-zones' pour explorer les quartiers.")
-    elif MIN_EMAILS_CIBLE:
-        print(f"[SUCCES] Objectif {MIN_EMAILS_CIBLE} emails ATTEINT ✓")
-    else:
-        print(f"Scraping terminé — {len(valid_leads)} leads extraits")
-
+    print("\n" + "=" * 60)
+    print(f"Scraping terminé en {elapsed:.1f}s")
     print(f"   Total leads      : {len(valid_leads)}")
-    print(f"   Avec site web    : {nb_avec_site}")
-    print(f"   Sans site web    : {nb_sans_site}")
-    print(f"   Avec email       : {nb_avec_email}")
-    print(f"   Passes effectuées: {passe_num}")
-    print(f"   Durée            : {elapsed:.1f}s")
+    print(f"   Avec email       : {emails_count}")
     print(f"   RAM utilisée     : {mem_mb:.1f} Mo")
     print("=" * 60)
 
+    # Browser headless propre — le finally dans scrape_google_maps ferme chaque instance
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    try:
+        asyncio.run(main_async())
+    except KeyboardInterrupt:
+        print("\n[!] Interruption par l'utilisateur.")
+    except Exception as e:
+        print(f"\n[!] Erreur fatale : {e}")
 
 

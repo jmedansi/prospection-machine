@@ -2,9 +2,34 @@
 *.json
 !requirements.txt
 errors.log
+error.log
+*.log
+*log.txt
 debug_out.txt
 cles_api_sauvegarde.txt
 __pycache__/
 *.pyc
 .vscode/
 .idea/
+.venv/
+venv/
+env/
+node_modules/
+
+# Profils Chrome temporaires (contiennent des caches et cookies)
+chrome_profile/
+chrome_profiles/
+**/chrome_profile/
+**/chrome_profiles/
+
+# Rapports clients volumineux
+reporter/reports/
+*.report.html
+
+# Sauvegardes temporaires dans scratch
+scratch/*.db
+
+# Dossiers temporaires de backup
+backups/pre-refact-*/
+backups/v4-cleanup-*/
+backups/v4-cleanup-temp*

@@ -8,10 +8,9 @@ import os
 import sys
 import json
 import requests
-from dotenv import load_dotenv
-
+from core.config import ensure_env
 # Charger le .env depuis la racine du projet
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+ensure_env()
 
 resend_key   = os.getenv("RESEND_API_KEY")
 sender_email = os.getenv("BREVO_SENDER_EMAIL")

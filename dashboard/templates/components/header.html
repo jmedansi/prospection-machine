@@ -1,0 +1,93 @@
+<!--
+    dashboard/templates/components/header.html
+    Barre d'outils supérieure (Desktop Topbar)
+-->
+<div class="tb">
+    <div class="topbar-left" style="display:flex;align-items:center;gap:12px">
+        <div class="tb-brand" style="display:flex;align-items:center;gap:8px">
+            <div style="background:var(--accent);color:white;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">I</div>
+            <span class="tb-brand-name" style="font-weight:700;font-size:16px;letter-spacing:-0.5px">Incidenx</span>
+        </div>
+        <div style="width:1px;height:20px;background:var(--border);margin:0 4px" class="tb-sep"></div>
+        <div class="pt" id="PT" style="font-weight:600;font-size:14px;color:var(--ink3)">Cockpit</div>
+    </div>
+    <div class="tr">
+        <div class="tb-sector-group" style="display:flex;align-items:center;gap:8px;margin-right:15px;padding-right:15px;border-right:1px solid var(--border)">
+            <span class="tb-label" style="font-size:11px;font-weight:600;color:var(--ink3)">Secteur:</span>
+            <select id="global-sector-select" class="inp sm" style="width:140px" onchange="loadCampaignsForSector(this.value)">
+                <option value="">Tous secteurs</option>
+            </select>
+        </div>
+        <div class="tb-campaign-group" style="display:flex;align-items:center;gap:8px;margin-right:15px;padding-right:15px;border-right:1px solid var(--border)">
+            <span class="tb-label" style="font-size:11px;font-weight:600;color:var(--ink3)">Campagne:</span>
+            <select id="global-campaign-select" class="inp sm" style="width:200px" onchange="changeGlobalCampaign(this.value)">
+                <option value="">Toutes les campagnes</option>
+            </select>
+        </div>
+        <!-- Date Range Picker -->
+        <div class="tb-date-picker" style="position:relative;margin-right:15px;padding-right:15px;border-right:1px solid var(--border)">
+            <input type="hidden" id="global-date-start">
+            <input type="hidden" id="global-date-end">
+            <button id="drp-trigger" onclick="_drpToggle()"
+                style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--ink);font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;transition:border-color .15s">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M1 6h14" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                <span id="drp-label" style="color:var(--ink3)">Période</span>
+                <span id="drp-clear" onclick="event.stopPropagation();clearGlobalDate()"
+                    style="display:none;color:var(--ink3);font-size:14px;line-height:1;margin-left:2px">✕</span>
+            </button>
+            <div id="drp-popup"
+                style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.18);z-index:10000;padding:16px 16px 14px;width:268px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <button onclick="_drpPrevMonth()"
+                        style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--ink3);width:28px;height:28px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s"
+                        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+                        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink3)'">‹</button>
+                    <span id="drp-month-label" style="font-size:13px;font-weight:700;color:var(--ink)"></span>
+                    <button onclick="_drpNextMonth()"
+                        style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--ink3);width:28px;height:28px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s"
+                        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+                        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--ink3)'">›</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px">
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Lu</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Ma</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Me</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Je</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Ve</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Sa</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Di</div>
+                </div>
+                <div id="drp-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px"></div>
+                <div
+                    style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+                    <span id="drp-footer" style="font-size:11px;color:var(--ink3)">Choisissez la date de début</span>
+                    <button onclick="_drpReset();_drpRender()"
+                        style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer;padding:0;text-decoration:underline">Effacer</button>
+                </div>
+            </div>
+        </div>
+        <div class="sp" id="status-provider"
+            style="background:var(--surface2);color:var(--ink3);border-color:var(--border)"><span class="pls"
+                style="background:var(--ink3)"></span><span id="status-provider-text">Chargement...</span></div>
+        <button class="btn bg1 sm" onclick="refreshAll()">Rafraîchir</button>
+        <div class="tt" onclick="toggleTheme()" title="Thème">
+            <svg id="TI" width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.4" />
+                <path
+                    d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.1 3.1l1.1 1.1M11.8 11.8l1.1 1.1M3.1 12.9l1.1-1.1M11.8 4.2l1.1-1.1"
+                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div id="notification-bell" class="tt" onclick="showNotifications()" title="Notifications" style="position:relative">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2a4 4 0 00-4 4v3l-1 2h10l-1-2V6a4 4 0 00-4-4z" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M6.5 13a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <span id="notification-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:8px;height:8px;background:var(--error);border-radius:50%"></span>
+        </div>
+    </div>
+</div>

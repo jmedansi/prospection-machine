@@ -6,7 +6,6 @@ import sys
 import os
 
 # Ajout de la racine au path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from envoi.resend_sender import send_prospecting_email
 

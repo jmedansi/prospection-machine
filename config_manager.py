@@ -12,13 +12,12 @@ import requests
 from datetime import date, datetime
 from typing import Dict, Any, List, Optional
 
-from dotenv import load_dotenv
+from core.config import ensure_env
 import gspread
 from google.oauth2.service_account import Credentials
 
 # Chargement du .env
-load_dotenv()
-
+ensure_env()
 # --- Logging ---
 logging.basicConfig(
     filename='errors.log',
@@ -57,14 +56,13 @@ def _get_gspread_client() -> gspread.client.Client:
         return _cache["gspread_client"]
     try:
         credentials_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-        if not credentials_file:
-            raise ValueError("GOOGLE_SERVICE_ACCOUNT_JSON manquant dans .env")
+        if not credentials_file or not os.path.exists(credentials_file):
+            return None
         creds = Credentials.from_service_account_file(credentials_file, scopes=SCOPES)
         _cache["gspread_client"] = gspread.authorize(creds)
         return _cache["gspread_client"]
-    except Exception as e:
-        logger.error(f"Erreur authentification gspread: {e}")
-        raise
+    except Exception:
+        return None
 
 
 def get_sheet(sheet_name: str) -> gspread.worksheet.Worksheet:
@@ -74,18 +72,18 @@ def get_sheet(sheet_name: str) -> gspread.worksheet.Worksheet:
     try:
         sheet_id = os.getenv("GOOGLE_SHEETS_ID")
         if not sheet_id:
-            raise ValueError("GOOGLE_SHEETS_ID manquant dans .env")
+            return None
         
         if not _cache["spreadsheet"]:
             client = _get_gspread_client()
+            if not client: return None
             _cache["spreadsheet"] = client.open_by_key(sheet_id)
             
         sheet = _cache["spreadsheet"].worksheet(sheet_name)
         _cache["worksheets"][sheet_name] = sheet
         return sheet
-    except Exception as e:
-        logger.error(f"Erreur accès feuille {sheet_name}: {e}")
-        raise
+    except Exception:
+        return None
 
 
 def _get_all_records(force: bool = False) -> List[Dict[str, Any]]:
@@ -96,6 +94,8 @@ def _get_all_records(force: bool = False) -> List[Dict[str, Any]]:
     now = time.time()
     if force or (now - _cache["records_ts"]) > CACHE_TTL or _cache["all_records"] is None:
         sheet = get_sheet("config_comptes")
+        if not sheet:
+            return []
         expected_headers = [
             "compte_id", "actif", "groq_key", "google_api_key", "hunter_key", "brevo_key",
             "outscraper_key", "hunter_usage", "brevo_usage", "date_reset"
@@ -179,16 +179,33 @@ def get_active_client() -> Dict[str, Any]:
 
     try:
         records = _get_all_records(force=True)
+        if not records:
+            # Fallback total sur le .env
+            fallback = {
+                "compte_id": "env_fallback",
+                "actif": "TRUE",
+                "groq_key": os.getenv("GROQ_API_KEY"),
+                "google_api_key": os.getenv("GOOGLE_API_KEY")
+            }
+            _cache["active_client"] = fallback
+            _cache["cache_ts"] = now
+            return fallback
+
         for row in records:
             if str(row.get("actif", "")).strip().upper() == "TRUE":
                 _cache["active_client"] = dict(row)
                 _cache["cache_ts"] = now
                 return _cache["active_client"]
 
-        raise ValueError("Aucun compte actif (actif=TRUE) trouvé dans config_comptes.")
+        raise ValueError("Aucun compte actif trouvé.")
     except Exception as e:
-        logger.error(f"Erreur get_active_client: {e}")
-        raise
+        # Dernier recours : si tout foire, on renvoie les variables d'env
+        return {
+            "compte_id": "env_fallback_error",
+            "actif": "TRUE",
+            "groq_key": os.getenv("GROQ_API_KEY"),
+            "google_api_key": os.getenv("GOOGLE_API_KEY")
+        }
 
 
 def get_llm_client(client_info: Optional[Dict[str, Any]] = None):
@@ -257,37 +274,56 @@ def increment_usage(compte_id: str, service: str = "hunter") -> None:
 # POINT D'ENTRÉE UNIQUE — handle_llm_call()
 # ===========================================================
 
-MAX_RETRIES = 10  # 10 comptes au total
+MAX_RETRIES = 10
+
+
+def _get_groq_keys() -> list[str]:
+    keys = []
+    for i in range(1, 6):
+        var = "GROQ_API_KEY" if i == 1 else f"GROQ_API_KEY_{i}"
+        k = os.getenv(var)
+        if k and k not in keys:
+            keys.append(k)
+    return keys
+
 
 def handle_llm_call(prompt: str, system: str = "Tu es un consultant business expert.", provider: str = None, model: Optional[str] = None) -> str:
-    """
-    Point d'entrée unique — utilise exclusivement Groq (LLaMA 3.3 70B).
-    Plus de dépendance Gemini.
-    """
-    try:
-        client_info = get_active_client()
-        api_key = client_info.get("groq_key") or client_info.get("GROQ_API_KEY")
+    keys = _get_groq_keys()
+    if not keys:
+        raise ValueError("Aucune clé Groq trouvée (GROQ_API_KEY / GROQ_API_KEY_2 dans .env).")
 
-        if not api_key:
-            raise ValueError("Aucune clé Groq (groq_key) trouvée dans config_comptes.")
+    last_error = None
+    for attempt in range(MAX_RETRIES):
+        key_idx = attempt % len(keys)
+        api_key = keys[key_idx]
 
         from openai import OpenAI
-        client = OpenAI(
-            base_url="https://api.groq.com/openai/v1",
-            api_key=api_key
-        )
-        response = client.chat.completions.create(
-            model=model or "llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content
+        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=api_key)
 
-    except Exception as e:
-        logger.error(f"Erreur handle_llm_call: {e}")
-        raise
+        try:
+            response = client.chat.completions.create(
+                model=model or "llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            last_error = e
+            err_str = str(e).lower()
+            is_rate = "429" in err_str or "rate limit" in err_str or "too many" in err_str
+            if is_rate:
+                delay = min(2 ** (attempt // len(keys)), 30)
+                logger.warning(f"Rate limit (clé {key_idx+1}/{len(keys)}), pause {delay}s, tentative {attempt+1}/{MAX_RETRIES}")
+                time.sleep(delay)
+                continue
+            if attempt < MAX_RETRIES - 1:
+                continue
+            break
+
+    logger.error(f"handle_llm_call: épuisé après {MAX_RETRIES} tentatives. Dernière erreur: {last_error}")
+    raise last_error
 
 
 # ===========================================================
@@ -382,6 +418,7 @@ def get_config() -> Dict[str, Any]:
             logger.error(f"Erreur get_config fallback: {e}")
     
     # Fusionner avec les variables d'environnement (Brevo, Vercel, etc.)
+    config["google_api_key"] = os.getenv("GOOGLE_API_KEY", config.get("google_api_key"))
     config["brevo_key"] = os.getenv("BREVO_API_KEY", config.get("brevo_key"))
     config["resend_key"] = os.getenv("RESEND_API_KEY")
     config["vercel_token"] = os.getenv("VERCEL_TOKEN")

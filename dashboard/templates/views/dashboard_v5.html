@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Incidenx - Prospection Machine V5{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/dashboard.css') }}?v=12">
+{% endblock %}
+
+<!-- Mobile app experience is now unified within the main .app structure -->
+{% block mobile_app %}
+{% endblock %}
+
+{% block sidebar %}
+{% include "components/sidebar.html" %}
+{% endblock %}
+
+{% block topbar %}
+{% include "components/header.html" %}
+{% endblock %}
+
+{% block content %}
+<div id="toast-container"></div>
+
+<!-- Section Cockpit (Seule) -->
+<div id="section-cockpit" class="v-section active">
+    {% include "views/sections/cockpit.html" %}
+</div>
+
+<!-- Section Prospection (Groupée) -->
+<div id="section-campagne" class="v-section">
+    <div class="section-tabs">
+        <button class="section-tab active" onclick="switchSectionTab('leads', this)">Leads Station</button>
+        <button class="section-tab" onclick="switchSectionTab('sources', this)">Sources</button>
+    </div>
+    <div id="subtab-leads" class="subtab-content active">
+        {% include "views/sections/leads_unified.html" %}
+    </div>
+    <div id="subtab-sources" class="subtab-content" style="display:none">
+        {% include "views/sections/sources.html" %}
+    </div>
+</div>
+
+<!-- Section Tracking (Groupée) -->
+<div id="section-tracking" class="v-section">
+    <div class="section-tabs">
+        <button class="section-tab active" onclick="switchSectionTab('suivi', this)">Suivi CRM</button>
+        <button class="section-tab" onclick="switchSectionTab('roi', this)">ROI Analytics</button>
+        <button class="section-tab" onclick="switchSectionTab('board', this)">Tableau</button>
+    </div>
+    <div id="subtab-suivi" class="subtab-content active">
+        {% include "views/sections/suivi.html" %}
+    </div>
+    <div id="subtab-roi" class="subtab-content" style="display:none">
+        {% include "views/sections/roi.html" %}
+    </div>
+    <div id="subtab-board" class="subtab-content" style="display:none">
+        {% include "views/sections/tracking_board.html" %}
+    </div>
+</div>
+
+<!-- Section Planning (Seule) -->
+{% include "views/sections/planificateur.html" %}
+
+<!-- Section Paramètres (Groupée) -->
+<div id="section-settings" class="v-section">
+    <div class="section-tabs">
+        <button class="section-tab active" onclick="switchSectionTab('settings_gen', this)">Configuration</button>
+        <button class="section-tab" onclick="switchSectionTab('templates', this)">Templates e-mails</button>
+        <button class="section-tab" onclick="switchSectionTab('health', this)">Santé système</button>
+        <button class="section-tab" onclick="switchSectionTab('logs', this)">Logs</button>
+    </div>
+    <div id="subtab-settings_gen" class="subtab-content active">
+        {% include "views/sections/settings.html" %}
+    </div>
+    <div id="subtab-templates" class="subtab-content" style="display:none">
+        {% include "views/sections/templates.html" %}
+    </div>
+    <div id="subtab-health" class="subtab-content" style="display:none">
+        {% include "views/sections/health.html" %}
+    </div>
+    <div id="subtab-logs" class="subtab-content" style="display:none">
+        {% include "views/sections/logs.html" %}
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+{% include "components/modals/modal_scraper.html" %}
+{% include "components/modals/modal_edit_lead.html" %}
+{% include "components/modals/modal_edit_email.html" %}
+{% include "components/modals/modal_audit_results.html" %}
+<div id="lead-details-panel" class="side-panel">
+    {% include "components/modals/side_panel.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Core API & UI (V5) -->
+<script type="module" src="{{ url_for('static', filename='js/core/api.js') }}?v=1"></script>
+<script type="module" src="{{ url_for('static', filename='js/core/ui.js') }}?v=1"></script>
+
+<script src="{{ url_for('static', filename='js/ui.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/api.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/modules/collecte.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/modules/audits.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/modules/rapports.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/modules/settings.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/modules/planificateur.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/modules/sniper.js') }}?v=14"></script>
+<script src="{{ url_for('static', filename='js/modules/leads.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/modules/unified_leads.js') }}?v=16"></script>
+<script src="{{ url_for('static', filename='js/modules/sources.js') }}?v=15"></script>
+<script src="{{ url_for('static', filename='js/modules/stats.js') }}?v=15"></script>
+<script src="{{ url_for('static', filename='js/modules/jobs.js') }}?v=15"></script>
+<script>window._debugActionsModule = null; console.log('Script actions.js loading...');</script>
+<script src="{{ url_for('static', filename='js/modules/actions.js') }}?v=11"></script>
+<script>
+setTimeout(function() {
+    console.log('After load - ActionsModule:', typeof window.ActionsModule);
+    if(typeof window.ActionsModule !== 'undefined') {
+        window.ActionsModule.init();
+        window.findEmailsForSelectedLeads = function() { window.ActionsModule.launchSelectedEmailSearch(); };
+    }
+    // JobsModule will be on window via its own code
+    if(typeof window.JobsModule !== 'undefined') {
+        window.JobsModule.init();
+    }
+}, 250);
+</script>
+<script src="{{ url_for('static', filename='js/modules/dashboard_core.js') }}?v=15"></script>
+<script src="{{ url_for('static', filename='js/modules/templates.js') }}?v=2"></script>
+{% endblock %}

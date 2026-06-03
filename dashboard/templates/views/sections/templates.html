@@ -1,0 +1,43 @@
+    <div class="section-header">
+
+        <h2>Templates emails</h2>
+        <p style="color:var(--ink3);font-size:13px;margin:4px 0 0">Modifiez les templates et objets des emails de prospection. Les changements sont enregistrés directement sur le disque.</p>
+    </div>
+
+    <div class="tm-layout">
+        <div class="tm-sidebar">
+            <div class="card" style="padding:0">
+                <div id="tm-categories"></div>
+            </div>
+            <div class="card" style="margin-top:12px">
+                <div class="ct2" style="margin-bottom:8px">Variables disponibles</div>
+                <div id="tm-variables" style="font-size:12px;color:var(--ink3);line-height:1.8"></div>
+            </div>
+        </div>
+        <div class="tm-editor">
+            <div class="card" style="padding:0;height:100%;display:flex;flex-direction:column">
+                <div class="tm-toolbar">
+                    <span id="tm-filename" style="font-weight:600;font-size:13px;color:var(--ink2)">—</span>
+                    <div style="display:flex;gap:8px;margin-left:auto">
+                        <button class="btn bg1 sm" id="tm-preview-btn" onclick="tmPreview()">Aperçu</button>
+                        <button class="btn bp1 sm" id="tm-save-btn" onclick="tmSave()">Enregistrer</button>
+                    </div>
+                </div>
+                <div class="tm-tabs" id="tm-tabs">
+                    <div class="tm-tab active" onclick="tmSwitchTab('content',this)">Contenu HTML</div>
+                    <div class="tm-tab" onclick="tmSwitchTab('subject',this)">Objet</div>
+                </div>
+                <textarea id="tm-editor" spellcheck="false" placeholder="Chargement…"></textarea>
+            </div>
+        </div>
+    </div>
+
+<div id="tm-preview-modal" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="max-width:700px;width:95%;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mh">
+            <div class="mh-t">Aperçu du template</div>
+            <button class="btn bg0" onclick="tmClosePreview()">✕</button>
+        </div>
+        <iframe id="tm-preview-frame" style="flex:1;border:none;min-height:400px" sandbox="allow-same-origin"></iframe>
+    </div>
+</div>

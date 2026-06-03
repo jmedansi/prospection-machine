@@ -22,7 +22,6 @@ import logging
 from datetime import date, timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
 
 from database.db_manager import get_conn
 
@@ -58,21 +57,7 @@ DEFAULT_PRIORITIES = [
     ("artisan", "chauffagiste",      "Lyon",         20, 2, 30),
     ("artisan", "serrurier",         "Paris",        20, 2, 30),
 
-    # ── Santé (priorité 2 — sites pro, emails visibles) ───────────────────
-    ("sante", "dentiste",            "Paris",        20, 2, 30),
-    ("sante", "kinésithérapeute",    "Paris",        20, 2, 30),
-    ("sante", "ostéopathe",          "Paris",        20, 2, 30),
-    ("sante", "dentiste",            "Lyon",         20, 2, 30),
-    ("sante", "kinésithérapeute",    "Lyon",         20, 2, 30),
-    ("sante", "dentiste",            "Marseille",    20, 2, 30),
-    ("sante", "ostéopathe",          "Marseille",    20, 2, 30),
-    ("sante", "dentiste",            "Toulouse",     20, 2, 30),
-    ("sante", "dentiste",            "Nice",         20, 2, 30),
-    ("sante", "dentiste",            "Bordeaux",     20, 2, 30),
-    ("sante", "naturopathe",         "Paris",        20, 3, 30),
-    ("sante", "psychologue",         "Paris",        20, 3, 30),
-    ("sante", "nutritionniste",      "Paris",        20, 3, 30),
-
+    # ── Santé retirée (Interdiction de faire de la publicité en France) ────────
     # ── Juridique / Comptable (priorité 2 — sites toujours présents) ──────
     ("juridique", "avocat",          "Paris",        20, 2, 30),
     ("juridique", "expert-comptable","Paris",        20, 2, 30),
@@ -139,27 +124,170 @@ DEFAULT_PRIORITIES = [
 ]
 
 
-def seed_default_priorities():
-    """Insère les priorités par défaut si la table est vide."""
+import random
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DICTIONNAIRE DE VARIATIONS DE MOTS-CLÉS
+# ──────────────────────────────────────────────────────────────────────────────
+KEYWORD_VARIATIONS = {
+    "plombier": ["plombier", "dépannage plomberie", "urgence plombier", "artisan plombier", "entreprise de plomberie", "plombier chauffagiste", "fuite d'eau"],
+    "électricien": ["électricien", "artisan électricien", "dépannage électrique", "urgence électricité", "installation électrique", "entreprise électricité"],
+    "menuisier": ["menuisier", "artisan menuisier", "menuiserie sur mesure", "menuiserie bois", "menuiserie pvc alu"],
+    "peintre en bâtiment": ["peintre en bâtiment", "artisan peintre", "entreprise de peinture", "peintre décorateur", "rénovation peinture"],
+    "chauffagiste": ["chauffagiste", "plombier chauffagiste", "dépannage chaudière", "entretien chaudière", "installation pompe à chaleur"],
+    "serrurier": ["serrurier", "dépannage serrurier", "urgence serrurier", "ouverture de porte", "artisan serrurier"],
+    # Santé retirée de la liste des variations
+    
+    "avocat": ["avocat", "cabinet d'avocats", "avocat droit du travail", "avocat affaires", "avocat famille", "cabinet juridique"],
+    "expert-comptable": ["expert-comptable", "cabinet d'expertise comptable", "cabinet comptable", "expert comptable en ligne"],
+    "notaire": ["notaire", "étude notariale", "office notarial", "notaire succession"],
+    
+    "agence immobilière": ["agence immobilière", "conseiller immobilier", "estimation immobilière", "transaction immobilière", "mandataire immobilier", "réseau immobilier"],
+    
+    "salon de coiffure": ["salon de coiffure", "coiffeur", "coiffeur visagiste", "coiffure femme", "coiffure homme", "institut capillaire"],
+    "esthéticienne": ["esthéticienne", "institut de beauté", "soins esthétiques", "salon d'esthétique", "esthéticienne à domicile"],
+    "barbier": ["barbier", "barbershop", "salon de coiffure homme", "coiffeur barbier"],
+    "spa": ["spa", "centre de bien-être", "spa hammam", "massage bien-être", "institut spa"],
+    
+    "garagiste": ["garagiste", "garage auto", "réparation automobile", "entretien auto", "mécanicien auto", "centre auto"],
+    "carrossier": ["carrossier", "carrosserie auto", "réparation carrosserie", "peinture auto", "tôlerie auto"],
+    "auto-école": ["auto-école", "école de conduite", "permis de conduire", "auto école moto"],
+    
+    "salle de sport": ["salle de sport", "fitness", "club de sport", "centre de remise en forme", "gymnase"],
+    "coach sportif": ["coach sportif", "coaching sportif", "coach personnel", "personal trainer"],
+    "yoga": ["yoga", "studio de yoga", "cours de yoga", "centre de yoga", "professeur de yoga"],
+    "pilates": ["pilates", "studio pilates", "cours de pilates"],
+    
+    "agence web": ["agence web", "agence digitale", "création site web", "agence communication digitale", "agence seo", "développement web"],
+    "photographe": ["photographe", "studio photo", "photographe professionnel", "photographe mariage", "photographe portrait"],
+    "graphiste": ["graphiste", "studio graphique", "graphiste freelance", "directeur artistique", "designer graphique"],
+    
+    "fleuriste": ["fleuriste", "artisan fleuriste", "boutique de fleurs", "création florale", "livraison fleurs"],
+    "opticien": ["opticien", "magasin d'optique", "opticien lunetier", "centre optique"],
+    "librairie": ["librairie", "librairie indépendante", "maison de la presse", "bouquinerie"],
+    
+    "hôtel": ["hôtel", "établissement hôtelier", "hôtel restaurant", "hébergement", "boutique hôtel"],
+    "chambre d'hôtes": ["chambre d'hôtes", "gîte", "maison d'hôtes", "bed and breakfast"],
+    
+    "bijouterie": ["bijouterie", "joaillerie", "artisan bijoutier", "créateur de bijoux", "bijouterie fantaisie"],
+    "horlogerie": ["horlogerie", "artisan horloger", "réparation montres", "montres de luxe"],
+    
+    # ── E-commerce & FB Ads ──
+    "vêtements": ["vêtements homme", "vêtements femme", "prêt-à-porter", "boutique mode", "marque de vêtements", "streetwear", "boutique vêtements en ligne"],
+    "bijoux": ["bijoux", "bijouterie en ligne", "bijoux créateur", "bijoux fantaisie", "bijoux argent", "créateur bijoux"],
+    "cosmétiques": ["cosmétiques", "produits de beauté", "soins visage", "maquillage", "soins naturels", "cosmétiques bio", "boutique cosmétiques en ligne"],
+    "décoration": ["décoration intérieur", "meubles", "décoration maison", "objets déco", "concept store déco", "boutique décoration en ligne"],
+    "cbd": ["cbd", "fleurs cbd", "huile cbd", "cbd shop", "boutique cbd en ligne"],
+    "restaurant": ["restaurant", "livraison repas", "pizzeria", "burger", "restaurant gastronomique", "restaurant traditionnel"],
+    "chaussures": ["chaussures femme", "chaussures homme", "sneakers", "boutique chaussures en ligne"],
+    "maroquinerie": ["maroquinerie", "sacs à main", "sac en cuir", "boutique maroquinerie"],
+}
+
+def get_used_keywords(city: str) -> set:
+    """Récupère les variations déjà planifiées ou exécutées pour une ville donnée."""
+    from database.db_manager import get_conn
     try:
         with get_conn() as conn:
-            count = conn.execute("SELECT COUNT(*) as n FROM scraping_priorities").fetchone()['n']
-            if count > 0:
-                return  # déjà peuplé
+            rows = conn.execute(
+                "SELECT keyword FROM planned_campaigns WHERE city = ?",
+                (city,)
+            ).fetchall()
+        # Normaliser pour la comparaison (minuscules, strip)
+        return {r['keyword'].lower().strip() for r in rows if r['keyword']}
+    except Exception as e:
+        logger.error(f"[AUTO-PLANNER] get_used_keywords: {e}")
+        return set()
 
+def get_keyword_variation(base_keyword: str, city: str, sector: str = "") -> str:
+    """
+    Retourne une variation de longue traîne générée par l'IA ou le dictionnaire.
+    Consulte la base de données pour ne pas répéter la même variation dans la même ville.
+    """
+    used = get_used_keywords(city)
+    
+    # 1. Tentative avec l'IA
+    try:
+        from scraper.sniper.keyword_generator import generate_long_tail
+        ai_variations = generate_long_tail(sector, base_keyword, city, limit=10)
+        if ai_variations:
+            for var in ai_variations:
+                # Retirer la ville si elle y est pour la vérification exacte (car 'keyword' dans DB ne contient pas forcément la ville)
+                # Mais en fait, variation = ce qu'on sauvegarde dans planned_campaigns.keyword
+                if var not in used:
+                    logger.info(f"[AUTO-PLANNER] Nouvelle intention IA trouvée : '{var}'")
+                    return var
+            logger.info(f"[AUTO-PLANNER] Toutes les variations IA pour '{base_keyword}' à '{city}' sont déjà utilisées.")
+    except Exception as e:
+        logger.error(f"[AUTO-PLANNER] Erreur appel keyword_generator : {e}")
+
+    # 2. Fallback dictionnaire
+    k_low = base_keyword.lower().strip()
+    dict_variations = []
+    if k_low in KEYWORD_VARIATIONS:
+        dict_variations = KEYWORD_VARIATIONS[k_low]
+    else:
+        prefixes = ["", "entreprise de ", "pro ", "cabinet ", "agence "]
+        dict_variations = [f"{p}{base_keyword}".strip() for p in prefixes]
+
+    # Mélanger pour ne pas toujours prendre la première
+    random.shuffle(dict_variations)
+    
+    for var in dict_variations:
+        if var.lower() not in used:
+            return var
+
+    # 3. Si tout est utilisé, ajouter un modificateur aléatoire pour forcer une nouvelle recherche
+    import string
+    random_suffix = ''.join(random.choices(string.ascii_lowercase, k=3))
+    new_var = f"{base_keyword} {random_suffix}"
+    logger.warning(f"[AUTO-PLANNER] Mémoire pleine pour '{base_keyword}' à '{city}'. Utilisation de '{new_var}'.")
+    return new_var
+
+
+def seed_default_priorities():
+    """Insère les priorités par défaut si elles n'existent pas déjà."""
+    try:
+        with get_conn() as conn:
+            # S'assurer que les colonnes existent
+            try: conn.execute("ALTER TABLE scraping_priorities ADD COLUMN min_emails INTEGER DEFAULT 20")
+            except Exception: pass
+            
+            try: conn.execute("ALTER TABLE scraping_priorities ADD COLUMN source TEXT DEFAULT 'maps'")
+            except Exception: pass
+
+            conn.execute("UPDATE scraping_priorities SET min_emails = limit_leads WHERE min_emails IS NULL")
+            conn.execute("UPDATE scraping_priorities SET source = 'maps' WHERE source IS NULL")
+
+            # 1. Maps priorities (legacy defaults)
             conn.executemany("""
                 INSERT OR IGNORE INTO scraping_priorities
                     (secteur, keyword, ville, limit_leads, priorite, frequence_jours)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, DEFAULT_PRIORITIES)
-            # Renommer limit_leads → min_emails dans la colonne (valeurs déjà correctes)
-            try:
-                conn.execute("ALTER TABLE scraping_priorities ADD COLUMN min_emails INTEGER DEFAULT 20")
-            except Exception:
-                pass  # colonne existe déjà
-            conn.execute("UPDATE scraping_priorities SET min_emails = limit_leads WHERE min_emails IS NULL")
+            
+            # 2. Multi-source priorities
+            new_sources = [
+                ("vêtements", "vêtements", "Paris", 20, 2, 30, "sniper_ecom"),
+                ("bijoux", "bijoux", "Lyon", 20, 3, 30, "sniper_ecom"),
+                ("cosmétiques", "cosmétiques", "Marseille", 20, 3, 30, "sniper_ecom"),
+                ("décoration", "décoration", "Bordeaux", 20, 3, 30, "sniper_ecom"),
+                ("chaussures", "chaussures", "Toulouse", 20, 4, 30, "sniper_ecom"),
+            
+                ("immobilier", "agence immobilière", "Paris", 20, 3, 30, "sniper_fb"),
+                ("sport", "coach sportif", "Lyon", 20, 4, 30, "sniper_fb"),
+                ("beaute", "esthéticienne", "Marseille", 20, 4, 30, "sniper_fb"),
+            
+                ("juridique", "avocat", "Paris", 20, 2, 30, "sniper_ads"),
+                ("artisan", "plombier", "Lyon", 20, 1, 30, "sniper_ads"),
+            ]
+            conn.executemany("""
+                INSERT OR IGNORE INTO scraping_priorities
+                    (secteur, keyword, ville, min_emails, priorite, frequence_jours, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, new_sources)
+            
             conn.commit()
-            logger.info(f"[AUTO-PLANNER] {len(DEFAULT_PRIORITIES)} priorités par défaut injectées.")
+            logger.info("[AUTO-PLANNER] Priorités multi-sources vérifiées/injectées.")
     except Exception as e:
         logger.error(f"[AUTO-PLANNER] seed_default_priorities: {e}")
 
@@ -179,11 +307,22 @@ def get_auto_plan_settings() -> dict:
             'per_day':          int(cfg.get('auto_plan_per_day', '3')),
             'daily_quota':      int(cfg.get('daily_quota', '60')),
             'max_backlog_days': int(cfg.get('max_backlog_days', '3')),
+            'maps_auto_scrape': False,  # DÉSACTIVÉ — scraping Google Maps automatique désactivé définitivement
+            'maps_daily_quota': int(cfg.get('maps_daily_quota', '50')),
+            'maps_topup_enabled': False,  # DÉSACTIVÉ — top-up Google Maps automatique désactivé définitivement
             # max_backlog_days : nb de jours d'envoi en stock avant de pauser le scraping
         }
     except Exception as e:
         logger.error(f"[AUTO-PLANNER] get_settings: {e}")
-        return {'enabled': True, 'per_day': 3, 'daily_quota': 60, 'max_backlog_days': 3}
+        return {
+            'enabled': True,
+            'per_day': 3,
+            'daily_quota': 60,
+            'max_backlog_days': 3,
+            'maps_auto_scrape': False,
+            'maps_daily_quota': 50,
+            'maps_topup_enabled': False
+        }
 
 
 def get_pipeline_backlog() -> dict:
@@ -244,17 +383,18 @@ def count_planned_today(target_date: str | None = None) -> int:
         return 0
 
 
-def get_next_priorities(n: int, target_date: str) -> list:
+def get_next_priorities(n: int, target_date: str, exclude_source: str = None) -> list:
     """
     Retourne les N prochaines configs à scraper :
     - actif = 1
     - derniere_execution NULL ou + vieille que frequence_jours
     - pas déjà planifié pour target_date avec ce (keyword+ville)
+    - exclude_source: optionnel, exclure une source (ex: 'maps')
     - ordre : priorite ASC, derniere_execution ASC (oldest first)
     """
     try:
         with get_conn() as conn:
-            rows = conn.execute("""
+            query = """
                 SELECT sp.*
                 FROM scraping_priorities sp
                 WHERE sp.actif = 1
@@ -269,9 +409,16 @@ def get_next_priorities(n: int, target_date: str) -> list:
                         AND pc.date_planifiee = ?
                         AND pc.statut != 'cancelled'
                   )
-                ORDER BY sp.priorite ASC, sp.derniere_execution ASC NULLS FIRST
-                LIMIT ?
-            """, (target_date, n)).fetchall()
+            """
+            params = [target_date]
+            if exclude_source:
+                query += " AND sp.source != ?"
+                params.append(exclude_source)
+                
+            query += " ORDER BY sp.priorite ASC, sp.derniere_execution ASC NULLS FIRST LIMIT ?"
+            params.append(n)
+            
+            rows = conn.execute(query, params).fetchall()
         return [dict(r) for r in rows]
     except Exception as e:
         logger.error(f"[AUTO-PLANNER] get_next_priorities: {e}")
@@ -346,7 +493,8 @@ def plan_day(target_date: str | None = None, force: bool = False) -> int:
         logger.info(f"[AUTO-PLANNER] {d} → {already}/{target} campagne(s), rien à ajouter.")
         return 0
 
-    candidates = get_next_priorities(needed, d)
+    exclude = 'maps'  # DÉSACTIVÉ — Google Maps exclu de l'auto-planification
+    candidates = get_next_priorities(needed, d, exclude_source=exclude)
     if not candidates:
         logger.info("[AUTO-PLANNER] Aucune priorité disponible pour compléter la journée.")
         return 0
@@ -364,11 +512,12 @@ def plan_day(target_date: str | None = None, force: bool = False) -> int:
                 min_e = min_e_par_campagne
                 # Assigner une heure différente pour chaque campagne (alternance)
                 hour = hours[idx % len(hours)]
+                variation = get_keyword_variation(c['keyword'], c['ville'], c.get('secteur', ''))
                 conn.execute("""
                     INSERT INTO planned_campaigns
-                        (secteur, keyword, city, limit_leads, min_emails, date_planifiee, heure, statut)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'planned')
-                """, (c['secteur'], c['keyword'], c['ville'], min_e * 4, min_e, d, hour))
+                        (secteur, keyword, city, limit_leads, min_emails, date_planifiee, heure, statut, source)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'planned', ?)
+                """, (c['secteur'], variation, c['ville'], min_e * 4, min_e, d, hour, c.get('source', 'maps')))
                 added += 1
             conn.commit()
 
@@ -477,31 +626,72 @@ def fill_quota_if_needed(trigger_immediate: bool = False) -> int:
 
     # Trouver la prochaine campagne disponible
     today = date.today().isoformat()
-    candidates = get_next_priorities(1, today)
+    exclude = 'maps'  # DÉSACTIVÉ — Google Maps exclu du top-up automatique
+    candidates = get_next_priorities(1, today, exclude_source=exclude)
     if not candidates:
         logger.warning("[TOP-UP] Aucune priorité disponible pour top-up.")
         return deficit
 
     c = candidates[0]
+    variation = get_keyword_variation(c['keyword'], c['ville'], c.get('secteur', ''))
 
     if trigger_immediate:
         # Lancer directement via l'API Flask
         try:
             import requests as req
-            payload = {
-                'keyword':       c['keyword'],
-                'city':          c['ville'],
-                'sector':        c['secteur'],
-                'campaign_name': f"top-up {c['keyword']} {c['ville']} {today}",
-                'min_emails':    deficit,
-                'limit':         deficit * 4,
-                'multi_zone':    False,
-            }
-            resp = req.post('http://127.0.0.1:5001/api/scraper/launch', json=payload, timeout=10)
+            source = c.get('source', 'maps')
+            
+            if source == 'sniper_ecom':
+                api_url = 'http://127.0.0.1:5001/api/sniper/tech-scan'
+                payload = {
+                    'keywords':      [variation],
+                    'city':          c['ville'],
+                    'campaign_name': f"top-up {variation} {c['ville']} {today}",
+                    'max_leads':     deficit * 4,
+                    'max_companies': deficit * 8
+                }
+            elif source == 'sniper_fb':
+                api_url = 'http://127.0.0.1:5001/api/sniper/fb-ads-scan'
+                payload = {
+                    'search_terms':  [f"{variation} {c['ville']}"],
+                    'country':       'FR',
+                    'max_pages':     5,
+                    'campaign_name': f"top-up {variation} {c['ville']} {today}"
+                }
+            elif source == 'sniper_ads':
+                api_url = 'http://127.0.0.1:5001/api/sniper/launch'
+                payload = {
+                    'keywords':      [f"{variation} {c['ville']}"],
+                    'country':       'fr',
+                    'max_per_kw':    deficit * 4,
+                    'campaign_name': f"top-up {variation} {c['ville']} {today}"
+                }
+            else:
+                api_url = 'http://127.0.0.1:5001/api/scraper/launch'
+                payload = {
+                    'keyword':       variation,
+                    'city':          c['ville'],
+                    'sector':        c['secteur'],
+                    'campaign_name': f"top-up {variation} {c['ville']} {today}",
+                    'min_emails':    deficit,
+                    'limit':         deficit * 4,
+                    'multi_zone':    False,
+                }
+                
+            resp = req.post(api_url, json=payload, timeout=10)
             if resp.status_code == 200:
-                logger.info(f"[TOP-UP] Scraping lancé : {c['keyword']} {c['ville']} — objectif {deficit} emails")
-                # Mettre à jour la date d'exécution
+                logger.info(f"[TOP-UP] Scraping {source} lancé : {variation} {c['ville']} — objectif {deficit} emails")
+                # Mettre à jour la date d'exécution et marquer comme running
                 with get_conn() as conn:
+                    # Enregistrer dans planned_campaigns pour que ça compte comme actif
+                    import datetime
+                    now = datetime.datetime.now()
+                    conn.execute("""
+                        INSERT INTO planned_campaigns
+                            (secteur, keyword, city, limit_leads, min_emails, date_planifiee, heure, statut, source)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?)
+                    """, (c.get('secteur', ''), variation, c['ville'], deficit * 4, deficit, today, now.strftime('%H:%M'), source))
+                    
                     conn.execute(
                         "UPDATE scraping_priorities SET derniere_execution=? WHERE id=?",
                         (today, c['id'])
@@ -533,15 +723,15 @@ def fill_quota_if_needed(trigger_immediate: bool = False) -> int:
                 
                 conn.execute("""
                     INSERT INTO planned_campaigns
-                        (secteur, keyword, city, limit_leads, min_emails, date_planifiee, heure, statut)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'planned')
-                """, (c['secteur'], c['keyword'], c['ville'], deficit * 4, deficit, today, hour))
+                        (secteur, keyword, city, limit_leads, min_emails, date_planifiee, heure, statut, source)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'planned', ?)
+                """, (c['secteur'], variation, c['ville'], deficit * 4, deficit, today, hour, c.get('source', 'maps')))
                 conn.execute(
                     "UPDATE scraping_priorities SET derniere_execution=? WHERE id=?",
                     (today, c['id'])
                 )
                 conn.commit()
-            logger.info(f"[TOP-UP] Campagne planifiée : {c['keyword']} {c['ville']} — objectif {deficit} emails à {hour}")
+            logger.info(f"[TOP-UP] Campagne planifiée : {variation} {c['ville']} — objectif {deficit} emails à {hour}")
         except Exception as e:
             logger.error(f"[TOP-UP] plan: {e}")
 

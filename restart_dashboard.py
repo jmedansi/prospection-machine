@@ -14,6 +14,7 @@ try:
     result = subprocess.run(
         ["netstat", "-ano"],
         capture_output=True,
+        errors='ignore',
         text=True
     )
 

@@ -1,73 +1,71 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-Worker pour exécuter les séquences de relances planifiées.
-À exécuter toutes les heures via cron ou un scheduler.
+workers/sequence_worker.py
+Worker pour les sequences de relances planifiees.
+
+Nouveau flux (validation Telegram) :
+  1. Recupere les sequences 'planned' arrivees a echeance
+  2. Verifie les conditions (should_send_sequence)
+  3. Met a jour le score du lead
+  4. Genere le contenu email et stocke dans email_sequences
+  5. Passe le statut a 'pending_approval'
+  6. Envoie une notification Telegram pour approbation
+
+L'envoi effectif est realise par le poller (scheduler) qui surveille
+les reponses ✅ de l'utilisateur.
 
 Commande: python -m workers.sequence_worker
 """
-import os
-import sqlite3
+
+import logging
 from datetime import datetime
 from services.email_sequence_service import EmailSequenceService
 from services.lead_scoring_service import LeadScoringService
-from envoi.resend_sender_with_retry import ResendSenderWithRetry
 
-DB_PATH = os.environ.get('DB_PATH', 'data/prospection.db')
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY', 'changeme')
+logger = logging.getLogger(__name__)
 
 
 def run_sequence_worker():
-    print(f"[SequenceWorker] Démarrage à {datetime.now().isoformat()}")
-    seq_service = EmailSequenceService(DB_PATH)
-    scoring_service = LeadScoringService(DB_PATH)
-    sender = ResendSenderWithRetry(RESEND_API_KEY, DB_PATH)
+    logger.info(f"[SequenceWorker] Demarrage a {datetime.now().isoformat()}")
+    seq_service = EmailSequenceService()
+    scoring_service = LeadScoringService()
 
-    # 1. Récupérer les séquences prêtes à être envoyées
-    sequences = seq_service.get_sequences_to_send()
-    print(f"[SequenceWorker] {len(sequences)} séquences à traiter")
+    sequences = seq_service.get_sequences_to_process()
+    logger.info(f"[SequenceWorker] {len(sequences)} sequences a traiter")
 
     for seq in sequences:
         lead_id = seq['lead_id']
         sequence_id = seq['id']
-        email_record_id = seq['email_record_id']
         email_type = seq['email_type']
 
-        # 2. Mettre à jour le score du lead avant d'envoyer
-        score, temperature = scoring_service.update_lead_score(lead_id)
-        print(f"[SequenceWorker] Lead {lead_id} score={score} temp={temperature}")
+        # 1. Mettre a jour le score
+        try:
+            score, temperature = scoring_service.update_lead_score(lead_id)
+            logger.debug(f"[SequenceWorker] Lead {lead_id} score={score} temp={temperature}")
+        except Exception as e:
+            logger.debug(f"[SequenceWorker] Score update failed for {lead_id}: {e}")
 
-        # 3. Vérifier si la séquence doit être envoyée (conditions)
+        # 2. Verifier les conditions
         if not seq_service.should_send_sequence(seq):
-            print(f"[SequenceWorker] Skip sequence {sequence_id} (condition non remplie)")
+            logger.info(f"[SequenceWorker] Skip sequence {sequence_id} (condition non remplie)")
             continue
 
-        # 4. Générer le contenu de la relance (utiliser email_builder)
-        from envoi.email_builder import build_premium_email
-        # Récupérer les infos du lead/email (à adapter selon votre modèle)
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM emails_envoyes WHERE id = ?", (email_record_id,))
-        email_row = cursor.fetchone()
-        conn.close()
-        if not email_row:
-            print(f"[SequenceWorker] Email record {email_record_id} introuvable")
-            continue
-        lead_data = dict(zip([col[0] for col in cursor.description], email_row))
-        html = build_premium_email(lead_data, verify_link=False)
-        # Extraire l'objet depuis le <title>
-        import re
-        m = re.search(r'<title>([^<]+)</title>', html)
-        subject = m.group(1) if m else 'Relance Audit'
-        body = html
-        to_email = lead_data.get('email')
-
-        # 5. Envoyer l'email via Resend avec retry
-        success, msg = sender.send_with_retry(email_record_id, to_email, subject, body)
-        if success:
-            print(f"[SequenceWorker] Relance envoyée à {to_email} (seq {sequence_id})")
-            seq_service.mark_sequence_sent(sequence_id, email_record_id)
+        # 3. Generer le contenu + demander validation Telegram
+        ok = seq_service.generate_and_request_approval(seq)
+        if ok:
+            logger.info(
+                f"[SequenceWorker] Sequence {sequence_id} ({email_type}) "
+                f"envoyee pour approbation (lead {lead_id})"
+            )
         else:
-            print(f"[SequenceWorker] Échec envoi relance {sequence_id}: {msg}")
+            logger.error(
+                f"[SequenceWorker] Echec generation approbation pour "
+                f"sequence {sequence_id}"
+            )
+
+    logger.info(f"[SequenceWorker] Termine ({len(sequences)} sequences)")
+
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     run_sequence_worker()

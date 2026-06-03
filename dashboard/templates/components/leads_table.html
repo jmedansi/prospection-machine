@@ -1,0 +1,45 @@
+<!-- 
+    dashboard/templates/components/leads_table.html
+    Tableau principal des leads avec pagination
+-->
+<div class="table-scroll">
+    <table class="campaign-table">
+        <thead>
+            <tr>
+                <th style="width:30px">
+                    <input type="checkbox" id="cb-all" onchange="toggleAllLeads(this)">
+                </th>
+                <th>Prospect</th>
+                <th>Ville</th>
+                <th>Note</th>
+                <th>Site</th>
+                <th>Email</th>
+                <th>Score</th>
+                <th>Statut</th>
+                <th style="width:180px">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="tbody-campaign">
+            <!-- Dynamically populated by leads.js -->
+            <tr>
+                <td colspan="9" class="empty-state">
+                    Chargement des leads...
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    <div id="pagination-controls" class="pagination-bar">
+        <button id="btn-prev-page" class="btn sm" onclick="changeCampaignPage(-1)" disabled>
+            ← Précédent
+        </button>
+        <select id="page-select" onchange="goToCampaignPage(this.value)" class="page-select">
+            <option>1</option>
+        </select>
+        <span id="page-info" class="page-info">page 1 sur 1</span>
+        <button id="btn-next-page" class="btn sm" onclick="changeCampaignPage(1)" disabled>
+            Suivant →
+        </button>
+    </div>
+</div>

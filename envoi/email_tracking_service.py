@@ -1,18 +1,15 @@
-import sqlite3
 from datetime import datetime
 from typing import Optional, Dict, Any
+from database.connection import get_conn
 
 class EmailTrackingService:
     """Service centralisé pour toutes les opérations sur emails_envoyes"""
-    
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-    
+
+    def __init__(self, db_path: str = None):
+        pass  # db_path ignoré — get_conn() utilise la DB centrale
+
     def _get_conn(self):
-        """Obtenir une connexion avec row_factory"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return get_conn()
     
     # ========== OPÉRATIONS DE BASE ==========
     

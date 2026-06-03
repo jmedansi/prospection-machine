@@ -11,10 +11,9 @@ import logging
 import requests
 from typing import Dict, Any, Optional
 
-from dotenv import load_dotenv
-
+from core.config import ensure_env
 # Chargement du .env (dossier parent, c-à-d la racine du projet)
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+ensure_env()
 
 # Logging vers errors.log à la racine du projet
 log_path = os.path.join(os.path.dirname(__file__), '..', 'errors.log')
@@ -106,7 +105,6 @@ def send_prospecting_email(
         if compte_id:
             try:
                 import sys
-                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
                 from config_manager import increment_usage
                 increment_usage(compte_id, "brevo")
             except Exception as e:
@@ -147,6 +145,6 @@ def send_email(to_email: str, subject: str, content: str, is_html: bool = True) 
 
 if __name__ == "__main__":
     # Petit test si lancé directement
-    load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+    ensure_env()
     print("Test envoi simple...")
     # send_email("jmedansi@incidenx.com", "Sujet Test", "Contenu Test")

@@ -1,8 +1,14 @@
 import os
 import re
+import sys
 import logging
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from core.browser import cdp_tab
 
 logger = logging.getLogger(__name__)
 
@@ -288,21 +294,16 @@ def generate_mockup(lead: dict) -> dict:
             desktop_path = output_dir / f"{nom_slug}_desktop.png"
             mobile_path  = output_dir / f"{nom_slug}_mobile.png"
 
-        # 9. Capture Playwright
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
+        # 9. Capture via Chrome Gemini (CDP)
+        with cdp_tab(viewport={"width": 1280, "height": 800}) as page:
             page.goto(f"file:///{html_path.absolute()}")
             page.wait_for_timeout(1000)
 
-            page.set_viewport_size({"width": 1280, "height": 800})
             page.screenshot(path=str(desktop_path), full_page=False)
 
             page.set_viewport_size({"width": 390, "height": 844})
             page.wait_for_timeout(500)
             page.screenshot(path=str(mobile_path), full_page=False)
-
-            browser.close()
 
         # 10. Nettoyage
         if html_path.exists():

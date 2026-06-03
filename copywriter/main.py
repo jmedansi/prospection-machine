@@ -27,6 +27,13 @@ from typing import Dict, Any, List
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, ".."))
 
+from core.scoring import (
+    SCORE_MOBILE_BON   as _SCORE_BON,
+    SCORE_MOBILE_MOYEN as _SCORE_MOYEN,
+    LCP_LENT_MS        as _LCP_LENT,
+    LCP_MOYEN_MS       as _LCP_CRITIQUE,
+)
+
 # Configuration du logger
 logging.basicConfig(
     filename='errors.log',
@@ -40,8 +47,8 @@ def get_all_impacts(audit: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Évalue les 15 règles d'impact définies."""
     impacts = []
     rules = [
-        ("mobile_score", lambda v: v < 50, 3),
-        ("lcp_ms", lambda v: v > 4000, 3),
+        ("mobile_score", lambda v: v < _SCORE_MOYEN, 3),
+        ("lcp_ms", lambda v: v > _LCP_CRITIQUE, 3),
         ("has_https", lambda v: not v, 3),
         ("render_blocking_scripts", lambda v: (v or 0) > 2, 2),
         ("reviews_count", lambda v: (v or 0) < 10, 2),
@@ -159,10 +166,10 @@ def generate_email_content(audit_dict: Dict[str, Any], main_problem: Dict[str, s
     # Ordre de priorité des situations (seuils assouplis)
     if not has_site:
         situation = "S4_NO_SITE"
-    elif rating >= 4.3 and reviews >= 30 and lcp_ms > 3000:
+    elif rating >= 4.3 and reviews >= 30 and lcp_ms > _LCP_LENT:
         # Bon GMB + site lent → contraste fort
         situation = "S8_GOOD_GMB_BAD_WEB"
-    elif lcp_ms > 3000 or m_score < 65:
+    elif lcp_ms > _LCP_LENT or m_score < _SCORE_BON:
         # Site lent même si GMB moyen
         situation = "S1_LENT"
     elif not has_meta:

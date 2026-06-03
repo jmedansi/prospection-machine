@@ -10,7 +10,7 @@ import json
 import threading
 import requests
 import logging
-from dotenv import load_dotenv
+from core.config import ensure_env
 from typing import Optional, Dict, Tuple
 
 # Import du module de stockage externe d'images
@@ -22,7 +22,7 @@ except ImportError:
     EXTERNAL_STORAGE_AVAILABLE = False
     logger.warning("Module image_storage non disponible, utilisation du stockage en Base64")
 
-load_dotenv()
+ensure_env()
 logger = logging.getLogger(__name__)
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", os.getenv("GITHUB_ACCESS_TOKEN", ""))

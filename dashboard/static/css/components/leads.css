@@ -1,0 +1,173 @@
+/* 
+    dashboard/static/css/components/leads.css
+    Composants relatifs aux Leads et Campagnes
+*/
+
+/* Data Table */
+.campaign-table { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0;
+}
+
+.campaign-table th { 
+    text-align: left; 
+    padding: 12px 16px; 
+    font-size: var(--text-2xs); 
+    font-weight: 700; 
+    color: var(--ink3); 
+    border-bottom: 1px solid var(--border); 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+}
+
+.campaign-table td { 
+    padding: 12px 16px; 
+    font-size: var(--text-sm); 
+    border-bottom: 1px solid var(--surface2); 
+    vertical-align: middle; 
+    transition: background var(--transition-fast); 
+    color: var(--ink2);
+}
+
+.campaign-table tr:hover { 
+    background: var(--surface2); 
+}
+
+.campaign-table tr.selected { 
+    background: var(--accent-soft); 
+    border-left: 4px solid var(--accent); 
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.status-badge:hover { 
+    transform: scale(1.05); 
+}
+
+.status-badge.pending     { background: var(--surface2); color: var(--ink3); }
+.status-badge.scraped     { background: rgba(59, 130, 246, 0.1); color: var(--blue); }
+.status-badge.audited     { background: var(--accent-soft); color: var(--accent); }
+.status-badge.email-ready { background: rgba(245, 158, 11, 0.1); color: var(--orange); }
+.status-badge.sent        { background: rgba(139, 92, 246, 0.1); color: var(--purple); }
+.status-badge.replied     { background: rgba(16, 185, 129, 0.2); color: #059669; }
+.status-badge.failed      { background: rgba(239, 68, 68, 0.1); color: var(--red); }
+
+/* Buttons & Actions */
+.action-btn {
+    padding: 8px;
+    font-size: 1.125rem;
+    cursor: pointer;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink2);
+}
+
+.action-btn:hover { 
+    background: var(--surface2); 
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Filter Bar */
+.filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 1rem;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.filter-bar select, 
+.filter-bar input {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: var(--text-sm);
+    background: var(--bg-app);
+    color: var(--ink);
+    transition: all var(--transition-fast);
+}
+
+.filter-bar select:hover, 
+.filter-bar input:hover {
+    border-color: var(--ink3);
+}
+
+.filter-bar select:focus, 
+.filter-bar input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Scroll Containers */
+.table-scroll {
+    overflow-y: auto;
+    max-height: calc(100vh - 280px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+/* Quick Stats / Metrics */
+.audit-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric-card {
+    background: var(--surface2);
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
+    text-align: center;
+    border: 1px solid transparent;
+    transition: all var(--transition-normal);
+}
+
+.metric-card:hover {
+    background: var(--surface);
+    border-color: var(--border);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.metric-value { 
+    font-size: var(--text-2xl); 
+    font-weight: 700; 
+    color: var(--accent); 
+    line-height: 1;
+}
+
+.metric-label { 
+    font-size: var(--text-2xs); 
+    color: var(--ink3); 
+    text-transform: uppercase; 
+    margin-top: 0.5rem; 
+    font-weight: 600;
+}

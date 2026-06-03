@@ -7,7 +7,7 @@ import sys
 # Ajout du dossier parent pour config_manager
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from main import run_tech_audit, check_daily_reset
+from main import run_tech_audit_sqlite, check_daily_reset
 from agents.web_analyzer import run_web_analysis
 import config_manager
 
@@ -35,7 +35,7 @@ async def test_static_first():
         print(f"\n--- Test de : {lead['nom']} ({lead['site']}) ---")
         try:
             # L'audit web technique
-            result = run_web_analysis(lead["site"])
+            result = await run_web_analysis(lead["site"])
             
             # Affichage du JSON complet pour vérification
             print("\n[RESULTATS TECHNIQUES EXTRAITS]")

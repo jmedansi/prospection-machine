@@ -1,0 +1,128 @@
+<!-- 
+    dashboard/templates/components/sidebar.html
+    Navigation latérale du Dashboard
+-->
+<aside class="sb">
+    <div class="brand">
+        <div class="blogo">
+            <div class="lm">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 13L6 8L9 11L12 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="4" r="1.5" fill="white" />
+                </svg>
+            </div>
+            <span class="bn">Incidenx</span>
+        </div>
+        <div class="bs">Prospection Machine v5</div>
+    </div>
+    
+    <nav class="ng">
+        <div class="nl">Pipeline</div>
+        <a href="javascript:void(0)" class="ni active" id="nav-cockpit" onclick="nav('cockpit',this)">
+            <svg viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+                <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+                <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+                <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+            </svg>
+            Cockpit
+        </a>
+        <a href="javascript:void(0)" class="ni" id="nav-campagne" onclick="nav('campagne',this)">
+            <span class="ni-icon">👥</span>
+            <span class="ni-label">Leads</span>
+        </a>
+        <a href="javascript:void(0)" class="ni" id="nav-planificateur" onclick="nav('planificateur',this)">
+            <span class="ni-icon">📅</span>
+            <span class="ni-label">Planning</span>
+            <span class="ni-badge" id="nav-badge-planning">0</span>
+        </a>
+    </nav>
+
+    <nav class="ng">
+        <div class="nl">Performance</div>
+        <a href="javascript:void(0)" class="ni" id="nav-tracking" onclick="nav('tracking',this)">
+            <svg viewBox="0 0 16 16" fill="none">
+                <path d="M1 12L5 7l3 3 3-4 4 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Tracking
+        </a>
+    </nav>
+    
+    <nav class="ng">
+        <div class="nl">Système</div>
+        <a href="javascript:void(0)" class="ni" id="nav-settings" onclick="nav('settings',this)">
+            <svg viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.4" />
+                <path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            </svg>
+            Paramètres
+        </a>
+    </nav>
+
+    <!-- Sidebar Stats & Jobs -->
+            <div class="sb-stats">
+                <div class="sb-stats-title">Statistiques</div>
+                <div class="sb-stats-grid">
+                    <div class="sb-stat-row"><span>Scrapés</span><span id="sidebar-stat-scrapes" class="sb-stat-val">0</span></div>
+                    <div class="sb-stat-row"><span>Audités</span><span id="sidebar-stat-audits" class="sb-stat-val accent">0</span></div>
+                    <div class="sb-stat-row"><span>Emails</span><span id="sidebar-stat-emails" class="sb-stat-val">0</span></div>
+                    <div class="sb-stat-row"><span>Envoyés</span><span id="sidebar-stat-sent" class="sb-stat-val green">0</span></div>
+                </div>
+            </div>
+
+            <!-- Progress bars in sidebar -->
+            <div id="sidebar-scrape" class="sb-progress" style="display:none;background:var(--accent-s)">
+                <div class="sb-progress-header" style="color:var(--accent)">
+                    <span>🔍 Scraping</span>
+                    <span id="sidebar-scrape-pct">0%</span>
+                </div>
+                <div class="sb-progress-track">
+                    <div id="sidebar-scrape-bar" class="sb-progress-fill" style="width:0%;background:var(--accent)"></div>
+                </div>
+                <div id="sidebar-scrape-text" class="sb-progress-text">Démarrage...</div>
+            </div>
+
+            <div id="sidebar-audit" class="sb-progress" style="display:none;background:rgba(16,185,129,0.05)">
+                <div class="sb-progress-header" style="color:var(--accent)">
+                    <span>🔬 Audit</span>
+                    <span id="sidebar-audit-pct">0%</span>
+                </div>
+                <div class="sb-progress-track">
+                    <div id="sidebar-audit-bar" class="sb-progress-fill" style="width:0%;background:var(--accent)"></div>
+                </div>
+                <div id="sidebar-audit-text" class="sb-progress-text">Démarrage...</div>
+            </div>
+
+            <div id="sidebar-email" class="sb-progress" style="display:none;background:rgba(59,130,246,0.05)">
+                <div class="sb-progress-header" style="color:var(--blue)">
+                    <span>📧 Envoi</span>
+                    <span id="sidebar-email-pct">0%</span>
+                </div>
+                <div class="sb-progress-track">
+                    <div id="sidebar-email-bar" class="sb-progress-fill" style="width:0%;background:var(--blue)"></div>
+                </div>
+                <div id="sidebar-email-text" class="sb-progress-text">Démarrage...</div>
+            </div>
+
+            <div id="sidebar-enrich" class="sb-progress" style="display:none;background:rgba(139,92,246,0.05)">
+                <div class="sb-progress-header" style="color:var(--purple)">
+                    <span>🔍 Emails</span>
+                    <span id="sidebar-enrich-pct">0%</span>
+                </div>
+                <div class="sb-progress-track">
+                    <div id="sidebar-enrich-bar" class="sb-progress-fill" style="width:0%;background:var(--purple)"></div>
+                </div>
+                <div id="sidebar-enrich-text" class="sb-progress-text">Recherche...</div>
+            </div>
+
+    <!-- User footer -->
+    <div class="sf">
+        <a href="javascript:void(0)" class="uc" onclick="nav('settings', document.getElementById('nav-settings'))">
+            <div class="ua">JD</div>
+            <div class="un-info">
+                <div class="un">{{ session_user_name if session_user_name else 'Jean-Marc DANSI' }}</div>
+                <div class="ue">jmedansi@incidenx.com</div>
+            </div>
+        </a>
+    </div>
+</aside>

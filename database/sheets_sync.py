@@ -14,7 +14,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Ajout du dossier parent au path pour accéder à config_manager
-sys.path.insert(0, str(Path(__file__).parent.parent))
+
 
 from database.db_manager import (
     get_conn, insert_lead, insert_audit, init_db, log_sync,

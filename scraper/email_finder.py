@@ -5,13 +5,11 @@ Recherche robuste d'emails sur le site web du prospect.
 CHAINAGE DE METHODES PAR PRIORITE:
 1. Multi-pages site web (contact, mentions-legales, etc.)
 2. Patterns emails cachés (anti-spam)
-3. Hunter.io API (si clé disponible)
-4. SMTP guess (validation domaine MX)
-5. Recherche basique homepage (fallback)
+3. SMTP guess (validation domaine MX)
+4. Recherche basique homepage (fallback)
 """
 
 import re
-import os
 import requests
 try:
     import dns.resolver
@@ -22,6 +20,7 @@ import socket
 from urllib.parse import urljoin, urlparse
 from time import time, sleep
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import asyncio
 
 # email-scraper : gère atob(), entités HTML, mailto: en un seul appel
 try:
@@ -30,16 +29,20 @@ try:
 except ImportError:
     _EMAIL_SCRAPER_LIB = False
 
-# Patchright (Playwright anti-détection) pour les sites JS et cookie-wall
+# Connexion CDP vers Chrome Gemini (partagé avec tous les modules)
 try:
-    from patchright.sync_api import sync_playwright as _sync_playwright
+    import sys as _sys, os as _os
+    _ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    if _ROOT not in _sys.path:
+        _sys.path.insert(0, _ROOT)
+    from core.browser import cdp_tab_headless as _cdp_tab_headless
+    from browser_manager import BrowserManager
     _PLAYWRIGHT_AVAILABLE = True
 except ImportError:
-    try:
-        from playwright.sync_api import sync_playwright as _sync_playwright
-        _PLAYWRIGHT_AVAILABLE = True
-    except ImportError:
-        _PLAYWRIGHT_AVAILABLE = False
+    _PLAYWRIGHT_AVAILABLE = False
+
+# Set to False to disable browser fallback (e.g., in batch/threaded contexts)
+_PLAYWRIGHT_ENABLED = True
 
 # ===========================================================
 # CONSTANTES
@@ -48,6 +51,15 @@ except ImportError:
 TIMEOUT_GLOBAL = 45
 TIMEOUT_PAGE = 10
 TIMEOUT_SMTP = 8
+
+# Pages prioritaires pour le mode rapide (batch)
+PAGES_TO_SCRAPE_FAST = [
+    "",           # Home
+    "/contact", "/contact/", "/contact.html", "/contact.php",
+    "/nous-contacter", "/contactez-nous",
+    "/mentions-legales", "/mentions-legales/", "/mentions-legales.html",
+    "/politique-de-confidentialite", "/a-propos",
+]
 
 PAGES_TO_SCRAPE = [
     # Contact — variantes FR
@@ -76,43 +88,11 @@ PAGES_TO_SCRAPE = [
     "",  # Home
 ]
 
-EMAIL_EXCLUDE_PATTERNS = [
-    'noreply@', 'no-reply@', 'donotreply@', 'webmaster@', 'abuse@',
-    'wordpress@', 'admin@', 'root@', 'postmaster@',
-    '@sentry.io', '@googleapis.com', '@google-analytics.com',
-    '@facebook.com', '@twitter.com', '@instagram.com', '@linkedin.com',
-    '@wix.com', '@squarespace.com', '@wixsite.com', '@weebly.com', '@shopify.com',
-    '@mysite.com', '@votresite.com', '@monsite.com', '@yoursite.com',
-    '@example.com', '@domain.com', '@test.com', '@localhost',
-    '@5.1.3', '@4.0', '@1.16.1', '@3.', '@2.', '@1.',
-    'bootstrap', 'popper.js', 'jquery', 'fontawesome', 'googleads',
-    # Domaines temporaires / jetables
-    'yopmail.com', '10minutemail.com', 'temp-mail.org', 'guerrillamail.com',
-    'mailinator.com', 'tempmail.com', 'fakeinbox.com', 'throwaway.email',
-    'dispostable.com', 'sharklasers.com', 'spam4.me', 'grr.la',
-]
-
-
-EMAIL_PRIORITY = {
-    'contact@': 1,
-    'info@': 2,
-    'bonjour@': 3,
-    'hello@': 4,
-    'accueil@': 5,
-    'direction@': 6,
-    'secretariat@': 7,
-    'commercial@': 8,
-    'vente@': 9,
-}
-
-SMTP_VARIANTS = [
-    'contact@{domain}',
-    'info@{domain}',
-    'bonjour@{domain}',
-    'hello@{domain}',
-    'accueil@{domain}',
-    'direction@{domain}',
-]
+from core.email_constants import (
+    EMAIL_EXCLUDE_PATTERNS,
+    EMAIL_PRIORITY,
+    SMTP_VARIANTS,
+)
 
 MASKED_EMAIL_PATTERNS = [
     r'([a-zA-Z0-9._%+-]+)\s*\[at\]\s*([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})',
@@ -141,7 +121,7 @@ HEADERS = {
 # FONCTION PRINCIPALE UNIFIEE
 # ===========================================================
 
-def find_email_all_methods(url: str, verbose: bool = False) -> dict:
+def find_email_all_methods(url: str, verbose: bool = False, fast_mode: bool = False) -> dict:
     """
     Trouve un email en essayant TOUTES les méthodes disponibles.
     S'arrête dès qu'un email est trouvé.
@@ -149,9 +129,8 @@ def find_email_all_methods(url: str, verbose: bool = False) -> dict:
     ORDRE DE PRIORITE:
     1. Scraping multi-pages du site web
     2. Patterns emails masqués (anti-spam)
-    3. Hunter.io API
-    4. SMTP guess (validation MX)
-    5. Scraping homepage simple (fallback)
+    3. SMTP guess (validation MX)
+    4. Scraping homepage simple (fallback)
 
     Args:
         url: URL du site web
@@ -175,44 +154,51 @@ def find_email_all_methods(url: str, verbose: bool = False) -> dict:
         return _empty_result()
     
     methods_tried = []
-    
+
     if verbose:
-        print(f"[EMAIL FINDER] Début recherche pour {domain}")
-    
+        print(f"[EMAIL FINDER] Debut recherche pour {domain}")
+
     # ============================================
-    # METHODE 1: Scraping multi-pages du site
+    # METHODE 0: SMTP guess rapide (contact@, info@)
     # ============================================
-    if _time_left(start_time, 25):
-        methods_tried.append('multi_pages')
+    if _DNS_AVAILABLE:
+        methods_tried.append('smtp_guess')
         if verbose:
-            print(f"[EMAIL FINDER] Méthode 1: Scraping multi-pages...")
-        
-        result = _scrape_all_pages(url, domain)
+            print(f"[EMAIL FINDER] Methode 0: SMTP guess rapide...")
+        result = _try_smtp_guess(domain)
         if result['email']:
             result['methods_tried'] = methods_tried
             if verbose:
-                print(f"[EMAIL FINDER] ✓ Trouvé via {result['source']}")
-            return result
-    
-    # ============================================
-    # METHODE 1b: Suivi des liens "contact" internes
-    # ============================================
-    if _time_left(start_time, 22):
-        methods_tried.append('link_follow')
-        result = _follow_contact_links(url, domain)
-        if result['email']:
-            result['methods_tried'] = methods_tried
-            if verbose:
-                print(f"[EMAIL FINDER] ✓ Trouvé via lien contact interne: {result['source']}")
+                print(f"[EMAIL FINDER] OK via SMTP guess: {result['email']}")
             return result
 
     # ============================================
-    # METHODE 1c: Playwright browser fallback (JS / cookie-wall)
+    # METHODE 1: Scraping multi-pages du site
     # ============================================
-    if _PLAYWRIGHT_AVAILABLE and _time_left(start_time, 18):
+    methods_tried.append('multi_pages')
+    if verbose:
+        print(f"[EMAIL FINDER] Methode 1: Scraping multi-pages...")
+
+    result = _scrape_all_pages(url, domain, fast_mode=fast_mode)
+    if result['email']:
+        result['methods_tried'] = methods_tried
+        if verbose:
+            print(f"[EMAIL FINDER] OK via {result['source']}")
+        return result
+
+    # En mode rapide, on s'arrête ici (SMTP guess déjà fait)
+    if fast_mode:
+        if verbose:
+            print(f"[EMAIL FINDER] KO - aucun email (fast_mode)")
+        return _empty_result(methods_tried)
+
+    # ============================================
+    # METHODE 1b: Playwright browser fallback (JS / cookie-wall)
+    # ============================================
+    if _PLAYWRIGHT_AVAILABLE and _PLAYWRIGHT_ENABLED and _time_left(start_time, 18):
         methods_tried.append('browser_fallback')
         if verbose:
-            print(f"[EMAIL FINDER] Méthode 1c: Browser Playwright (parallèle)...")
+            print(f"[EMAIL FINDER] Methode 1b: Browser Playwright (JS rendu)...")
         emails = _scrape_page_with_browser(url, domain)
         if emails:
             result = {
@@ -222,7 +208,7 @@ def find_email_all_methods(url: str, verbose: bool = False) -> dict:
                 'methods_tried': methods_tried
             }
             if verbose:
-                print(f"[EMAIL FINDER] ✓ Trouvé via browser: {result['email']}")
+                print(f"[EMAIL FINDER] OK via browser: {result['email']}")
             return result
 
     # ============================================
@@ -231,62 +217,47 @@ def find_email_all_methods(url: str, verbose: bool = False) -> dict:
     if _time_left(start_time, 20):
         methods_tried.append('masked_patterns')
         if verbose:
-            print(f"[EMAIL FINDER] Méthode 2: Patterns masqués...")
-        
+            print(f"[EMAIL FINDER] Methode 2: Patterns masques...")
+
         result = _find_masked_emails(url, domain)
         if result['email']:
             result['methods_tried'] = methods_tried
             if verbose:
-                print(f"[EMAIL FINDER] ✓ Trouvé via {result['source']}")
+                print(f"[EMAIL FINDER] OK via {result['source']}")
             return result
-    
+
     # ============================================
-    # METHODE 3: Hunter.io API
-    # ============================================
-    if _time_left(start_time, 15):
-        methods_tried.append('hunter')
-        if verbose:
-            print(f"[EMAIL FINDER] Méthode 3: Hunter.io...")
-        
-        result = _try_hunter(domain)
-        if result['email']:
-            result['methods_tried'] = methods_tried
-            if verbose:
-                print(f"[EMAIL FINDER] ✓ Trouvé via Hunter.io")
-            return result
-    
-    # ============================================
-    # METHODE 4: SMTP guess via MX
+    # METHODE 3: SMTP guess via MX
     # ============================================
     if _time_left(start_time, 8):
-        methods_tried.append('smtp_guess')
+        methods_tried.append('smtp_guess_late')
         if verbose:
-            print(f"[EMAIL FINDER] Méthode 4: SMTP guess...")
-        
+            print(f"[EMAIL FINDER] Methode 4: SMTP guess...")
+
         result = _try_smtp_guess(domain)
         if result['email']:
             result['methods_tried'] = methods_tried
             if verbose:
-                print(f"[EMAIL FINDER] ✓ Trouvé via SMTP: {result['email']}")
+                print(f"[EMAIL FINDER] OK via SMTP: {result['email']}")
             return result
-    
+
     # ============================================
     # METHODE 5: Scraping homepage simple
     # ============================================
     if _time_left(start_time, 5):
         methods_tried.append('homepage_basic')
         if verbose:
-            print(f"[EMAIL FINDER] Méthode 5: Homepage basique...")
-        
+            print(f"[EMAIL FINDER] Methode 5: Homepage basique...")
+
         result = _scrape_homepage_basic(url, domain)
         if result['email']:
             result['methods_tried'] = methods_tried
             if verbose:
-                print(f"[EMAIL FINDER] ✓ Trouvé via homepage")
+                print(f"[EMAIL FINDER] OK via homepage")
             return result
     
     if verbose:
-        print(f"[EMAIL FINDER] ✗ Aucun email trouvé après {len(methods_tried)} méthodes")
+        print(f"[EMAIL FINDER] KO - aucun email apres {len(methods_tried)} methodes")
     
     return _empty_result(methods_tried)
 
@@ -305,30 +276,91 @@ def search_email_on_website(url: str) -> str:
 # METHODES INDIVIDUELLES
 # ===========================================================
 
-def _scrape_all_pages(url: str, domain: str) -> dict:
-    """Scrape toutes les pages critiques du site en parallèle."""
-    results = []  # list of (priority, email, source)
+def _scrape_all_pages(url: str, domain: str, fast_mode: bool = False) -> dict:
+    """
+    Scrape les pages de contact du site en 2 étapes :
+      1. Parse la homepage pour extraire les VRAIS liens internes (contact, mentions, etc.)
+      2. Visite ces URLs réelles (pas des URLs devinées)
+      Fallback : essaie quelques chemins standards si aucun lien trouvé.
+    """
+    CONTACT_KEYWORDS = (
+        'contact', 'coordonnees', 'joindre', 'nous-contacter', 'contactez',
+        'mentions', 'legal', 'about', 'a-propos', 'qui-sommes', 'equipe',
+        'infos', 'confidentialite', 'privacy', 'footer',
+    )
 
-    def _fetch(page_path):
-        page_url = urljoin(url, page_path)
+    # ── Étape 1 : Homepage — extraire l'email direct + les vrais liens internes ───────
+    real_urls = []   # liens trouvés dans le HTML
+    home_emails = []
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT_PAGE, allow_redirects=True)
+        if resp.status_code < 500:
+            home_text = resp.text
+            base_parsed = urlparse(url)
+            base = f"{base_parsed.scheme}://{base_parsed.netloc}"
+
+            # Email direct sur la homepage
+            home_emails = _scrape_single_page(url, domain)
+
+            # Extraire TOUS les href <a> du HTML
+            all_hrefs = re.findall(r'<a[^>]+href=["\']([^"\'#]{3,})["\']', home_text, re.IGNORECASE)
+            seen_urls = set()
+            for href in all_hrefs:
+                # Ignorer les ancres, javascript, mailto, téléphone
+                if href.startswith(('mailto:', 'tel:', 'javascript:', '#')):
+                    continue
+                # Construire l'URL absolue
+                if href.startswith('http'):
+                    full = href
+                else:
+                    full = urljoin(base + '/', href.lstrip('/'))
+                # Garder seulement les liens internes au même domaine
+                parsed_full = urlparse(full)
+                link_domain = parsed_full.netloc.replace('www.', '')
+                if link_domain != domain:
+                    continue
+                href_lower = href.lower()
+                if any(kw in href_lower for kw in CONTACT_KEYWORDS):
+                    if full not in seen_urls:
+                        seen_urls.add(full)
+                        real_urls.append(full)
+    except Exception:
+        pass
+
+    # ── Étape 1b : Si pas de liens trouvés, fallback sur quelques chemins standards ────
+    if not real_urls:
+        fallback_paths = PAGES_TO_SCRAPE_FAST if fast_mode else [
+            '/contact', '/nous-contacter', '/contactez-nous',
+            '/mentions-legales', '/a-propos', '/about',
+        ]
+        base_parsed = urlparse(url)
+        base = f"{base_parsed.scheme}://{base_parsed.netloc}"
+        real_urls = [urljoin(base + '/', p.lstrip('/')) for p in fallback_paths if p]
+
+    # ── Étape 2 : Visiter les URLs réelles en parallèle ──────────────────────────────
+    results = [(e, 'home') for e in home_emails]  # ajouter les emails de la homepage
+
+    def _fetch(page_url):
+        path = urlparse(page_url).path or '/'
         found = _scrape_single_page(page_url, domain)
-        return [(e, page_path) for e in found]
+        return [(e, path) for e in found]
 
-    with ThreadPoolExecutor(max_workers=10) as ex:
-        futures = {ex.submit(_fetch, p): p for p in PAGES_TO_SCRAPE}
+    max_workers = 3 if not fast_mode else 2
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        futures = {ex.submit(_fetch, u): u for u in real_urls[:15]}
         for f in as_completed(futures):
             try:
-                for email, page_path in f.result():
-                    results.append((email, page_path))
+                results.extend(f.result())
             except Exception:
                 pass
 
     if results:
         results.sort(key=lambda x: _get_priority(x[0]))
         best_email, best_page = results[0]
+        unique_emails = list(dict.fromkeys([e for e, _ in results]))
         return {
-            'email': best_email,
-            'source': f'site:{best_page or "home"}',
+            'email': unique_emails[0],   # meilleur email seulement (pas une concaténation)
+            'source': f'site:{best_page}',
             'priority': _get_priority(best_email),
             'methods_tried': []
         }
@@ -475,8 +507,9 @@ def _find_masked_emails(url: str, domain: str) -> dict:
             emails = _find_masked_on_page(page_url, domain)
             if emails:
                 emails.sort(key=lambda e: _get_priority(e))
+                unique_emails = list(dict.fromkeys(emails))
                 return {
-                    'email': emails[0],
+                    'email': ", ".join(unique_emails),
                     'source': f'masked:{page or "home"}',
                     'priority': _get_priority(emails[0]),
                     'methods_tried': []
@@ -506,35 +539,6 @@ def _find_masked_on_page(page_url: str, domain: str) -> list:
         pass
     
     return emails
-
-
-def _try_hunter(domain: str) -> dict:
-    """Cherche via Hunter.io API."""
-    api_key = os.getenv('HUNTER_API_KEY')
-    if not api_key:
-        return _empty_result()
-    
-    try:
-        response = requests.get(
-            'https://api.hunter.io/v2/domain-search',
-            params={'domain': domain, 'api_key': api_key},
-            timeout=10
-        )
-        if response.status_code == 200:
-            data = response.json()
-            emails = data.get('data', {}).get('emails', [])
-            if emails:
-                email_data = emails[0]
-                return {
-                    'email': email_data.get('value'),
-                    'source': 'hunter_api',
-                    'priority': _get_priority(email_data.get('value', '')),
-                    'methods_tried': []
-                }
-    except Exception:
-        pass
-    
-    return _empty_result()
 
 
 def _try_smtp_guess(domain: str) -> dict:
@@ -580,15 +584,22 @@ def _scrape_homepage_basic(url: str, domain: str) -> dict:
         faux_positifs = ['noreply', 'no-reply', 'donotreply', 'admin', 'webmaster', 
                         'sentry', 'wix', 'example', 'domain.com', 'googleads']
         
+        valid_emails = []
+        
         for email in emails_trouves:
             email_lower = email.lower()
             if not any(fp in email_lower for fp in faux_positifs):
-                return {
-                    'email': email,
-                    'source': 'homepage_basic',
-                    'priority': _get_priority(email),
-                    'methods_tried': []
-                }
+                valid_emails.append(email)
+                
+        if valid_emails:
+            unique_emails = list(dict.fromkeys(valid_emails))
+            unique_emails.sort(key=lambda e: _get_priority(e))
+            return {
+                'email': ", ".join(unique_emails),
+                'source': 'homepage_basic',
+                'priority': _get_priority(unique_emails[0]),
+                'methods_tried': []
+            }
     except Exception:
         pass
     
@@ -656,55 +667,51 @@ def _extract_emails_from_html(html: str, domain: str) -> list:
 def _scrape_page_with_browser(base_url: str, domain: str) -> list:
     """
     Fallback Playwright pour les sites JS-rendus ou bloqués par cookie-wall.
-    Lance un seul navigateur avec N onglets en parallèle (threads).
+    Lance UN SEUL navigateur headless pour toutes les pages.
     """
     if not _PLAYWRIGHT_AVAILABLE:
         return []
 
     all_emails = []
-
-    try:
-        with _sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
-
-            def scrape_tab(path):
+    
+    async def _async_scrape():
+        manager = BrowserManager()
+        try:
+            for path in _BROWSER_PAGES:
                 try:
-                    ctx = browser.new_context(
-                        user_agent=HEADERS['User-Agent'],
-                        locale='fr-FR',
-                        viewport={'width': 1280, 'height': 800},
-                    )
-                    tab = ctx.new_page()
-                    tab.goto(urljoin(base_url, path), wait_until='domcontentloaded', timeout=15000)
-                    _dismiss_cookies_sync(tab)
-                    tab.wait_for_timeout(1000)
-                    # Hover sur icônes mail pour déclencher tooltip/affichage JS
-                    for sel in ['[class*="mail"]', '[class*="email"]', 'a[href^="mailto:"]']:
-                        try:
-                            for el in tab.query_selector_all(sel)[:3]:
-                                try:
-                                    el.hover()
-                                    tab.wait_for_timeout(200)
-                                except Exception:
-                                    pass
-                        except Exception:
-                            pass
-                    html = tab.content()
-                    ctx.close()
-                    return _extract_emails_from_html(html, domain)
+                    full_url = urljoin(base_url, path)
+                    async with manager.get_page() as page:
+                        await page.set_viewport_size({'width': 1280, 'height': 800})
+                        await page.goto(full_url, wait_until='domcontentloaded', timeout=12000)
+                        # Dismiss cookies
+                        await page.wait_for_timeout(800)
+                        for sel in _COOKIE_SELECTORS_SYNC:
+                            try:
+                                btn = await page.query_selector(sel)
+                                if btn and await btn.is_visible():
+                                    await btn.click()
+                                    await page.wait_for_timeout(500)
+                                    break
+                            except Exception:
+                                continue
+                        await page.wait_for_timeout(800)
+                        
+                        content = await page.content()
+                        found = _extract_emails_from_html(content, domain)
+                        if found:
+                            all_emails.extend(found)
+                            # Optionnel : si on a trouvé un bon email, on peut s'arrêter là
+                            # pour gagner du temps.
+                            if any(_get_priority(e) <= 10 for e in found):
+                                break
+                                
                 except Exception:
-                    return []
-
-            with ThreadPoolExecutor(max_workers=4) as ex:
-                futures = [ex.submit(scrape_tab, p) for p in _BROWSER_PAGES]
-                for f in as_completed(futures):
-                    try:
-                        all_emails.extend(f.result())
-                    except Exception:
-                        pass
-
-            browser.close()
-
+                    continue
+        finally:
+            await manager.shutdown()
+    
+    try:
+        asyncio.run(_async_scrape())
     except Exception:
         pass
 
@@ -773,7 +780,7 @@ def _filter_emails(emails: list, domain: str) -> list:
     Règle : un professionnel qui cherche des clients ne met jamais un faux email
     sur son site. Si c'est sur la page, c'est son email.
 
-    Seuls les patterns EMAIL_EXCLUDE_PATTERNS sont rejetés (noreply, wix, sentry…).
+    Seuls les patterns EMAIL_EXCLUDE_PATTERNS sont rejetés (noreply, wix, sentry...).
     Aucun filtrage par domaine — un artisan peut avoir son site sur .fr et son
     email sur gmail, wanadoo, ou un domaine complètement différent.
     """

@@ -1,0 +1,63 @@
+    <div class="mg">
+
+        <div class="mc">
+            <div class="ml">Envoyés total</div>
+            <div class="mv" id="crm-stat-envoyes">0</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Taux d'ouverture</div>
+            <div class="mv" id="crm-stat-ouvertures">—</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Taux de clic</div>
+            <div class="mv" id="crm-stat-clics">—</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Taux de réponse</div>
+            <div class="mv" id="crm-stat-reponses">—</div>
+        </div>
+        <div class="mc ac">
+            <div class="ml">Réponses positives</div>
+            <div class="mv" id="crm-stat-positives">0</div>
+        </div>
+        <div class="mc">
+            <div class="ml">RDV obtenus</div>
+            <div class="mv" id="crm-stat-rdv">0</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Bounces</div>
+            <div class="mv" id="crm-stat-bounces">0</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Spam</div>
+            <div class="mv" id="crm-stat-spam">0</div>
+        </div>
+    </div>
+    <div class="sl">Historique des emails</div>
+    <div class="card">
+        <div class="ch">
+            <div id="crm-filters" style="display:flex;gap:4px">
+                <button class="btn bg1 sm active" onclick="setCRMFilter('tous', this)">Tous</button>
+                <button class="btn bg1 sm" onclick="setCRMFilter('ouverts', this)">Ouverts</button>
+                <button class="btn bg1 sm" onclick="setCRMFilter('cliques', this)">Cliqués</button>
+                <button class="btn bg1 sm" onclick="setCRMFilter('repondus', this)">Répondus</button>
+                <button class="btn bg1 sm" onclick="setCRMFilter('positifs', this)">Positifs</button>
+                <button class="btn bg1 sm" onclick="setCRMFilter('bounces', this)">Bounces</button>
+                <button class="btn bg1 sm" onclick="setCRMFilter('spam', this)">Spam</button>
+            </div>
+        </div>
+        <table class="tbl" style="margin-top:10px">
+            <thead>
+                <tr>
+                    <th>Prospect</th>
+                    <th>Date</th>
+                    <th>Tracking</th>
+                    <th>Réponse</th>
+                    <th>RDV</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-crm">
+                <tr><td colspan="5" style="text-align:center;padding:2rem">Chargement...</td></tr>
+            </tbody>
+        </table>
+    </div>

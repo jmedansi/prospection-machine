@@ -4,7 +4,6 @@ import sys
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
 
 from config_manager import get_config
 
@@ -99,7 +98,7 @@ TEXTE DU SITE :
             "format": "json"
         }
         
-        response = requests.post('http://localhost:11434/api/generate', json=payload, timeout=45)
+        response = requests.post('http://localhost:11434/api/generate', json=payload, timeout=12)
         response.raise_for_status()
         
         result = response.json().get('response', '{}')

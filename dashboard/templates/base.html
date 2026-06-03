@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Incidenx - Prospection Machine{% endblock %}</title>
+
+    <!-- PWA / Web App capabilities -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Incidenx">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- V4 Bridge CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=6">
+
+    <!-- Core CSS (System Design) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/core.css') }}?v=12">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/layout.css') }}?v=12">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/modals.css') }}?v=12">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/templates.css') }}?v=12">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/mobile.css') }}?v=13">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/saas-redesign.css') }}?v=12">
+
+    <!-- External Libs (Phase 4) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Mobile App Container -->
+    {% block mobile_app %}
+    <div class="mobile-app" id="mobile-app">
+        <!-- Will be populated by mobile views or components -->
+    </div>
+    {% endblock %}
+
+    <!-- Desktop App Container -->
+    {% block desktop_app %}
+    <div class="app">
+        {% block sidebar %}{% endblock %}
+
+        <main class="mn">
+            {% block topbar %}{% endblock %}
+
+            <div class="ct">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        {% include "components/mobile_nav.html" %}
+    </div>
+    {% endblock %}
+
+    <!-- Modals Overlay Container -->
+    <div id="modal-container">
+        {% block modals %}{% endblock %}
+    </div>
+
+    <!-- Sidebar overlay (tablet / small laptop) -->
+    <div class="sb-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- UI Feedback -->
+    <div id="toast-container" class="toast-container"></div>
+    <div id="panel-overlay" onclick="closeSidePanel()"
+        style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.01)"></div>
+
+    <!-- Core JS -->
+    <script src="{{ url_for('static', filename='js/modules/scraper_watchdog.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/core/cmd_k.js') }}?v=1"></script>
+    <script src="{{ url_for('static', filename='js/core/email_streaming.js') }}?v=1"></script>
+
+    <!-- Socket.IO Client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        // Initialisation globale de Socket.IO
+        const socket = io();
+        socket.on('connect', () => console.log('[Socket.IO] Connecté au serveur'));
+        socket.on('disconnect', () => console.log('[Socket.IO] Déconnecté du serveur'));
+    </script>
+
+    <!-- PWA Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('[PWA] Service Worker registered scope:', reg.scope))
+                    .catch(err => console.error('[PWA] Service Worker registration failed:', err));
+            });
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

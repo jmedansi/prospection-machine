@@ -9,9 +9,8 @@ import requests
 import logging
 from typing import Dict, Optional, Tuple
 from datetime import datetime
-from dotenv import load_dotenv
-
-load_dotenv()
+from core.config import ensure_env
+ensure_env()
 logger = logging.getLogger(__name__)
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", os.getenv("GITHUB_ACCESS_TOKEN", ""))

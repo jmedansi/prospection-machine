@@ -1,0 +1,89 @@
+    <div class="sl">Tableau de Tracking</div>
+    <div class="mg">
+        <div class="mc">
+            <div class="ml">Emails envoyés</div>
+            <div class="mv" id="board-stat-sent">0</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Ouverts</div>
+            <div class="mv" id="board-stat-open">—</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Clics</div>
+            <div class="mv" id="board-stat-click">—</div>
+        </div>
+        <div class="mc">
+            <div class="ml">Réponses</div>
+            <div class="mv" id="board-stat-reply">—</div>
+        </div>
+        <div class="mc ac">
+            <div class="ml">RDV confirmés</div>
+            <div class="mv" id="board-stat-rdv">0</div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+        <div class="sl">Enregistrement manuel de contact</div>
+        <div class="ch" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+            <input id="tracking-lead-search" type="text" placeholder="Rechercher un lead..." oninput="searchTrackingLead()" style="flex:1;min-width:220px;padding:10px;border:1px solid var(--surface2);border-radius:8px;background:var(--surface);color:var(--ink);" />
+            <select id="tracking-channel-select" style="min-width:180px;padding:10px;border:1px solid var(--surface2);border-radius:8px;background:var(--surface);color:var(--ink);">
+                <option value="Email">Email</option>
+                <option value="Téléphone">Téléphone</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Formulaire">Formulaire</option>
+                <option value="SMS">SMS</option>
+            </select>
+            <button class="btn sm" onclick="saveTrackingContact()">Enregistrer le contact</button>
+        </div>
+        <div id="tracking-selected-lead" style="margin-top:12px;font-size:13px;color:var(--ink3)">Aucun lead sélectionné.</div>
+
+        <div class="table-container" style="margin-top:16px">
+            <table class="tbl" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Prospect</th>
+                        <th>Email</th>
+                        <th>Secteur</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-tracking-search">
+                    <tr><td colspan="4" style="text-align:center;padding:2rem">Saisissez un nom de lead pour commencer.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="ch" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+            <div id="tracking-board-filters" style="display:flex;flex-wrap:wrap;gap:6px">
+                <button class="btn btn-primary sm" data-filter="tous" onclick="setTrackingBoardFilter('tous', this)">Tous</button>
+                <button class="btn btn-ghost sm" data-filter="ouverts" onclick="setTrackingBoardFilter('ouverts', this)">Ouverts</button>
+                <button class="btn btn-ghost sm" data-filter="cliques" onclick="setTrackingBoardFilter('cliques', this)">Cliqués</button>
+                <button class="btn btn-ghost sm" data-filter="repondus" onclick="setTrackingBoardFilter('repondus', this)">Répondus</button>
+                <button class="btn btn-ghost sm" data-filter="bounce" onclick="setTrackingBoardFilter('bounce', this)">Bounces</button>
+                <button class="btn btn-ghost sm" data-filter="spam" onclick="setTrackingBoardFilter('spam', this)">Spam</button>
+            </div>
+            <button class="btn sm" onclick="loadTrackingBoard()">Rafraîchir</button>
+        </div>
+
+        <div class="table-container" style="margin-top:16px">
+            <table class="tbl" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Prospect</th>
+                        <th>Email</th>
+                        <th>Objet</th>
+                        <th>Canal</th>
+                        <th>Tracking</th>
+                        <th>Date</th>
+                        <th>RDV</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-tracking-board">
+                    <tr><td colspan="7" style="text-align:center;padding:2rem">Chargement...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>

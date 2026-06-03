@@ -1,0 +1,280 @@
+<!-- Leads Unified Header -->
+<div class="leads-header">
+    <div class="leads-header-left">
+        <h2 class="leads-title">Leads</h2>
+        <span class="leads-count-badge" id="ul-count">—</span>
+        <div class="leads-view-toggle">
+            <button class="view-btn active" id="view-list" onclick="setLeadsView('list')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </button>
+            <button class="view-btn" id="view-kanban" onclick="setLeadsView('kanban')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3h18v18H3zM9 3v18M15 3v18"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="leads-actions">
+        <button class="leads-btn-primary" onclick="nav('sources', document.querySelector('[data-nav=sources]'))"
+            title="Ouvrir la page Sources pour lancer un scraping">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Nouveau scraping
+        </button>
+        <button class="leads-btn" onclick="launchSelectedAudits()">Auditer</button>
+        <button class="leads-btn" onclick="window.ActionsModule.launchSelectedEmailSearch()">Trouver emails</button>
+        <button class="leads-btn" onclick="window.ActionsModule.generateSelectedEmailsImpl()">Générer emails</button>
+        <button class="leads-btn" onclick="window.ActionsModule.sendApprovedEmailsImpl()">Envoyer</button>
+        <div class="leads-divider"></div>
+        <button class="leads-btn" onclick="checkSniperResponses()" title="Vérifier les réponses par email (IMAP)">Vérifier réponses</button>
+        <button class="leads-btn bp1" onclick="sendSniperStep1()" title="Envoyer le premier contact Sniper">Envoyer Step 1</button>
+        <div class="leads-divider"></div>
+        <button class="leads-btn" onclick="retryFailedAudits()">Relancer</button>
+        <button class="leads-btn" onclick="exportFilteredLeads()">CSV</button>
+        <button class="leads-btn danger" title="Supprimer" onclick="ulDeleteSelected()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M2 3.5h10M5.5 3.5V2h3v1.5M3.5 3.5l.7 8h5.6l.7-8" stroke="currentColor" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="leads-filters">
+    <select id="ul-filter-source" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Toutes sources</option>
+        <option value="maps">Maps</option>
+        <option value="sniper">Sniper</option>
+        <option value="ads">Google Ads</option>
+        <option value="fb_ads">Facebook Ads</option>
+        <option value="tech">Tech / E-com</option>
+        <option value="jobs">Jobs</option>
+        <option value="bodacc">BODACC</option>
+    </select>
+    <select id="ul-filter-statut" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Tous les stades</option>
+        <option value="en_attente">1. À traiter (Nouveau)</option>
+        <option value="audite">2. Audité</option>
+        <option value="non_audite">   ↳ Non audité</option>
+        <option value="email_pret">3. Email prêt</option>
+        <option value="email_non_genere">   ↳ Email non généré</option>
+        <option value="envoye">4. Envoyé (Contacté)</option>
+        <option value="non_envoye">   ↳ Prêt mais non envoyé</option>
+        <option value="repondu">5. Répondu</option>
+        <option value="non_repondu">   ↳ Envoyé sans réponse</option>
+    </select>
+    <select id="ul-filter-tag" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Tous tags</option>
+        <option value="perf">Perf</option>
+        <option value="securite">Sécu</option>
+        <option value="creation">Création</option>
+    </select>
+    <select id="ul-filter-sector" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Tous secteurs</option>
+        <option value="immobilier">Immobilier</option>
+        <option value="courtage">Courtage</option>
+        <option value="concessionnaires_auto">Concessionnaires Auto</option>
+        <option value="cliniques_esthetiques">Cliniques Esthétiques</option>
+        <option value="ecoles_formation">Écoles / Formation</option>
+        <option value="plomberie_chauffage">Plomberie / Chauffage</option>
+        <option value="sante">Santé</option>
+        <option value="informatique_web">Informatique / Web</option>
+        <option value="batiment">Bâtiment</option>
+        <option value="conseil_gestion">Conseil / Gestion</option>
+        <option value="expertise_comptable">Expertise Comptable</option>
+        <option value="communication">Communication</option>
+        <option value="commerce_detail">Commerce de Détail</option>
+        <option value="avocat">Avocat</option>
+        <option value="publicite">Publicité</option>
+        <option value="sport_fitness">Sport / Fitness</option>
+        <option value="hotellerie_restauration">Hôtellerie / Restauration</option>
+        <option value="esthetique_bienetre">Esthétique / Bien-être</option>
+        <option value="fournitures_services">Fournitures / Services</option>
+        <option value="demenagement_stockage">Déménagement / Stockage</option>
+        <option value="assurance">Assurance</option>
+        <option value="bijouterie_horlogerie">Bijouterie / Horlogerie</option>
+        <option value="transport_mobilite">Transport / Mobilité</option>
+        <option value="photographie">Photographie</option>
+        <option value="divers_services">Divers Services</option>
+        <option value="autres">Autres</option>
+    </select>
+    <select id="ul-filter-site" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Site web</option>
+        <option value="with">Avec site</option>
+        <option value="without">Sans site</option>
+    </select>
+    <select id="ul-filter-email" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Email</option>
+        <option value="with">Avec email</option>
+        <option value="without">Sans email</option>
+    </select>
+    <select id="ul-filter-notes" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Notes ML</option>
+        <option value="responsables">Avec responsables</option>
+        <option value="infos">Avec données (SIRET / adresse)</option>
+        <option value="partiel">Données partielles</option>
+        <option value="sans">Sans notes</option>
+    </select>
+    <select id="ul-filter-score" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="">Tous les scores</option>
+        <option value="bad">Lents (&lt; 70)</option>
+        <option value="good">Rapides (≥ 70)</option>
+        <option value="unscored">Non évalués</option>
+    </select>
+    <select id="ul-filter-limit" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+        <option value="50">50 par page</option>
+        <option value="100">100 par page</option>
+        <option value="500">500 par page</option>
+        <option value="10000">Tous (pas de pages)</option>
+    </select>
+    <div class="leads-search-wrap">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4" />
+            <path d="M9.5 9.5L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        <input id="ul-search" type="search" placeholder="Rechercher…" oninput="unifiedLeadsLoad(1)"
+            class="leads-search">
+    </div>
+</div>
+
+<!-- Table View -->
+<div id="leads-list-view">
+    <div class="leads-table-wrap">
+        <table class="leads-table">
+            <colgroup>
+                <col class="col-check">
+                <col class="col-prospect">
+                <col class="col-source">
+                <col class="col-contact">
+                <col class="col-score">
+                <col class="col-statut">
+                <col class="col-actions">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="col-check"><input type="checkbox" id="ul-cb-all" onchange="ulToggleAll(this)"></th>
+                    <th class="col-prospect">Prospect</th>
+                    <th class="col-source">Ville</th>
+                    <th class="col-contact">Contact</th>
+                    <th class="col-score">Score</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions"></th>
+                </tr>
+            </thead>
+            <tbody id="ul-tbody">
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:32px;color:var(--ink3);font-size:13px">Chargement…
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="leads-pagination">
+        <button id="ul-prev" class="leads-page-btn" onclick="ulChangePage(-1)" disabled>← Précédent</button>
+        <span id="ul-page-info" class="leads-page-info">page 1 / 1</span>
+        <button id="ul-next" class="leads-page-btn" onclick="ulChangePage(1)" disabled>Suivant →</button>
+    </div>
+</div>
+
+<!-- Kanban View (Phase 4.1) -->
+<div id="leads-kanban-view" style="display:none">
+    <div class="kanban-board">
+        <div class="kanban-col" data-status="en_attente">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">À traiter</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-en_attente"></div>
+        </div>
+        <div class="kanban-col" data-status="audite">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Audité</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-audite"></div>
+        </div>
+        <div class="kanban-col" data-status="email_genere">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Email prêt</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-email_genere"></div>
+        </div>
+        <div class="kanban-col" data-status="envoye">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Envoyé</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-envoye"></div>
+        </div>
+        <div class="kanban-col" data-status="repondu">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Répondu</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-repondu"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal FB Ads supprimé — centralisé dans Sources (sources.js) -->
+
+<!-- Modal édition lead -->
+<div id="modal-ul-edit" class="modal-overlay">
+    <div class="modal-content" style="width:520px">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Modifier le lead</div>
+                <div id="ul-edit-pipeline-label" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-ul-edit')">✕</button>
+        </div>
+        <div class="mb">
+            <input type="hidden" id="ul-edit-id">
+            <div class="g2">
+                <div class="form-grp"><label>Nom</label><input type="text" id="ul-edit-nom" class="inp"></div>
+                <div class="form-grp"><label>Ville</label><input type="text" id="ul-edit-ville" class="inp"></div>
+            </div>
+            <div class="form-grp"><label>Site web</label><input type="url" id="ul-edit-site" class="inp"></div>
+            <div class="g2">
+                <div class="form-grp"><label>Email</label><input type="email" id="ul-edit-email" class="inp"></div>
+                <div class="form-grp"><label>Téléphone</label><input type="tel" id="ul-edit-tel" class="inp"></div>
+            </div>
+            <div class="g2">
+                <div class="form-grp"><label>Email 2</label><input type="email" id="ul-edit-email-2" class="inp"
+                        placeholder="Optionnel"></div>
+                <div class="form-grp"><label>Téléphone 2</label><input type="tel" id="ul-edit-tel-2" class="inp"
+                        placeholder="Optionnel"></div>
+            </div>
+            <div class="form-grp"><label>Secteur</label><input type="text" id="ul-edit-category" class="inp"></div>
+            <div class="form-grp"><label>Notes</label><textarea id="ul-edit-notes" class="inp"
+                    style="resize:vertical;height:60px" placeholder="Notes particulières..."></textarea></div>
+            <div id="ul-edit-ceo-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;margin-bottom:8px;letter-spacing:.04em">
+                    DÉCIDEUR</div>
+                <div class="g2">
+                    <div class="form-grp"><label>Prénom</label><input type="text" id="ul-edit-ceo-prenom" class="inp"
+                            placeholder="Jean"></div>
+                    <div class="form-grp"><label>Nom</label><input type="text" id="ul-edit-ceo-nom" class="inp"
+                            placeholder="DUPONT"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mf">
+            <button class="btn bd sm" onclick="unifiedLeadsDelete()">Supprimer</button>
+            <div style="display:flex;gap:8px">
+                <button class="btn bg1 sm" onclick="closeModal('modal-ul-edit')">Annuler</button>
+                <button class="btn bp1 sm" onclick="unifiedLeadsSave()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
