@@ -373,15 +373,25 @@ def init_scheduler(_app=None):
 
     _scheduler.add_job(_run_ceo_retry, IntervalTrigger(hours=2), id='ceo_retry')
 
-    # Backup DB automatique toutes les 5 heures (local + git push)
-    def _run_db_backup():
+    # Sauvegarde DB locale toutes les 5 heures
+    def _run_db_backup_local():
+        try:
+            from backup_db import run_backup
+            run_backup(git=False)
+        except Exception as e:
+            logger.error(f"[scheduler] db_backup_local erreur : {e}")
+
+    _scheduler.add_job(_run_db_backup_local, CronTrigger(hour='*/5', minute=0), id='db_backup_local')
+
+    # Sauvegarde complète de la machine et push GitHub quotidien (à 22h00)
+    def _run_daily_git_backup():
         try:
             from backup_db import run_backup
             run_backup(git=True)
         except Exception as e:
-            logger.error(f"[scheduler] db_backup erreur : {e}")
+            logger.error(f"[scheduler] daily_git_backup erreur : {e}")
 
-    _scheduler.add_job(_run_db_backup, CronTrigger(hour='*/5', minute=0), id='db_backup')
+    _scheduler.add_job(_run_daily_git_backup, CronTrigger(hour=22, minute=0), id='daily_git_backup')
 
     # Enregistrement des pipelines via le Registry (Phase 4.3)
     from dashboard.pipeline import maintain_batch_slots, notify_new_audits, auto_approve_after_timeout
