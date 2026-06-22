@@ -1546,89 +1546,53 @@
             }
         }
         
-        function previewReport(leadId) {
-            fetch('/api/leads/' + leadId, { cache: 'no-store' })
+        function previewReport(slug) {
+            slug = slug || '';
+            fetch('/api/previews')
                 .then(r => r.json())
-                 .then(d => {
-                     const lead = d.lead || d;
-                     if(!lead || lead.error || !lead.nom) {
-                         showToast('Lead non trouvé', 'error');
-                         return;
-                     }
-                     
-                     // Aligné sur generate_slug() Python : retirer tout sauf alphanum+espaces, puis espaces → tirets
-                     const slug = lead.nom.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
-                     const lienRapport = lead.lien_rapport || '';
-                     
-                     console.log('[Preview] lead:', lead.nom, 'lien_rapport:', lienRapport, 'slug:', slug);
-                    
-                    // Priority 1: Check if local folder exists via API
-                    fetch('/api/previews')
-                        .then(r => r.json())
-                        .then(pd => {
-                            console.log('[Preview] previews API:', pd.previews);
-                            const preview = pd.previews ? pd.previews.find(p => p.slug === slug || p.slug.includes(slug)) : null;
-                            console.log('[Preview] found preview:', preview);
-                            
-                            if(preview && preview.local) {
-                                window.open('/previews/' + slug + '/', '_blank');
-                            } else if(lienRapport && lienRapport.startsWith('http')) {
-                                window.open(lienRapport, '_blank');
-                            } else {
-                                showToast('Aucun rapport généré pour ce lead. Cliquer sur "Relancer l\'audit" pour en générer un.', 'error');
-                            }
-                        })
-                        .catch(e => {
-                            console.error('[Preview] error:', e);
-                            showToast('Erreur: ' + e.message, 'error');
-                        });
+                .then(pd => {
+                    const preview = pd.previews ? pd.previews.find(p => p.slug === slug || p.slug.includes(slug)) : null;
+                    if(preview && preview.local) {
+                        window.open('/previews/' + slug + '/', '_blank');
+                    } else if(slug) {
+                        window.open('https://audit.incidenx.com/' + slug + '/', '_blank');
+                    } else {
+                        showToast('Aucun rapport généré pour ce lead. Cliquer sur "Relancer l\'audit" pour en générer un.', 'error');
+                    }
                 })
                 .catch(e => {
                     showToast('Erreur: ' + e.message, 'error');
                 });
         }
         
-        function pushReport(leadId) {
-            fetch('/api/leads/' + leadId, { cache: 'no-store' })
-                .then(r => r.json())
-                .then(async d => {
-                    const lead = d.lead || d;
-                    if(!lead || lead.error || !lead.nom) { showToast('Lead non trouvé', 'error'); return; }
-                    
-                    const slug = makeSlug(lead.nom);
-                    const lienRapport = lead.lien_rapport || '';
-                    
-                    // Vérifier via l'API si un dossier local existe
-                    const pd = await fetch('/api/previews').then(r => r.json());
-                    const preview = pd.previews ? pd.previews.find(p => p.slug === slug) : null;
-                    
-                    if(preview && preview.local) {
-                        showToast('Publication en cours...', 'info');
-                        const pushRes = await fetch('/api/previews/push', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ slugs: [slug] })
-                        }).then(r => r.json());
-                        if(pushRes.published && pushRes.published.length > 0) {
-                            const publicUrl = pushRes.published[0].url;
-                            showToast('✅ Mockup publié + email régénéré : ' + publicUrl, 'success');
-                            loadPanelContent(leadId, 'audit');
-                            loadCampaignTable();
-                        } else if(pushRes.results && pushRes.results[0] && pushRes.results[0].status === 'published') {
-                            const publicUrl = pushRes.results[0].url;
-                            showToast('✅ Mockup publié + email régénéré : ' + publicUrl, 'success');
-                            loadPanelContent(leadId, 'audit');
-                            loadCampaignTable();
-                        } else {
-                            showToast('Erreur: ' + (pushRes.error || pushRes.failed?.[0]?.error || 'Publication échouée'), 'error');
-                        }
-                    } else if(lienRapport && lienRapport.startsWith('https://')) {
-                        showToast('Mockup déjà en ligne : ' + lienRapport, 'info');
-                    } else {
-                        showToast('Aucun mockup local trouvé. Lancer l\'audit d\'abord.', 'warning');
-                    }
-                })
-                .catch(e => showToast('Erreur: ' + e.message, 'error'));
+        async function pushReport(slug) {
+            slug = slug || '';
+            if(!slug) { showToast('Aucun slug de rapport', 'error'); return; }
+
+            const pd = await fetch('/api/previews').then(r => r.json());
+            const preview = pd.previews ? pd.previews.find(p => p.slug === slug) : null;
+            
+            if(preview && preview.local) {
+                showToast('Publication en cours...', 'info');
+                const pushRes = await fetch('/api/previews/push', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slugs: [slug] })
+                }).then(r => r.json());
+                if(pushRes.published && pushRes.published.length > 0) {
+                    const publicUrl = pushRes.published[0].url;
+                    showToast('✅ Mockup publié : ' + publicUrl, 'success');
+                    loadCampaignTable();
+                } else if(pushRes.results && pushRes.results[0] && pushRes.results[0].status === 'published') {
+                    const publicUrl = pushRes.results[0].url;
+                    showToast('✅ Mockup publié : ' + publicUrl, 'success');
+                    loadCampaignTable();
+                } else {
+                    showToast('Erreur: ' + (pushRes.error || pushRes.failed?.[0]?.error || 'Publication échouée'), 'error');
+                }
+            } else {
+                showToast('Aucun mockup local trouvé. Lancer l\'audit d\'abord.', 'warning');
+            }
         }
 
         function launchAuditForLead(leadId) {
