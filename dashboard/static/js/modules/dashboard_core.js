@@ -1326,14 +1326,20 @@
         }
         
         // Edit lead from panel - uses campaign data
-        function openEditLeadFromPanel(leadId) {
+        async function openEditLeadFromPanel(leadId) {
             if (typeof unifiedLeadsOpenEdit === 'function') {
                 const opened = unifiedLeadsOpenEdit(leadId, _campaignData);
                 if (opened !== false) closeSidePanel();
                 return;
             }
-            const lead = _campaignData.find(l => l.id === leadId);
+            let lead = _campaignData.find(l => l.id == leadId);
             if(!lead) {
+                try {
+                    const r = await fetch('/api/leads/' + leadId, { cache: 'no-store' });
+                    if (r.ok) { const d = await r.json(); lead = d.lead || d; }
+                } catch(e) {}
+            }
+            if(!lead || lead.error) {
                 showToast('Lead non trouvé', 'error');
                 return;
             }
@@ -1374,16 +1380,28 @@
             }
         }
         
-        function previewEmail(leadId) {
-            const lead = _campaignData.find(l => l.id === leadId);
+        async function previewEmail(leadId) {
+            let lead = _campaignData.find(l => l.id == leadId);
+            if(!lead || !lead.email_corps) {
+                try {
+                    const r = await fetch('/api/leads/' + leadId, { cache: 'no-store' });
+                    if (r.ok) { const d = await r.json(); lead = d.lead || d; }
+                } catch(e) {}
+            }
             if(!lead || !lead.email_corps) return;
             const win = window.open('', '_blank');
             win.document.write(lead.email_corps);
         }
 
-        function openEmailEditor(leadId) {
-            const lead = _campaignData.find(l => l.id === leadId);
-            if (!lead) return;
+        async function openEmailEditor(leadId) {
+            let lead = _campaignData.find(l => l.id == leadId);
+            if (!lead) {
+                try {
+                    const r = await fetch('/api/leads/' + leadId, { cache: 'no-store' });
+                    if (r.ok) { const d = await r.json(); lead = d.lead || d; }
+                } catch(e) {}
+            }
+            if (!lead || lead.error) return;
 
             // Remove any existing instance
             const existing = document.getElementById('email-editor-modal');
@@ -1505,8 +1523,6 @@
         }
         
         async function sendTestEmail(leadId) {
-            const lead = _campaignData.find(l => l.id === leadId);
-            if(!lead) return;
             try {
                 const r = await fetch('/api/email/test', {
                     method: 'POST',
