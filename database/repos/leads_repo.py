@@ -34,6 +34,7 @@ class LeadsRepo:
                         la.email_valide AS email_valide_audit,
                         la.copywriting_mode, la.is_catch_all, la.mx_host,
                         la.statut_prospection, la.telephone_sniper,
+                        la.screenshot_desktop, la.screenshot_mobile, la.rapport_html,
                         ee.date_envoi AS sent_at, ee.ouvert AS is_opened,
                         ee.date_ouverture AS opened_at, ee.clique AS is_clicked,
                         ee.repondu AS is_replied, ee.statut_envoi AS email_status
@@ -48,7 +49,18 @@ class LeadsRepo:
                     LIMIT 1
                 """, (lead_id, lead_id)).fetchone()
                 if not row: return None
-                return self._normalize_v5(dict(row)) if version == 5 else self._normalize(dict(row))
+                data = dict(row)
+                # Récupérer les séquences d'email pour ce lead (relances planifiées / pending / sent)
+                try:
+                    seqs = conn.execute(
+                        "SELECT id, email_type, statut, date_planifiee, date_envoi, email_objet, email_corps, telegram_msg_id FROM email_sequences WHERE lead_id=? ORDER BY date_planifiee ASC",
+                        (lead_id,)
+                    ).fetchall()
+                    data['email_sequences'] = [dict(s) for s in seqs]
+                except Exception:
+                    data['email_sequences'] = []
+
+                return self._normalize_v5(data) if version == 5 else self._normalize(data)
         except Exception as e:
             logger.error(f"LeadsRepo.get_by_id({lead_id}) → {e}")
             return None
@@ -60,7 +72,7 @@ class LeadsRepo:
                  campaign_ids: list | None = None,
                  date_start: str | None = None, date_end: str | None = None,
                  source: str = "tous", tag: str = "", score: str = "tous",
-                 notes: str = "tous") -> dict:
+                 notes: str = "tous", list_id: int | None = None) -> dict:
         """
         Liste paginée de leads avec jointure audit.
         """
@@ -80,11 +92,12 @@ class LeadsRepo:
                         la.statut_prospection,
                         COALESCE(NULLIF(la.email_valide, ''), NULLIF(lb.email_valide, '')) AS email_valide,
                         la.audit_partial,
-                        la.ceo_prenom, la.ceo_nom, la.ceo_source
+                        la.ceo_prenom, la.ceo_nom, la.ceo_source,
+                        la.screenshot_desktop, la.screenshot_mobile
                     FROM leads_bruts lb
                     LEFT JOIN leads_audites la ON la.lead_id = lb.id
                 """
-                where, params = self._build_filters(statut, site, email, sector, search, campaign_id, campaign_ids, date_start, date_end, source=source, tag=tag, score=score, notes=notes)
+                where, params = self._build_filters(statut, site, email, sector, search, campaign_id, campaign_ids, date_start, date_end, source=source, tag=tag, score=score, notes=notes, list_id=list_id)
                 logger.info(f"LeadsRepo.get_all filters: where={where}, params={params}")
                 count_row = conn.execute(
                     f"SELECT COUNT(*) FROM leads_bruts lb LEFT JOIN leads_audites la ON la.lead_id = lb.id {where}", params
@@ -216,7 +229,7 @@ class LeadsRepo:
                        campaign_id: int | None = None, campaign_ids: list | None = None,
                        date_start: str | None = None, date_end: str | None = None,
                        source: str = "tous", tag: str = "", score: str = "tous",
-                       notes: str = "tous"):
+                       notes: str = "tous", list_id: int | None = None):
         clauses, params = [], []
         
         # Source Filter (Unified Maps/Sniper logic)
@@ -334,6 +347,9 @@ class LeadsRepo:
         if date_end:
             clauses.append("DATE(lb.date_scraping) <= ?")
             params.append(date_end)
+        if list_id:
+            clauses.append("lb.id IN (SELECT lead_id FROM lead_list_items WHERE list_id = ?)")
+            params.append(list_id)
         where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
         return where, params
 
@@ -367,8 +383,11 @@ class LeadsRepo:
             "email_objet":       d.get("email_objet"),
             "email_corps":       d.get("email_corps"),
             "approuve":          bool(d.get("approuve")),
+            # Séquences de relance (list of {id,email_type,statut,date_planifiee,email_objet,email_corps})
+            "email_sequences":   d.get("email_sequences") or [],
             "lien_rapport":      d.get("lien_rapport"),
             "lien_pdf":          d.get("lien_pdf"),
+            "lien_maps":         d.get("lien_maps"),
             "probleme_principal": d.get("probleme_principal"),
             "service_suggere":   d.get("service_suggere"),
             "cms_detected":      d.get("cms_detected"),
@@ -400,6 +419,10 @@ class LeadsRepo:
             "audit_id":          d.get("audit_id"),
             "audit_partial":     bool(d.get("audit_partial")),
             "kanban_status":     self._get_kanban_status(d),
+            # Screenshots & mockup
+            "screenshot_desktop": d.get("screenshot_desktop"),
+            "screenshot_mobile":  d.get("screenshot_mobile"),
+            "rapport_html":       d.get("rapport_html"),
         }
 
     def _normalize_v5(self, d: dict) -> dict:
