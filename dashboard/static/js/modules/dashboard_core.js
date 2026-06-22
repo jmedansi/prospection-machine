@@ -152,6 +152,10 @@
             if (tabName === 'logs') {
                 if(typeof loadLogs === 'function') loadLogs();
             }
+            // Listes de leads
+            if (tabName === 'listes') {
+                if (window.ListsModule) window.ListsModule.init();
+            }
         }
 
         function setTrackingBoardFilter(filter, el) {
@@ -236,6 +240,10 @@
         }
 
         function loadTrackingBoard(silent = false) {
+            if (typeof window.unifiedLeadsLoadLists === 'function') {
+                window.unifiedLeadsLoadLists();
+            }
+
             const statsSent = document.getElementById('board-stat-sent');
             const statsOpen = document.getElementById('board-stat-open');
             const statsClick = document.getElementById('board-stat-click');
@@ -261,7 +269,11 @@
                 spam: 'spam'
             };
 
-            const emailUrl = '/api/emails?limit=50' + (statusMap[_trackingBoardFilter] ? '&statut=' + statusMap[_trackingBoardFilter] : '');
+            const listEl = document.getElementById('tracking-filter-list');
+            const listId = listEl ? listEl.value : '';
+            const emailUrl = '/api/emails?limit=50' 
+                + (statusMap[_trackingBoardFilter] ? '&statut=' + statusMap[_trackingBoardFilter] : '')
+                + (listId ? '&list_id=' + listId : '');
 
             fetch('/api/crm/counts')
                 .then(r => r.json())
@@ -800,6 +812,10 @@
                             <dt style="color:#64748b;font-size:12px;width:90px;flex-shrink:0;font-weight:500;margin:0;text-transform:uppercase;letter-spacing:0.05em">Site web</dt>
                             <dd style="margin:0;flex:1;min-width:0;font-weight:500"><a href="${escHtml(lead.site_web)}" target="_blank" style="color:#10b981;text-decoration:none;font-size:13px;word-break:break-all">${escHtml(lead.site_web.replace(/^https?:\/\//,''))}</a></dd>
                         </div>` : ''}
+                        ${lead.lien_maps ? `<div style="display:flex;gap:16px;padding:12px 0;border-bottom:1px solid #f1f5f9;align-items:center">
+                            <dt style="color:#64748b;font-size:12px;width:90px;flex-shrink:0;font-weight:500;margin:0;text-transform:uppercase;letter-spacing:0.05em">Google Maps</dt>
+                            <dd style="margin:0;flex:1;min-width:0;font-weight:500"><a href="${escHtml(lead.lien_maps)}" target="_blank" style="color:#10b981;text-decoration:none;font-size:13px;word-break:break-all">📍 Voir la fiche</a></dd>
+                        </div>` : ''}
                         <div style="display:flex;gap:16px;padding:12px 0;border-top:1px solid #f1f5f9">
                             <dt style="color:#64748b;font-size:12px;width:90px;flex-shrink:0;font-weight:500;margin:0;text-transform:uppercase;letter-spacing:0.05em;padding-top:8px">Notes</dt>
                             <dd style="margin:0;flex:1;min-width:0;">
@@ -883,6 +899,17 @@
                                     </div>
                                 </div>`;
                             }
+
+                            // Profil A : Mockup du futur site
+                            if (lead.template_used === 'maquette' && lead.screenshot_desktop) {
+                                const slug = lead.lien_rapport ? lead.lien_rapport.replace('local://', '').replace('https://audit.incidenx.com/', '').replace(/\/$/, '') : '';
+                                const screenshotUrl = slug ? `/previews/${slug}/${lead.screenshot_desktop.split(/[/\\]/).pop()}` : '';
+                                metaHtml += `<div style="margin-top:16px;padding-top:12px;border-top:1px dashed #10b981">
+                                    <span style="color:#059669;display:block;margin-bottom:6px;font-size:10px;text-transform:uppercase;font-weight:700">Mockup du futur site :</span>
+                                    ${screenshotUrl ? `<img src="${escHtml(screenshotUrl)}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.08)" onerror="this.style.display='none'">` : ''}
+                                    ${lead.lien_rapport ? `<div style="margin-top:8px;font-size:11px;color:#64748b;word-break:break-all">Chemin : ${escHtml(lead.lien_rapport)}</div>` : ''}
+                                </div>`;
+                            }
                         }
                     }
 
@@ -912,11 +939,11 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
                             Relancer
                         </button>
-                        <button class="leads-btn" style="flex:1;justify-content:center" onclick="previewReport(${lead.id})">
+                        <button class="leads-btn" style="flex:1;justify-content:center" onclick="previewReport('${lead.lien_rapport ? lead.lien_rapport.replace('local://','').replace('https://audit.incidenx.com/','').replace(/\/$/,'') : ''}')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                             Voir Rapport
                         </button>
-                        <button class="leads-btn-primary" style="flex:1;justify-content:center" onclick="pushReport(${lead.id})">
+                        <button class="leads-btn-primary" style="flex:1;justify-content:center" onclick="pushReport('${lead.lien_rapport ? lead.lien_rapport.replace('local://','').replace('https://audit.incidenx.com/','').replace(/\/$/,'') : ''}')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M22 2 11 13"/><path d="M22 2-9 19l-5-5"/></svg>
                             Publier
                         </button>
@@ -1327,14 +1354,12 @@
         
         // Missing functions for side panel
         async function generateEmailForLead(leadId) {
-            const lead = _campaignData.find(l => l.id === leadId);
-            if(!lead) return;
             try {
                 showToast('Génération de l\'email...', 'info');
                 const r = await fetch('/api/email/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lead_nom: lead.nom })
+                    body: JSON.stringify({ lead_ids: [leadId] })
                 });
                 const d = await r.json();
                 if(d.error) {
@@ -1486,7 +1511,7 @@
                 const r = await fetch('/api/email/test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lead_nom: lead.nom })
+                    body: JSON.stringify({ lead_ids: [leadId] })
                 });
                 const d = await r.json();
                 if(d.error) {
@@ -1569,46 +1594,44 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ slugs: [slug] })
                         }).then(r => r.json());
-                        if(pushRes.results && pushRes.results[0] && pushRes.results[0].status === 'published') {
-                            showToast('✅ Rapport publié : ' + pushRes.results[0].url, 'success');
+                        if(pushRes.published && pushRes.published.length > 0) {
+                            const publicUrl = pushRes.published[0].url;
+                            showToast('✅ Mockup publié + email régénéré : ' + publicUrl, 'success');
+                            loadPanelContent(leadId, 'audit');
+                            loadCampaignTable();
+                        } else if(pushRes.results && pushRes.results[0] && pushRes.results[0].status === 'published') {
+                            const publicUrl = pushRes.results[0].url;
+                            showToast('✅ Mockup publié + email régénéré : ' + publicUrl, 'success');
                             loadPanelContent(leadId, 'audit');
                             loadCampaignTable();
                         } else {
-                            showToast('Erreur: ' + (pushRes.results ? pushRes.results[0].message : pushRes.error || 'Inconnu'), 'error');
+                            showToast('Erreur: ' + (pushRes.error || pushRes.failed?.[0]?.error || 'Publication échouée'), 'error');
                         }
                     } else if(lienRapport && lienRapport.startsWith('https://')) {
-                        showToast('Rapport déjà en ligne : ' + lienRapport, 'info');
+                        showToast('Mockup déjà en ligne : ' + lienRapport, 'info');
                     } else {
-                        showToast('Aucun rapport local trouvé. Lancer l\'audit d\'abord.', 'warning');
+                        showToast('Aucun mockup local trouvé. Lancer l\'audit d\'abord.', 'warning');
                     }
                 })
                 .catch(e => showToast('Erreur: ' + e.message, 'error'));
         }
-        
+
         function launchAuditForLead(leadId) {
-            const lead = _campaignData.find(l => l.id === leadId);
-            if(!lead || !lead.nom) {
-                showToast('Lead non trouvé', 'error');
-                return;
-            }
             if(typeof auditLead === 'function') {
-                auditLead(lead.id);
+                auditLead(leadId);
             }
         }
         
         async function regenerateAudit(leadId) {
-            const lead = _campaignData.find(l => l.id === leadId);
-            if(!lead || !lead.nom) {
-                showToast('Lead non trouvé', 'error');
-                return;
-            }
+            const lead = _campaignData.find(l => l.id == leadId);
+            const leadName = lead ? lead.nom : 'Lead #' + leadId;
             
-            showToast('Lancement de l\'audit pour ' + lead.nom + '...', 'info');
+            showToast('Lancement de l\'audit pour ' + leadName + '...', 'info');
             
             // Vider le contenu du panel pour éviter d'afficher l'ancien rapport
             const content = document.getElementById('panel-content');
             if (content) {
-                content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ink3)"><div style="font-size:24px;margin-bottom:8px">⏳</div>Audit en cours pour <strong>' + escHtml(lead.nom) + '</strong>...</div>';
+                content.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ink3)"><div style="font-size:24px;margin-bottom:8px">⏳</div>Audit en cours pour <strong>' + escHtml(leadName) + '</strong>...</div>';
             }
             
             const globalProgress = document.getElementById('sidebar-audit');
@@ -1618,7 +1641,7 @@
             fetch('/api/audit/launch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lead_ids: [lead.id] })
+                body: JSON.stringify({ lead_ids: [leadId] })
             })
             .then(r => r.json())
             .then(data => {
