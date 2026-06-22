@@ -1547,12 +1547,11 @@
         }
         
         function previewReport(leadId) {
-            // Fetch fresh data for this lead
-            fetch('/api/leads?statut=tous&limit=500')
+            fetch('/api/leads/' + leadId, { cache: 'no-store' })
                 .then(r => r.json())
                  .then(d => {
-                     const lead = d.leads ? d.leads.find(l => l.id == leadId || l.id === leadId) : null;
-                     if(!lead || !lead.nom) {
+                     const lead = d.lead || d;
+                     if(!lead || lead.error || !lead.nom) {
                          showToast('Lead non trouvé', 'error');
                          return;
                      }
@@ -1590,11 +1589,11 @@
         }
         
         function pushReport(leadId) {
-            fetch('/api/leads?statut=tous&limit=500')
+            fetch('/api/leads/' + leadId, { cache: 'no-store' })
                 .then(r => r.json())
                 .then(async d => {
-                    const lead = d.leads ? d.leads.find(l => l.id == leadId || l.id === leadId) : null;
-                    if(!lead || !lead.nom) { showToast('Lead non trouvé', 'error'); return; }
+                    const lead = d.lead || d;
+                    if(!lead || lead.error || !lead.nom) { showToast('Lead non trouvé', 'error'); return; }
                     
                     const slug = makeSlug(lead.nom);
                     const lienRapport = lead.lien_rapport || '';
