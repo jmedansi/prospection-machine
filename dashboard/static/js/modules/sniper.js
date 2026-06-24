@@ -10,6 +10,9 @@ let _sniperPollInterval = null;
 // ─── Init ────────────────────────────────────────────────────────────────────
 
 function sniperInit() {
+    if (typeof window.unifiedLeadsLoadLists === 'function') {
+        window.unifiedLeadsLoadLists();
+    }
     sniperLoadStats();
     sniperLoadLeads();
     sniperLoadStatus();
@@ -64,12 +67,14 @@ async function sniperLoadLeads() {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--ink3)">Chargement…</td></tr>';
 
     try {
+        const list_id = document.getElementById('sniper-filter-list')?.value || '';
         const source  = document.getElementById('sniper-filter-source')?.value  || '';
         const statut  = document.getElementById('sniper-filter-statut')?.value  || '';
         const tag     = document.getElementById('sniper-filter-tag')?.value     || '';
         const contact = document.getElementById('sniper-filter-contact')?.value || '';
 
         const params = new URLSearchParams({ limit: 200 });
+        if (list_id) params.set('list_id', list_id);
         if (source)  params.set('source', source);
         if (statut)  params.set('statut_prospection', statut);
         if (tag)     params.set('tag_urgence', tag);

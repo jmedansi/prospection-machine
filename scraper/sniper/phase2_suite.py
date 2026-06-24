@@ -65,7 +65,7 @@ def get_incomplete():
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("""
-        SELECT id, nom, site_web, email, prenom_gerant FROM leads_bruts
+        SELECT id, nom, site_web, email, prenom_gerant, pays FROM leads_bruts
         WHERE source = 'ads'
           AND (email IS NULL OR email = '' OR email = '-'
             OR prenom_gerant IS NULL OR prenom_gerant = '' OR prenom_gerant = '-')
@@ -75,7 +75,7 @@ def get_incomplete():
     conn.close()
     return rows
 
-def enrich_one(lid, url, nom):
+def enrich_one(lid, url, nom, pays="fr"):
     domain = urlparse(url).netloc.lstrip("www.") or url
     updates = {}
     try:
@@ -85,7 +85,7 @@ def enrich_one(lid, url, nom):
     except Exception as e:
         logger.error(f"  email #{lid}: {type(e).__name__}: {e}")
     try:
-        ceo = find_ceo(nom or domain, domain, url)
+        ceo = find_ceo(nom or domain, domain, url, pays=pays)
         if ceo.get("ceo_prenom_norm"):
             updates["prenom_gerant"] = ceo["ceo_prenom_norm"]
         if ceo.get("ceo_nom_norm"):
@@ -102,7 +102,7 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         futures = {}
         for r in leads:
-            f = pool.submit(enrich_one, r['id'], r['site_web'], r['nom'])
+            f = pool.submit(enrich_one, r['id'], r['site_web'], r['nom'], r.get('pays', 'fr'))
             futures[f] = r['id']
         
         for f in concurrent.futures.as_completed(futures, timeout=180):

@@ -33,6 +33,8 @@ def run_sequence_worker():
     sequences = seq_service.get_sequences_to_process()
     logger.info(f"[SequenceWorker] {len(sequences)} sequences a traiter")
 
+    generated_count = 0
+
     for seq in sequences:
         lead_id = seq['lead_id']
         sequence_id = seq['id']
@@ -50,12 +52,13 @@ def run_sequence_worker():
             logger.info(f"[SequenceWorker] Skip sequence {sequence_id} (condition non remplie)")
             continue
 
-        # 3. Generer le contenu + demander validation Telegram
-        ok = seq_service.generate_and_request_approval(seq)
+        # 3. Generer le contenu (sans demander validation Telegram individuellement)
+        ok = seq_service.generate_and_request_approval(seq, send_telegram=False)
         if ok:
+            generated_count += 1
             logger.info(
                 f"[SequenceWorker] Sequence {sequence_id} ({email_type}) "
-                f"envoyee pour approbation (lead {lead_id})"
+                f"générée et en attente d'approbation (lead {lead_id})"
             )
         else:
             logger.error(
@@ -63,7 +66,12 @@ def run_sequence_worker():
                 f"sequence {sequence_id}"
             )
 
-    logger.info(f"[SequenceWorker] Termine ({len(sequences)} sequences)")
+    # 4. Demander une validation globale si des séquences ont été générées
+    if generated_count > 0:
+        logger.info(f"[SequenceWorker] Envoi de la demande globale pour {generated_count} séquences")
+        seq_service.request_bulk_approval(generated_count)
+
+    logger.info(f"[SequenceWorker] Termine ({generated_count}/{len(sequences)} générées)")
 
 
 if __name__ == '__main__':

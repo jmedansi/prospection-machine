@@ -111,6 +111,7 @@ def api_leads_all():
         score_filter = request.args.get("score_filter", "tous")
         notes_filter = request.args.get("notes_filter", "tous")
         sector_filter = request.args.get("sector", "tous")
+        list_id_filter = request.args.get("list_id", type=int)
         # Mapping propre pour éviter le bug "without" -> "avecout"
         filter_map = {"sans": "sans", "tous": "tous",
                       "responsables": "responsables", "infos": "infos",
@@ -128,7 +129,8 @@ def api_leads_all():
             source=source,
             tag=tag,
             score=score_filter,
-            notes=filter_map.get(notes_filter, "tous")
+            notes=filter_map.get(notes_filter, "tous"),
+            list_id=list_id_filter,
         )
         return jsonify(result)
     except Exception as e:
@@ -294,6 +296,7 @@ def api_leads():
     try:
         campaign_id  = request.args.get("campaign_id", type=int)
         campaign_ids = request.args.get("campaign_ids")
+        list_id      = request.args.get("list_id", type=int)
         result = leads_repo.get_all(
             statut=request.args.get("statut", "tous"),
             site=request.args.get("site", "tous"),
@@ -306,6 +309,7 @@ def api_leads():
             date_end=request.args.get("date_end"),
             page=int(request.args.get("page", 1)),
             limit=int(request.args.get("limit", 50)),
+            list_id=list_id,
         )
         return jsonify(result)
     except Exception as e:

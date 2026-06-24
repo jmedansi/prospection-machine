@@ -149,7 +149,7 @@ def _find_via_api_gouv(domain: str) -> Optional[tuple[str, str]]:
                         best = (prenom.capitalize(), nom.upper())
 
             if best:
-                logger.info(f"api_gouv: {domain} → {best[0]} {best[1]}")
+                logger.info(f"api_gouv: {domain} -> {best[0]} {best[1]}")
                 return best
 
     except Exception as e:
@@ -211,17 +211,19 @@ def _find_via_groq(url: str, company_name: str, domain: str) -> Optional[tuple[s
         if not page_text:
             # Pas de page légale accessible — demande à Groq avec juste le nom
             prompt = (
-                f"Quel est le nom du dirigeant principal (PDG, CEO, Gérant, Fondateur) "
-                f"de l'entreprise '{company_name}' (domaine: {domain}) en France ? "
+                f"Quel est le nom du dirigeant principal (PDG, CEO, Gérant, Fondateur, "
+                f"Administrateur Général, Président du Conseil) "
+                f"de l'entreprise '{company_name}' (domaine: {domain}) ? "
                 f"Réponds uniquement avec: PRENOM NOM. Si inconnu, réponds: INCONNU."
             )
         else:
             prompt = (
-                f"Voici le texte d'une page de mentions légales d'une entreprise française "
+                f"Voici le texte d'une page de mentions légales d'une entreprise "
                 f"nommée '{company_name}' ({domain}).\n\n"
                 f"Texte : {page_text}\n\n"
                 f"Extrais le nom complet du dirigeant principal "
-                f"(Gérant, Président, PDG, CEO, Directeur Général, Fondateur). "
+                f"(Gérant, Président, PDG, CEO, Directeur Général, Fondateur, "
+                f"Administrateur Général). "
                 f"Réponds uniquement avec: PRENOM NOM (ex: Jean DUPONT). "
                 f"Si introuvable, réponds: INCONNU."
             )
@@ -256,7 +258,7 @@ def _find_via_groq(url: str, company_name: str, domain: str) -> Optional[tuple[s
         if prenom.upper() in _JUNK or nom.upper() in _JUNK:
             return None
 
-        logger.info(f"ceo_finder Groq: {domain} → {prenom} {nom}")
+        logger.info(f"ceo_finder Groq: {domain} -> {prenom} {nom}")
         return prenom, nom
 
     except Exception as e:
@@ -282,7 +284,7 @@ def _find_via_ollama(url: str, domain: str):
         from enrichisseur.ceo_finder import find_ceo_from_url
         prenom, nom = find_ceo_from_url(url)
         if prenom and nom:
-            logger.info(f"ceo_finder Ollama: {domain} → {prenom} {nom}")
+            logger.info(f"ceo_finder Ollama: {domain} -> {prenom} {nom}")
             return prenom, nom
     except (ConnectionRefusedError, OSError) as e:
         logger.warning(f"ceo_finder Ollama: modèle indisponible — {e}")
@@ -301,6 +303,7 @@ def find_ceo(
     company_name: str,
     domain: str,
     url: Optional[str] = None,
+    pays: str = "fr",
 ) -> dict:
     """
     Trouve le décideur d'une entreprise.
@@ -309,6 +312,7 @@ def find_ceo(
         company_name: Nom de l'entreprise (ex: "Dupont Solar")
         domain:       Domaine (ex: "dupont-solar.fr")
         url:          URL complète pour le fallback Ollama
+        pays:         Code pays ISO (défaut: "fr"). "bj" pour Bénin — bypass API gouv.fr.
 
     Returns:
         {
@@ -334,7 +338,10 @@ def find_ceo(
     quota_hit = False  # True si Groq ou Ollama ont échoué par quota/indisponibilité
 
     # ── 1. API gouv.fr (INSEE + INPI — gratuit, sans clé, FR uniquement) ────────
-    found = _find_via_api_gouv(domain)
+    if pays == "fr":
+        found = _find_via_api_gouv(domain)
+    else:
+        found = None
     if found and found is not _QUOTA_ERROR:
         result["ceo_prenom"] = found[0]
         result["ceo_nom"]    = found[1]

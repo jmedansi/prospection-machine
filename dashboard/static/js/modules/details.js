@@ -85,11 +85,12 @@ class DetailsModule {
         content.innerHTML = `
             <div class="info-grid" style="display:flex;flex-direction:column;gap:16px">
                 <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Statut</div><div class="val"><span class="status-pill status-${lead.status}">${lead.status}</span></div></div>
-                <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Email</div><div class="val">${lead.email ? `<a href="mailto:${lead.email}" style="color:var(--accent);font-weight:600">${lead.email}</a>` : 'Non disponible'}</div></div>
+                <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Email</div><div class="val">${lead.email ? `<a href="mailto:${lead.email}" target="_blank" style="color:var(--accent);font-weight:600">${lead.email}</a>` : 'Non disponible'}</div></div>
                 <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Téléphone</div><div class="val">${lead.phone || '—'}</div></div>
-                <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Email 2</div><div class="val">${lead.email_2 ? `<a href="mailto:${lead.email_2}" style="color:var(--accent);font-weight:600">${lead.email_2}</a>` : '—'}</div></div>
+                <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Email 2</div><div class="val">${lead.email_2 ? `<a href="mailto:${lead.email_2}" target="_blank" style="color:var(--accent);font-weight:600">${lead.email_2}</a>` : '—'}</div></div>
                 <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Téléphone 2</div><div class="val">${lead.phone_2 || '—'}</div></div>
                 <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Site Web</div><div class="val">${lead.website ? `<a href="${lead.website}" target="_blank" style="color:var(--accent)">${lead.website}</a>` : '—'}</div></div>
+                <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Google Maps</div><div class="val">${lead.lien_maps ? `<a href="${lead.lien_maps}" target="_blank" style="color:var(--accent)">📍 Voir la fiche</a>` : '—'}</div></div>
                 <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Avis Google</div><div class="val">${lead.reviews || 0} avis · note ${lead.rating || '-'}</div></div>
                 <hr style="border:none;border-top:1px solid var(--border);margin:8px 0">
                 <div class="row"><div class="lbl" style="font-size:11px;color:var(--ink3);text-transform:uppercase;font-weight:700">Notes (Sauvegarde auto)</div>
@@ -281,8 +282,8 @@ class DetailsModule {
         UI.toast("Lancement de l'audit...", "info");
         try {
             await API.launchAudit([id]);
-            UI.toast("Audit lancé", "success");
-            this.openLead(id);
+            UI.toast("Audit lancé ✓ — Résultats disponibles à la fin de l'audit", "success");
+            // Pas de re-render du panneau — l'audit tourne en arrière-plan
         } catch (e) {
             UI.toast("Échec de l'audit", "error");
         }
@@ -292,8 +293,9 @@ class DetailsModule {
         UI.toast("Génération de l'email...", "info");
         try {
             await API.generateEmail(id);
-            UI.toast("Email généré", "success");
-            this.openLead(id);
+            UI.toast("Email généré ✓", "success");
+            // Rafraîchit les données silencieusement sans re-render visible
+            await this._refreshDataSilently(id);
         } catch (e) {
             UI.toast("Échec de génération", "error");
         }
@@ -318,10 +320,25 @@ class DetailsModule {
             }
             UI.toast("Envoi en cours...", "info");
             await API.sendApprovedEmail(id);
-            UI.toast("Email envoyé avec succès", "success");
-            this.openLead(id);
+            UI.toast("Email envoyé avec succès ✅", "success");
+            // Refresh complet pour mettre à jour les boutons (Approuver → Déjà Envoyé)
+            await this._refreshDataSilently(id);
+            this.renderTab(this.currentTab);
         } catch (e) {
             UI.toast("Erreur lors de l'envoi", "error");
+        }
+    }
+
+    /**
+     * Rafraîchit les données du lead en arrière-plan sans re-render du panneau.
+     * Met à jour this.currentLead avec les nouvelles données.
+     */
+    static async _refreshDataSilently(id) {
+        try {
+            const resp = await API.getLead(id);
+            this.currentLead = resp.lead || resp;
+        } catch (e) {
+            console.warn('[DetailsModule] Silent refresh failed:', e);
         }
     }
 

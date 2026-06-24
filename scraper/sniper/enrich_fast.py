@@ -33,7 +33,7 @@ def quick_scrape(url, timeout=8):
 
 with get_conn() as conn:
     cur = conn.execute(
-        "SELECT id, nom, site_web, secteur FROM leads_bruts "
+        "SELECT id, nom, site_web, secteur, pays FROM leads_bruts "
         "WHERE source='ads' AND secteur IS NOT NULL AND secteur != '' "
         "AND (email_valide IS NULL OR email_valide = '') "
         "AND site_web IS NOT NULL AND site_web != '' "
@@ -43,7 +43,7 @@ with get_conn() as conn:
 
 print(f'{len(leads)} leads — scrape contact pages + find_contacts fallback\n')
 ok = 0
-for i, (lid, nom, site_web, secteur) in enumerate(leads, 1):
+for i, (lid, nom, site_web, secteur, pays) in enumerate(leads, 1):
     print(f'[{i}/{len(leads)}] #{lid} [{secteur:25s}] {nom[:40]:40s}', end=' ')
     sys.stdout.flush()
 
@@ -59,7 +59,7 @@ for i, (lid, nom, site_web, secteur) in enumerate(leads, 1):
         print('(full scan) ')
         sys.stdout.flush()
         try:
-            contacts = find_contacts(site_web, nom, enrich_ceo=True, fast_mode=False)
+            contacts = find_contacts(site_web, nom, pays=pays or "fr", enrich_ceo=True, fast_mode=False)
             valid_email = contacts.get('email_valide') or contacts.get('email_contact')
             ceo_name = f"{contacts.get('ceo_prenom_norm', '') or ''} {contacts.get('ceo_nom_norm', '') or ''}".strip()
         except:
@@ -74,7 +74,7 @@ for i, (lid, nom, site_web, secteur) in enumerate(leads, 1):
             conn2.commit()
             # Also try CEO enrichment only if quick_scrape worked
             try:
-                contacts = find_contacts(site_web, nom, enrich_ceo=True, fast_mode=True)
+                contacts = find_contacts(site_web, nom, pays=pays or "fr", enrich_ceo=True, fast_mode=True)
                 ceo_updates = {}
                 if contacts.get('ceo_prenom_norm'):
                     ceo_updates['prenom_gerant'] = contacts['ceo_prenom_norm']

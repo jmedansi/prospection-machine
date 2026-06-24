@@ -17,6 +17,7 @@ _audit_job = {
 # État global des jobs d'envoi d'emails
 _email_job = {
     'running': False,
+    'cancelled': False,
     'total': 0,
     'current': 0,
     'success': 0,
@@ -56,6 +57,7 @@ def reset_audit_job(total=0):
 def reset_email_job(total=0):
     _email_job.update({
         'running': True,
+        'cancelled': False,
         'total': total,
         'current': 0,
         'success': 0,

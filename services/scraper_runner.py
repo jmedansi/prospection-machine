@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign_name=None, min_reviews=0, multi_zone=False):
+def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign_name=None, min_reviews=0, multi_zone=False,
+                   country='fr', require_contact=False, keyword_variants=False, site_filter='all'):
     """
     Lance le scraper Maps en arrière-plan (in-process dans un thread daemon).
     Crée la campagne en DB AVANT le lancement, puis track la progression.
@@ -28,7 +29,8 @@ def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign
         if not campaign_name:
             campaign_name = f"{sector or keyword} {city}"
             
-        camp_id = create_campaign(campaign_name, secteur=sector or keyword, ville=city, source='maps', nb_demande=limit)
+        camp_id = create_campaign(campaign_name, secteur=sector or keyword, ville=city, source='maps', nb_demande=limit,
+                                  pays=country)
         start_campaign(camp_id, phase='scraping')
 
         # Récupérer l'offset depuis la campagne (reprise après crash)
@@ -56,9 +58,16 @@ def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign
                     '--campaign-id', str(camp_id),
                     '--min-reviews', str(min_reviews),
                     '--secteur', str(sector or ''),
+                    '--country', str(country),
                 ]
+                if require_contact:
+                    argv.append('--require-contact')
+                if keyword_variants:
+                    argv.append('--keyword-variants')
                 if multi_zone:
                     argv.append('--multi-zone')
+                if site_filter and site_filter != 'all':
+                    argv.extend(['--site-filter', site_filter])
                 if offset > 0:
                     argv.extend(['--offset', str(offset)])
 

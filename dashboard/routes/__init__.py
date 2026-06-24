@@ -12,3 +12,4 @@ from .sniper    import sniper_bp
 from .deploy    import deploy_bp
 from .templates import templates_bp
 from .webhooks  import webhooks_bp
+from .lists     import lists_bp

@@ -28,7 +28,7 @@ def _now() -> str:
 # ─── Création & Démarrage ─────────────────────────────────────────────────────
 
 def create_campaign(nom: str, secteur: str = '', ville: str = '',
-                    source: str = 'maps', nb_demande: int = 0) -> int:
+                    source: str = 'maps', nb_demande: int = 0, pays: str = 'fr') -> int:
     """
     Crée une nouvelle campagne en DB et retourne son ID.
     Appelé AVANT le lancement du scraper.
@@ -36,9 +36,9 @@ def create_campaign(nom: str, secteur: str = '', ville: str = '',
     try:
         with get_conn() as conn:
             cur = conn.execute("""
-                INSERT INTO campagnes (nom, secteur, ville, source, nb_demande, phase, started_at)
-                VALUES (?, ?, ?, ?, ?, 'pending', ?)
-            """, (nom, secteur, ville, source, nb_demande, _now()))
+                INSERT INTO campagnes (nom, secteur, ville, source, nb_demande, pays, phase, started_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+            """, (nom, secteur, ville, source, nb_demande, pays, _now()))
             conn.commit()
             campaign_id = cur.lastrowid
             logger.info(f"[TRACKER] Campagne #{campaign_id} créée : {nom} ({source})")
@@ -115,6 +115,34 @@ def complete_campaign(campaign_id: int) -> None:
                 SET phase = 'done', finished_at = ?, total_leads = ?, statut = 'done'
                 WHERE id = ?
             """, (_now(), total, campaign_id))
+
+            # ── Auto-création de liste ───────────────────────────────────
+            try:
+                camp = conn.execute("SELECT nom, pays FROM campagnes WHERE id=?", (campaign_id,)).fetchone()
+                if camp and camp['nom']:
+                    camp_dict = dict(camp)
+                    flag = "🎯"
+                    list_name = f"{flag} {camp_dict['nom']} — {total} leads"
+                    cur_list = conn.execute(
+                        "INSERT INTO lead_lists (nom, description, icone, campaign_id) VALUES (?, ?, ?, ?)",
+                        (list_name, f"Campagne #{campaign_id} ({camp_dict.get('pays','fr')})", flag, campaign_id)
+                    )
+                    list_id = cur_list.lastrowid
+                    leads_rows = conn.execute(
+                        "SELECT id FROM leads_bruts WHERE campaign_id=?", (campaign_id,)
+                    ).fetchall()
+                    for lr in leads_rows:
+                        try:
+                            conn.execute(
+                                "INSERT OR IGNORE INTO lead_list_items (list_id, lead_id) VALUES (?, ?)",
+                                (list_id, lr['id'])
+                            )
+                        except Exception:
+                            pass
+                    logger.info(f"[TRACKER] Auto-liste #{list_id} créée pour campagne #{campaign_id} ({total} leads)")
+            except Exception as e:
+                logger.error(f"[TRACKER] Erreur auto-liste : {e}")
+
             conn.commit()
         logger.info(f"[TRACKER] Campagne #{campaign_id} terminée ✓ ({total} leads)")
     except Exception as e:

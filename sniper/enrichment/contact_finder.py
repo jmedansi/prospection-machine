@@ -34,6 +34,7 @@ _CONTACT_PATHS = [
 _PHONE_REGEX = re.compile(
     r"(?:(?:\+|00)33[\s.\-]?(?:\(0\)[\s.\-]?)?|0)"
     r"[1-9](?:[\s.\-]?\d{2}){4}"
+    r"|(?:\+|00)229[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}"
 )
 
 
@@ -70,11 +71,14 @@ def _extract_phone(html: str) -> Optional[str]:
     matches = _PHONE_REGEX.findall(html)
     if matches:
         phone = re.sub(r"[\s.\-]", "", matches[0])
-        # Normaliser au format 0X XX XX XX XX
         if phone.startswith("+33"):
             phone = "0" + phone[3:]
         elif phone.startswith("0033"):
             phone = "0" + phone[4:]
+        elif phone.startswith("+229"):
+            pass  # Garder le format +229XXXXXXXX pour le Bénin
+        elif phone.startswith("00229"):
+            phone = "+229" + phone[5:]
         return phone
     return None
 

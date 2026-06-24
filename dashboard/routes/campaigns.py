@@ -22,6 +22,10 @@ def api_scraper_launch():
         limit = int(data.get('limit', 50))
         min_emails = int(data.get('min_emails', 10))
         campaign_name = data.get('campaign_name', f"{secteur or keyword} {city}")
+        country = data.get('country', 'fr')
+        require_contact = data.get('require_contact', False)
+        keyword_variants = data.get('keyword_variants', False)
+        site_filter = data.get('site_filter', 'all')
 
         if not keyword or not city:
             return jsonify({'error': 'keyword et city requis'}), 400
@@ -32,7 +36,11 @@ def api_scraper_launch():
             sector=secteur,
             limit=limit,
             min_emails=min_emails,
-            campaign_name=campaign_name
+            campaign_name=campaign_name,
+            country=country,
+            require_contact=require_contact,
+            keyword_variants=keyword_variants,
+            site_filter=site_filter
         )
 
         if not success:

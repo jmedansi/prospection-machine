@@ -232,7 +232,7 @@ class TransparencyPipeline:
                 company = lead.get("advertiser_name") or domain.split(".")[0].replace("-", " ").title()
 
                 try:
-                    lead.update(find_contacts(url, company))
+                    lead.update(find_contacts(url, company, pays=lead.get("pays", "fr")))
                 except Exception as e:
                     logger.warning(f"contact_finder échoué pour {url}: {e}")
 

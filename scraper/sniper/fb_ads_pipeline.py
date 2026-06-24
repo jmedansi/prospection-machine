@@ -146,7 +146,7 @@ def _enrich_with_site(lead: Dict) -> Optional[Dict]:
     # Contact finder
     try:
         from core.contact_finder import find_contacts
-        lead.update(find_contacts(url, company_name))
+        lead.update(find_contacts(url, company_name, pays=lead.get("pays", "fr")))
     except Exception as e:
         logger.warning(f"[FB] contact_finder {url}: {type(e).__name__}: {e}")
 

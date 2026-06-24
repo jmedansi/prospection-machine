@@ -11,14 +11,14 @@ ids = [3674, 3675, 3676, 3677]  # Elysees Derm, Clinique La Marina, Boclinic, Do
 
 with get_conn() as conn:
     for lid in ids:
-        row = conn.execute("SELECT id, nom, site_web FROM leads_bruts WHERE id=?", (lid,)).fetchone()
+        row = conn.execute("SELECT id, nom, site_web, pays FROM leads_bruts WHERE id=?", (lid,)).fetchone()
         if not row: continue
-        lid, nom, site = row
+        lid, nom, site, pays = row
         if not site: continue
         print(f"\n#{lid} {nom}")
         print(f"   site: {site}")
         try:
-            contacts = find_contacts(site, nom, enrich_ceo=True, fast_mode=False)
+            contacts = find_contacts(site, nom, pays=pays or "fr", enrich_ceo=True, fast_mode=False)
             updates = {}
             if contacts.get("email_valide"):
                 updates["email"] = contacts.get("email_contact", "")

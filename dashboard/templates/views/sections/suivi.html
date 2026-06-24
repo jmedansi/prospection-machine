@@ -35,17 +35,20 @@
     </div>
     <div class="sl">Historique des emails</div>
     <div class="card">
-        <div class="ch">
-            <div id="crm-filters" style="display:flex;gap:4px">
-                <button class="btn bg1 sm active" onclick="setCRMFilter('tous', this)">Tous</button>
-                <button class="btn bg1 sm" onclick="setCRMFilter('ouverts', this)">Ouverts</button>
-                <button class="btn bg1 sm" onclick="setCRMFilter('cliques', this)">Cliqués</button>
-                <button class="btn bg1 sm" onclick="setCRMFilter('repondus', this)">Répondus</button>
-                <button class="btn bg1 sm" onclick="setCRMFilter('positifs', this)">Positifs</button>
-                <button class="btn bg1 sm" onclick="setCRMFilter('bounces', this)">Bounces</button>
-                <button class="btn bg1 sm" onclick="setCRMFilter('spam', this)">Spam</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;flex-wrap:wrap;gap:10px">
+                <div id="crm-filters" style="display:flex;gap:4px">
+                    <button class="btn bg1 sm active" onclick="setCRMFilter('tous', this)">Tous</button>
+                    <button class="btn bg1 sm" onclick="setCRMFilter('ouverts', this)">Ouverts</button>
+                    <button class="btn bg1 sm" onclick="setCRMFilter('cliques', this)">Cliqués</button>
+                    <button class="btn bg1 sm" onclick="setCRMFilter('repondus', this)">Répondus</button>
+                    <button class="btn bg1 sm" onclick="setCRMFilter('positifs', this)">Positifs</button>
+                    <button class="btn bg1 sm" onclick="setCRMFilter('bounces', this)">Bounces</button>
+                    <button class="btn bg1 sm" onclick="setCRMFilter('spam', this)">Spam</button>
+                </div>
+                <select id="crm-filter-list" onchange="typeof CRMModule !== 'undefined' && CRMModule.loadList ? CRMModule.loadList() : (typeof loadCRM === 'function' ? loadCRM() : null)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);width:160px">
+                    <option value="">Toutes listes</option>
+                </select>
             </div>
-        </div>
         <table class="tbl" style="margin-top:10px">
             <thead>
                 <tr>

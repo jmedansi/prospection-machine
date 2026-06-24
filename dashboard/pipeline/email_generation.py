@@ -87,7 +87,7 @@ def generate_email_for_lead(lead_id: int) -> bool:
             if site_web:
                 try:
                     from core.contact_finder import find_contacts
-                    contacts = find_contacts(site_web, audit_dict.get('nom', ''), enrich_ceo=True)
+                    contacts = find_contacts(site_web, audit_dict.get('nom', ''), pays=audit_dict.get('pays', 'fr'), enrich_ceo=True)
                     prenom = contacts.get('ceo_prenom')
                     nom_ceo = contacts.get('ceo_nom')
                     if prenom:

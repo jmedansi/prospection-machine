@@ -11,6 +11,9 @@ export class CRMModule {
 
     static async init() {
         this.renderBase();
+        if (typeof window.unifiedLeadsLoadLists === 'function') {
+            await window.unifiedLeadsLoadLists();
+        }
         await this.loadStats();
         await this.loadList();
     }
@@ -76,7 +79,13 @@ export class CRMModule {
             let status = 'envoye';
             if (this.filter === 'replied') status = 'repondu';
             
-            const data = await API.getLeads({ statut: status, limit: 50 });
+            const listEl = document.getElementById('crm-filter-list');
+            const listId = listEl ? listEl.value : '';
+            
+            const params = { statut: status, limit: 50 };
+            if (listId) params.list_id = listId;
+
+            const data = await API.getLeads(params);
             const leads = data.leads || [];
 
             if (leads.length === 0) {

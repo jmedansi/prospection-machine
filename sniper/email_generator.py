@@ -221,20 +221,35 @@ def generate_sniper_email_for_lead(lead_id: int) -> bool:
         if "—" in entreprise_nom:
             entreprise_nom = entreprise_nom.split("—")[-1].strip()
 
-        # Step 1 : pas de lien dans le corps (stratégie 2-steps — meilleure délivrabilité)
-        email_objet, email_corps = generate_email(
-            nom          = nom_contact,
-            site         = site,
-            tag          = tag,
-            score        = score,
-            lcp_ms       = lcp_ms,
-            cms          = cms,
-            server       = server,
-            niveau       = niveau,
-            lien_rapport = "",   # intentionnellement vide — envoyé en step 2 sur réponse
-            source       = lead.get("source", "ads"),
-            entreprise   = entreprise_nom,
-        )
+        # ── Override immobilier : mail secteur au lieu du template sniper ──
+        secteur_lead = (lead.get("category") or lead.get("secteur") or "").lower()
+        if "immo" in secteur_lead:
+            from envoi.sequence_emails import get_mail_1
+            mail1 = get_mail_1(secteur_lead)
+            email_objet = mail1.get("subject", "Vos leads du soir et du weekend")
+            body_text = mail1.get("body", "")
+            # Remplacer [Prénom] par le prenom du CEO
+            prenom = ceo_prenom or ''
+            body_text = body_text.replace('[Prénom]', prenom if prenom else '')
+            email_corps = (
+                '<html><head><title>{}</title></head>'
+                '<body><pre style="font-family:inherit;white-space:pre-wrap">{}</pre></body></html>'
+            ).format(email_objet, body_text)
+        else:
+            # Step 1 : pas de lien dans le corps (stratégie 2-steps — meilleure délivrabilité)
+            email_objet, email_corps = generate_email(
+                nom          = nom_contact,
+                site         = site,
+                tag          = tag,
+                score        = score,
+                lcp_ms       = lcp_ms,
+                cms          = cms,
+                server       = server,
+                niveau       = niveau,
+                lien_rapport = "",   # intentionnellement vide — envoyé en step 2 sur réponse
+                source       = lead.get("source", "ads"),
+                entreprise   = entreprise_nom,
+            )
 
         # Score d'urgence normalisé sur 100 pour compatibilité avec l'ancien pipeline
         score_urgence = min(100, niveau * 20)

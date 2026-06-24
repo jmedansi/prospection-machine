@@ -14,6 +14,16 @@ logger = logging.getLogger(__name__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DASHBOARD_URL = "http://127.0.0.1:5001"
 
+def _verify_url_accessible(url: str, timeout: int = 10) -> bool:
+    """Vérifie qu'une URL renvoie HTTP 200."""
+    try:
+        import requests
+        resp = requests.head(url, timeout=timeout, allow_redirects=True)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
 def _publish_reports(lead_ids: list) -> dict:
     """
     Publie sur GitHub Pages tous les rapports locaux (local://slug/) du lot.
@@ -47,6 +57,7 @@ def _publish_reports(lead_ids: list) -> dict:
         index_path = os.path.join(slug_dir, 'index.html')
 
         if not os.path.exists(index_path):
+            logger.warning(f"[PIPELINE-Publish] Fichier introuvable pour {slug}: {index_path}")
             continue
 
         files_to_commit = []
@@ -58,24 +69,121 @@ def _publish_reports(lead_ids: list) -> dict:
                     with open(os.path.join(slug_dir, fname), 'rb') as f:
                         files_to_commit.append({'path': f'{slug}/{fname}', 'content': f.read(), 'is_binary': True})
 
-            if _commit_files(files_to_commit, f'Rapport {slug}'):
-                public_url = f'https://{AUDIT_DOMAIN}/{slug}/'
-                local_url  = f'http://127.0.0.1:5001/previews/{slug}/'
-                with get_conn() as conn:
-                    conn.execute("UPDATE leads_audites SET lien_rapport=? WHERE lead_id=?", (public_url, lid))
-                    # Remplacer l'URL locale dans le corps du mail par l'URL publique
-                    conn.execute("""
-                        UPDATE leads_audites SET email_corps = REPLACE(REPLACE(email_corps, ?, ?), '[lien rapport]', ?)
-                        WHERE lead_id=?
-                    """, (local_url, public_url, public_url, lid))
-                    conn.commit()
-                shutil.rmtree(slug_dir, ignore_errors=True)
-                result[lid] = public_url
-                logger.info(f"[PIPELINE-Publish] Rapport publié : {public_url}")
+            if not _commit_files(files_to_commit, f'Rapport {slug}'):
+                logger.error(f"[PIPELINE-Publish] _commit_files échoué pour {slug} — fichiers locaux conservés")
+                continue
+
+            public_url = f'https://{AUDIT_DOMAIN}/{slug}/'
+
+            # Fix 3 : Vérification post-publication
+            if not _verify_url_accessible(public_url):
+                logger.error(f"[PIPELINE-Publish] Vérification post-publish échouée (404) pour {public_url} — fichiers locaux conservés")
+                continue
+
+            # Fix 2 : Corriger le remplacement email_corps (local:// au lieu de http://127.0.0.1)
+            local_pattern = f"local://{slug}/"
+            with get_conn() as conn:
+                conn.execute("UPDATE leads_audites SET lien_rapport=? WHERE lead_id=?", (public_url, lid))
+                conn.execute("""
+                    UPDATE leads_audites SET email_corps = REPLACE(REPLACE(email_corps, ?, ?), '[lien rapport]', ?)
+                    WHERE lead_id=?
+                """, (local_pattern, public_url, public_url, lid))
+                conn.commit()
+
+            # Fix 2 : Régénérer l'email avec le lien public
+            try:
+                from services.email_generator import generate_email_for_lead
+                generate_email_for_lead(lid)
+                logger.info(f"[PIPELINE-Publish] Email régénéré pour lead {lid}")
+            except Exception as e:
+                logger.warning(f"[PIPELINE-Publish] Régénération email échouée pour lead {lid}: {e}")
+
+            # Fix 4 : Supprimer les fichiers locaux uniquement après succès confirmé
+            shutil.rmtree(slug_dir, ignore_errors=True)
+            result[lid] = public_url
+            logger.info(f"[PIPELINE-Publish] Rapport publié et vérifié : {public_url}")
         except Exception as e:
             logger.warning(f"[PIPELINE-Publish] Publish échoué pour {slug}: {e}")
 
     return result
+
+
+def publish_reports_batch(slugs: list) -> str:
+    """
+    Publie un ou plusieurs rapports locaux sur GitHub Pages.
+    Args: slugs — liste de noms de dossiers dans reporter/reports/
+    Returns: URL publique du premier rapport publié, ou None.
+    """
+    try:
+        from synthetiseur.github_publisher import _commit_files, AUDIT_DOMAIN
+    except Exception as e:
+        logger.warning(f"[PIPELINE-Publish] github_publisher non dispo : {e}")
+        return None
+
+    reports_dir = os.path.join(ROOT, 'reporter', 'reports')
+
+    for slug in slugs:
+        slug_dir = os.path.join(reports_dir, slug)
+        index_path = os.path.join(slug_dir, 'index.html')
+
+        if not os.path.isdir(slug_dir) or not os.path.isfile(index_path):
+            logger.warning(f"[PIPELINE-Publish] Dossier ou index.html manquant pour {slug}")
+            continue
+
+        files_to_commit = []
+        try:
+            with open(index_path, 'r', encoding='utf-8', errors='replace') as f:
+                files_to_commit.append({'path': f'{slug}/index.html', 'content': f.read(), 'is_binary': False})
+            for fname in os.listdir(slug_dir):
+                if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    with open(os.path.join(slug_dir, fname), 'rb') as f:
+                        files_to_commit.append({'path': f'{slug}/{fname}', 'content': f.read(), 'is_binary': True})
+
+            if not _commit_files(files_to_commit, f'Rapport {slug}'):
+                logger.error(f"[PIPELINE-Publish] _commit_files échoué pour {slug} — fichiers locaux conservés")
+                continue
+
+            public_url = f'https://{AUDIT_DOMAIN}/{slug}/'
+
+            # Fix 3 : Vérification post-publication
+            if not _verify_url_accessible(public_url):
+                logger.error(f"[PIPELINE-Publish] Vérification post-publish échouée (404) pour {public_url} — fichiers locaux conservés")
+                continue
+
+            # Fix 2 : Régénérer l'email avec le lien public AVANT de supprimer les fichiers locaux
+            local_pattern = f"local://{slug}/"
+            lead_id = None
+            with get_conn() as conn:
+                row = conn.execute(
+                    "SELECT lead_id FROM leads_audites WHERE lien_rapport LIKE ?",
+                    (f"local://{slug}%",)
+                ).fetchone()
+                if row:
+                    lead_id = row[0]
+                    conn.execute("UPDATE leads_audites SET lien_rapport=? WHERE lead_id=?", (public_url, lead_id))
+                    conn.execute("""
+                        UPDATE leads_audites SET email_corps = REPLACE(REPLACE(email_corps, ?, ?), '[lien rapport]', ?)
+                        WHERE lead_id=?
+                    """, (local_pattern, public_url, public_url, lead_id))
+                    conn.commit()
+
+            if lead_id:
+                try:
+                    from services.email_generator import generate_email_for_lead
+                    generate_email_for_lead(lead_id)
+                    logger.info(f"[PIPELINE-Publish] Email régénéré pour lead {lead_id}")
+                except Exception as e:
+                    logger.warning(f"[PIPELINE-Publish] Régénération email échouée pour lead {lead_id}: {e}")
+
+            # Fix 4 : Supprimer les fichiers locaux uniquement après succès confirmé
+            shutil.rmtree(slug_dir, ignore_errors=True)
+            logger.info(f"[PIPELINE-Publish] Rapport publié et vérifié : {public_url}")
+            return public_url
+        except Exception as e:
+            logger.warning(f"[PIPELINE-Publish] Publish échoué pour {slug}: {e}")
+
+    return None
+
 
 def _publish_review_page(lead_ids: list, public_urls: dict) -> str:
     """

@@ -28,7 +28,7 @@ class AuditsRepo:
             with get_conn() as conn:
                 rows = conn.execute("""
                     SELECT
-                        lb.id AS lead_id, lb.nom, lb.email, lb.ville,
+                        la.id AS la_id, lb.id AS lead_id, lb.nom, lb.email, lb.ville,
                         lb.category, lb.site_web, lb.rating, lb.nb_avis,
                         la.score_performance, la.score_seo, la.score_urgence,
                         la.lcp_ms, la.email_objet, la.email_corps,

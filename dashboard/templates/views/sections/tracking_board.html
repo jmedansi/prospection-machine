@@ -65,7 +65,12 @@
                 <button class="btn btn-ghost sm" data-filter="bounce" onclick="setTrackingBoardFilter('bounce', this)">Bounces</button>
                 <button class="btn btn-ghost sm" data-filter="spam" onclick="setTrackingBoardFilter('spam', this)">Spam</button>
             </div>
-            <button class="btn sm" onclick="loadTrackingBoard()">Rafraîchir</button>
+            <div style="display:flex;gap:8px;align-items:center">
+                <select id="tracking-filter-list" onchange="loadTrackingBoard()" style="min-width:160px;padding:8px 12px;border:1px solid var(--surface2);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px">
+                    <option value="">Toutes listes</option>
+                </select>
+                <button class="btn sm" onclick="loadTrackingBoard()">Rafraîchir</button>
+            </div>
         </div>
 
         <div class="table-container" style="margin-top:16px">

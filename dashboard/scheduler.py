@@ -229,12 +229,17 @@ def init_scheduler(_app=None):
                 for row in rows:
                     cb_id = row[0]
                     try:
-                        sequence_id = int(cb_id.split('_')[-1])
-                        ok = seq_service.approve_and_send(sequence_id)
-                        if ok:
+                        # ── APPROBATION GROUPÉE ────────────────────────────────────────
+                        if cb_id == "relance_approve_all":
+                            count = seq_service.approve_all_pending()
+                            logger.info(f"[scheduler] Approval groupée : {count} relances envoyées")
                             conn.execute("UPDATE pending SET status='completed' WHERE callback_id=?", (cb_id,))
+                        # ── APPROBATION INDIVIDUELLE (fallback) ────────────────────────
                         else:
-                            conn.execute("UPDATE pending SET status='failed' WHERE callback_id=?", (cb_id,))
+                            sequence_id = int(cb_id.split('_')[-1])
+                            ok = seq_service.approve_and_send(sequence_id)
+                            status = 'completed' if ok else 'failed'
+                            conn.execute("UPDATE pending SET status=? WHERE callback_id=?", (status, cb_id,))
                     except Exception as loop_e:
                         logger.error(f"[scheduler] _check_relance_approvals parsing {cb_id}: {loop_e}")
                 conn.commit()
@@ -332,7 +337,7 @@ def init_scheduler(_app=None):
         try:
             with get_conn() as conn:
                 rows = conn.execute("""
-                    SELECT lb.id, lb.nom, lb.site_web
+                    SELECT lb.id, lb.nom, lb.site_web, lb.pays
                     FROM leads_bruts lb
                     JOIN leads_audites la ON la.lead_id = lb.id
                     WHERE la.ceo_source = 'quota_error'
@@ -353,7 +358,7 @@ def init_scheduler(_app=None):
                 lead_id = row["id"]
                 domain_raw = row["site_web"] or ""
                 domain = _re.sub(r"^https?://(www\.)?", "", domain_raw).rstrip("/").split("/")[0]
-                ceo = find_ceo(row["nom"] or "", domain, row["site_web"])
+                ceo = find_ceo(row["nom"] or "", domain, row["site_web"], pays=row.get("pays", "fr"))
 
                 if ceo.get("ceo_prenom"):
                     with get_conn() as conn:
@@ -392,6 +397,54 @@ def init_scheduler(_app=None):
             logger.error(f"[scheduler] daily_git_backup erreur : {e}")
 
     _scheduler.add_job(_run_daily_git_backup, CronTrigger(hour=22, minute=0), id='daily_git_backup')
+
+    # ─── Rappels Telegram pour listes contactées (J+3 / J+7 / J+14) ───
+    def check_list_followups():
+        """Vérifie les listes contactées et envoie des rappels Telegram quotidiens."""
+        try:
+            from datetime import datetime as _dt, timedelta
+            with get_conn() as conn:
+                conn.row_factory = None
+                lists = conn.execute("""
+                    SELECT id, nom, contacted_at, relance_j3, relance_j7, relance_j14
+                    FROM lead_lists
+                    WHERE contactee = 1 AND archived = 0 AND contacted_at IS NOT NULL
+                """).fetchall()
+
+                now = _dt.now()
+                for lst in lists:
+                    list_id, nom, contacted_at, rj3, rj7, rj14 = lst
+                    try:
+                        contacted = _dt.fromisoformat(contacted_at)
+                    except Exception:
+                        continue
+                    days = (now - contacted).days
+
+                    # Déterminer quelle étape est en cours
+                    current_step = None
+                    if not rj3:
+                        current_step = ('J+3', 3)
+                    elif not rj7:
+                        current_step = ('J+7', 7)
+                    elif not rj14:
+                        current_step = ('J+14', 14)
+
+                    if current_step and days >= current_step[1]:
+                        try:
+                            from core.telegram_adapter import notify
+                            notify(
+                                f"Relance {current_step[0]}",
+                                f"📋 *Relance {current_step[0]} — Liste \"{nom}\"*\n\n"
+                                f"Liste contactée il y a {days} jours.\n"
+                                f"Étape en cours : {current_step[0]}\n\n"
+                                f"👉 Cochez la case \"{current_step[0]}\" dans l'onglet Listes quand c'est fait"
+                            )
+                        except Exception as e:
+                            logger.error(f"[SCHEDULER] Telegram followup failed for list {list_id}: {e}")
+        except Exception as e:
+            logger.error(f"[SCHEDULER] check_list_followups: {e}")
+
+    _scheduler.add_job(check_list_followups, IntervalTrigger(hours=1), id='list_followups')
 
     # Enregistrement des pipelines via le Registry (Phase 4.3)
     from dashboard.pipeline import maintain_batch_slots, notify_new_audits, auto_approve_after_timeout

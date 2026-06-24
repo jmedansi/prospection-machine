@@ -52,6 +52,7 @@ def notify_new_audits():
                   AND la.approuve = 0
                   AND (la.email_objet IS NOT NULL AND la.email_objet != '')
                   AND (la.notified_at IS NULL OR la.notified_at = '')
+                  AND (lb.site_web IS NOT NULL AND lb.site_web != '')
                 ORDER BY la.lead_id DESC
                 LIMIT 50
             """).fetchall()
@@ -107,11 +108,13 @@ def auto_approve_after_timeout():
             rows = conn.execute("""
                 SELECT la.lead_id
                 FROM leads_audites la
+                JOIN leads_bruts lb ON la.lead_id = lb.id
                 WHERE la.email_corps IS NOT NULL AND la.email_corps != ''
                   AND la.approuve = 0
                   AND (la.email_objet IS NOT NULL AND la.email_objet != '')
                   AND (la.notified_at IS NOT NULL AND la.notified_at != '')
                   AND (datetime(la.notified_at) < datetime('now', '-5 hours'))
+                  AND (lb.site_web IS NOT NULL AND lb.site_web != '')
             """).fetchall()
             
             if not rows:

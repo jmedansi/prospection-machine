@@ -2,7 +2,7 @@
 """
 enrichisseur/structure_ml_notes.py
 
-Lit le texte brut des mentions légales (leads_bruts.notes)
+Lit le texte brut depuis leads_bruts.ml_extracted -> raw_text
 et extrait les informations structurées via regex :
   - Personnes (rôle, prénom, nom, email, téléphone associé)
   - Emails et téléphones seuls
@@ -11,8 +11,8 @@ et extrait les informations structurées via regex :
   - Éditeur / société
   - Capital social
 
-Stocke le résultat en JSON dans leads_bruts.ml_extracted,
-et remplit nom_gerant/prenom_gerant/email/téléphone si vides.
+Ajoute les données structurées dans ml_extracted (en conservant raw_text),
+remplit notes avec un résumé, et met à jour nom_gerant/prenom_gerant/email/téléphone si vides.
 """
 
 import json
@@ -56,7 +56,15 @@ _ROLE_FRAGMENT = (
     + r"|Cr(?:"
     + _EE + r"|e)ateur|Webmaster"
     + r"|Pr(?:"
-    + _EE + r"|e)sident|Fondateur|Co[-\s]?fondateur|CEO|PDG|DG|Administrateur"
+    + _EE + r"|e)sident(?:\s+du\s+Conseil)?|Fondateur|Co[-\s]?fondateur|CEO|PDG|DG|Administrateur(?:\s+G(?:"
+    + _EE + r"|e)n(?:"
+    + _EE + r"|e)ral)?"
+    r"|G(?:"
+    + _EE + r"|e)rant\s+principal"
+    r"|Directeur\s+G(?:"
+    + _EE + r"|e)n(?:"
+    + _EE + r"|e)ral"
+    r"|Dirigeant"
 )
 
 _NAME_FRAGMENT = r"(?P<nom_complet>[" + _AN + r"]+(?:[\s-][" + _AN + r"]+)+?)"
@@ -64,7 +72,7 @@ _NAME_FRAGMENT = r"(?P<nom_complet>[" + _AN + r"]+(?:[\s-][" + _AN + r"]+)+?)"
 # ─── Person patterns ──────────────────────────────────────────────────────
 
 _SEP = "•\u2013\u2014"  # bullet, en-dash, em-dash
-_PHONE_PATTERN = r"(?:(?:\+|00)33[\s.\-]?(?:\(0\)[\s.\-]?)?|0)[1-9](?:[\s.\-]?\d{2}){4}"
+_PHONE_PATTERN = r"(?:(?:\+|00)33[\s.\-]?(?:\(0\)[\s.\-]?)?|0)[1-9](?:[\s.\-]?\d{2}){4}|(?:\+|00)229[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}"
 
 # Pattern A: "Role : Name • email • phone"
 _PERSON_LINE_RE = re.compile(
@@ -123,6 +131,16 @@ SIRET_RE = re.compile(r"\b(\d{3,4}[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{5})\b")
 
 RCS_RE = re.compile(
     r"RCS\s*(?:de\s+)?([A-Za-z\s]+?)?\s*:?\s*(\d{3}[\s-]?\d{3}[\s-]?\d{3})",
+    re.IGNORECASE
+)
+
+RCCM_RE = re.compile(
+    r"RCCM\s*[:;]\s*([A-Z]{2,4}[\s-]*\d+[\s-]*[A-Z]?[\s-]*\d+)",
+    re.IGNORECASE
+)
+
+IFU_RE = re.compile(
+    r"IFU\s*[:;]\s*(\d{10,15})",
     re.IGNORECASE
 )
 
@@ -350,6 +368,21 @@ def _extract_capital(text: str) -> str | None:
     return None
 
 
+def _extract_rccm(text: str) -> str | None:
+    """Extrait le numéro RCCM (Bénin et autres pays OHADA)."""
+    for m in RCCM_RE.finditer(text):
+        num = re.sub(r"\s+", " ", m.group(1).strip())
+        return f"RCCM {num}"
+    return None
+
+
+def _extract_ifu(text: str) -> str | None:
+    """Extrait le numéro IFU (Bénin et autres pays francophones)."""
+    for m in IFU_RE.finditer(text):
+        return f"IFU {m.group(1)}"
+    return None
+
+
 def _extract_address(text: str) -> str | None:
     """Extrait une adresse physique."""
     for m in ADDRESS_RE.finditer(text):
@@ -386,6 +419,8 @@ def structure_ml_notes(text: str) -> dict:
         "phones": [],
         "siret": None,
         "rcs": None,
+        "rccm": None,
+        "ifu": None,
         "capital": None,
         "adresse": None,
         "editeur": None,
@@ -399,6 +434,8 @@ def structure_ml_notes(text: str) -> dict:
     result["phones"] = _extract_phones(text)
     result["siret"] = _extract_siret(text)
     result["rcs"] = _extract_rcs(text)
+    result["rccm"] = _extract_rccm(text)
+    result["ifu"] = _extract_ifu(text)
     result["capital"] = _extract_capital(text)
     result["adresse"] = _extract_address(text)
     result["editeur"] = _extract_editor(text)
@@ -408,49 +445,74 @@ def structure_ml_notes(text: str) -> dict:
 
 # ─── Main ─────────────────────────────────────────────────────────────────
 
-def main(limit: int | None = None):
-    """Parcourt les leads avec notes et structure les données ML."""
+def main(limit: int | None = None, secteurs: list[str] | None = None):
+    """Parcourt les leads avec ml_extracted.raw_text et structure les données ML."""
     with get_conn() as conn:
         sql = """
-            SELECT id, nom, site_web, notes, email, telephone, adresse,
+            SELECT id, nom, site_web, secteur, ml_extracted, email, telephone, adresse,
                    nom_gerant, prenom_gerant
             FROM leads_bruts
-            WHERE notes IS NOT NULL AND notes != ''
-              AND (ml_extracted IS NULL OR ml_extracted = '')
-            ORDER BY id
+            WHERE ml_extracted IS NOT NULL AND ml_extracted != ''
+              AND json_extract(ml_extracted, '$.raw_text') IS NOT NULL
+              AND json_extract(ml_extracted, '$.persons') IS NULL
+              AND (notes IS NULL OR notes = '')
         """
+        params = []
+        if secteurs:
+            placeholders = ",".join("?" for _ in secteurs)
+            sql += f" AND secteur IN ({placeholders})"
+            params.extend(secteurs)
+        sql += " ORDER BY id"
         if limit:
             sql += " LIMIT ?"
-            rows = conn.execute(sql, (limit,) if limit else ()).fetchall()
-        else:
-            rows = conn.execute(sql).fetchall()
+            params.append(limit)
+        rows = conn.execute(sql, params).fetchall()
 
     total = len(rows)
     if total == 0:
-        print("Aucun lead à traiter (notes vides ou déjà structurées).")
+        print("Aucun lead à traiter (pas de raw_text ou déjà structuré).")
         return
 
     print(f"[...] {total} leads à structurer\n")
 
     repo = LeadsRepo()
     ok = 0
-    empty_notes = 0
+    skipped = 0
 
     for i, row in enumerate(rows, 1):
         lead = dict(row)
         lid = lead["id"]
         nom = lead["nom"] or "(sans nom)"
-        notes = lead["notes"]
-        url = lead["site_web"] or ""
+        secteur = lead.get("secteur", "")
 
         safe_nom = nom[:40].encode("utf-8", errors="replace").decode("utf-8", errors="replace")
-        print(f"  [{i}/{total}] #{lid} {safe_nom:40s}", end="")
+        print(f"  [{i}/{total}] #{lid} [{secteur}] {safe_nom:40s}", end="")
 
-        struct = structure_ml_notes(notes)
+        # Load existing ml_extracted JSON and get raw_text
+        ml_data = json.loads(lead["ml_extracted"])
+        raw_text = ml_data.get("raw_text", "")
+        if not raw_text:
+            print(" -> SKIP (raw_text vide)")
+            skipped += 1
+            continue
+
+        struct = structure_ml_notes(raw_text)
+
+        # Merge structured data into existing ml_extracted (keep raw_text)
+        for k, v in struct.items():
+            ml_data[k] = v
 
         if struct["persons"] or struct["emails"] or struct["phones"] or struct["siret"]:
-            # Save JSON to ml_extracted
-            repo.update_fields(lid, {"ml_extracted": json.dumps(struct, ensure_ascii=False)})
+            # Save merged JSON
+            repo.update_fields(lid, {"ml_extracted": json.dumps(ml_data, ensure_ascii=False)})
+
+            # Build notes summary
+            notes_parts = []
+            if struct["persons"]:
+                p = struct["persons"][0]
+                name = " ".join(filter(None, [p["prenom"], p["nom"]]))
+                if name:
+                    notes_parts.append(f"Dirigeant: {name}")
 
             # Update simple fields if empty
             updates = {}
@@ -463,19 +525,38 @@ def main(limit: int | None = None):
                     updates["nom_gerant"] = p["nom"]
 
             # First email if empty
-            if not lead["email"] and struct["emails"]:
+            if struct["emails"]:
                 # Prefer an email associated with a person
                 person_emails = [p["email"] for p in struct["persons"] if p.get("email")]
                 best_email = person_emails[0] if person_emails else struct["emails"][0]
-                updates["email"] = best_email
+                notes_parts.append(f"Email: {best_email}")
+                if not lead["email"]:
+                    updates["email"] = best_email
 
             # First phone if empty
-            if not lead["telephone"] and struct["phones"]:
-                updates["telephone"] = struct["phones"][0]
+            if struct["phones"]:
+                notes_parts.append(f"Tel: {struct['phones'][0]}")
+                if not lead["telephone"]:
+                    updates["telephone"] = struct["phones"][0]
+
+            # SIRET
+            if struct["siret"]:
+                notes_parts.append(f"SIRET: {struct['siret']}")
+
+            # RCCM (Bénin / OHADA)
+            if struct["rccm"]:
+                notes_parts.append(f"RCCM: {struct['rccm']}")
+
+            # IFU (Bénin / francophone)
+            if struct["ifu"]:
+                notes_parts.append(f"IFU: {struct['ifu']}")
 
             # Address if empty
             if not lead["adresse"] and struct["adresse"]:
                 updates["adresse"] = struct["adresse"]
+
+            # Fill notes
+            updates["notes"] = " | ".join(notes_parts)
 
             if updates:
                 repo.update_fields(lid, updates)
@@ -485,17 +566,18 @@ def main(limit: int | None = None):
             ok += 1
         else:
             print(" -> RIEN (texte non structure)")
-            # Mark as processed even if empty
-            repo.update_fields(lid, {"ml_extracted": json.dumps(struct, ensure_ascii=False)})
-            empty_notes += 1
+            # Save merged JSON (still keep raw_text, mark persons as empty)
+            repo.update_fields(lid, {"ml_extracted": json.dumps(ml_data, ensure_ascii=False)})
+            skipped += 1
 
     print(f"\n{'='*50}")
-    print(f"OK: {ok} | Vides: {empty_notes} | Total: {total}")
+    print(f"OK (info trouvee): {ok} | Rien: {skipped} | Total: {total}")
 
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Structure les notes ML en JSON")
+    parser = argparse.ArgumentParser(description="Structure les mentions legales en JSON")
     parser.add_argument("--test", type=int, default=None, help="Nombre de leads à traiter")
+    parser.add_argument("--secteurs", nargs="+", default=None, help="Secteurs a filtrer")
     args = parser.parse_args()
-    main(limit=args.test)
+    main(limit=args.test, secteurs=args.secteurs)

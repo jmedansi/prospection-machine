@@ -129,7 +129,6 @@ function watchdogInit() {
     }
 
     _injectBanner();
-    _injectMobilePill();
     _injectStyles();
     _watchdog.interval = setInterval(_watchdogTick, _watchdog.POLL_MS);
     _watchdogTick(); // première vérification immédiate
@@ -255,20 +254,10 @@ function _renderWatchdog(d) {
             }
         });
 
-        // Pill mobile
+        // Pill mobile (masquée)
         const mobilePill = document.getElementById('wd-mobile-pill');
         if (mobilePill) {
-            const isMobile = window.innerWidth <= 768;
-            if (isMobile && active) {
-                mobilePill.style.display = 'flex';
-                const pct = active.total > 0 ? Math.round((active.processed / active.total) * 100) : null;
-                const pctEl = mobilePill.querySelector('.wd-pill-pct');
-                if (pctEl) pctEl.textContent = pct !== null ? `${pct}%` : '';
-                const labelEl = mobilePill.querySelector('.wd-pill-label');
-                if (labelEl) labelEl.textContent = active.label || active.key;
-            } else {
-                mobilePill.style.display = 'none';
-            }
+            mobilePill.style.display = 'none';
         }
     }
 

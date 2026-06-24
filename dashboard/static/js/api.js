@@ -217,15 +217,9 @@ async function refreshAll() {
     ]);
 }
 
-// --- Auto-refresh : stats sidebar + panneau latéral (intervalle unique) ---
+// --- Auto-refresh : stats sidebar uniquement (intervalle unique) ---
 const _autoRefreshId = setInterval(async () => {
     try { await loadStats(); } catch (e) {}
-    try {
-        if (_selectedLeadId && typeof loadPanelContent === 'function') {
-            const activeTab = document.querySelector('.side-panel-tab.active');
-            loadPanelContent(_selectedLeadId, activeTab ? activeTab.dataset.tab : 'audit');
-        }
-    } catch (e) {}
 }, 30000);
 
 window.addEventListener('beforeunload', () => clearInterval(_autoRefreshId));

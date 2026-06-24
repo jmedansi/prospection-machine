@@ -473,7 +473,7 @@ class SniperPipeline:
                         domain = _parsed.netloc.lstrip("www.") or url
                         company_name = domain.split(".")[0].replace("-", " ").title()
                         try:
-                            contacts = find_contacts(url, company_name)
+                            contacts = find_contacts(url, company_name, pays=lead.get("pays", "fr"))
                             lead.update(contacts)
                             _log_local(
                                 f"  ✉  {url} — email={lead.get('email_valide','?')} "

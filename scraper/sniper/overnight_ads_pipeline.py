@@ -184,7 +184,7 @@ async def phase1_scrape() -> dict:
 # PHASE 2: ENRICHISSEMENT EMAIL + CEO
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _enrichir_un_lead(lid: int, url: str, nom: str):
+def _enrichir_un_lead(lid: int, url: str, nom: str, pays: str = "fr"):
     """Email + CEO pour un lead (synchrone, avec timeout global)."""
     from scraper.email_finder import find_email_all_methods
     from urllib.parse import urlparse
@@ -202,7 +202,7 @@ def _enrichir_un_lead(lid: int, url: str, nom: str):
         logger.error(f"    email #{lid} ({url}): {e}")
 
     try:
-        ceo = find_ceo(nom or domain, domain, url)
+        ceo = find_ceo(nom or domain, domain, url, pays=pays)
         if ceo.get("ceo_prenom_norm"):
             updates["prenom_gerant"] = ceo["ceo_prenom_norm"]
         if ceo.get("ceo_nom_norm"):
@@ -224,10 +224,10 @@ def phase2_enrichir(secteur: str, lead_ids: list[int]):
         futures = []
         for lid in lead_ids:
             with get_conn() as conn:
-                row = conn.execute("SELECT id, nom, site_web FROM leads_bruts WHERE id=?", (lid,)).fetchone()
+                row = conn.execute("SELECT id, nom, site_web, pays FROM leads_bruts WHERE id=?", (lid,)).fetchone()
             if not row:
                 continue
-            f = pool.submit(_enrichir_un_lead, lid, row["site_web"], row["nom"])
+            f = pool.submit(_enrichir_un_lead, lid, row["site_web"], row["nom"], row.get("pays", "fr"))
             futures.append(f)
 
         ok = 0

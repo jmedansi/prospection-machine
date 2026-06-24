@@ -37,6 +37,7 @@ def api_sniper_leads():
         statut  = request.args.get("statut_prospection", "")
         tag     = request.args.get("tag_urgence", "")
         contact = request.args.get("contact", "")   # "avec"|"sans"|"catchall"
+        list_id = request.args.get("list_id", type=int)
         limit   = int(request.args.get("limit", 200))
         page    = int(request.args.get("page", 1))
         offset  = (page - 1) * limit
@@ -61,6 +62,10 @@ def api_sniper_leads():
             where.append("(la.email_valide IS NULL OR la.email_valide = '')")
         elif contact == "catchall":
             where.append("la.is_catch_all = 1")
+
+        if list_id:
+            where.append("lb.id IN (SELECT lead_id FROM lead_list_items WHERE list_id = ?)")
+            params.append(list_id)
 
         w = "WHERE " + " AND ".join(where)
 
@@ -238,6 +243,7 @@ def api_sniper_launch():
         max_per_kw   = int(data.get("max_per_kw", 30))
         pages_per_kw = int(data.get("pages_per_kw", 5))
         min_leads    = int(data.get("min_leads", 0))
+        secteur      = data.get("secteur", "").strip()
         if not keywords:
             return jsonify({"error": "keywords requis"}), 400
 
@@ -255,6 +261,7 @@ def api_sniper_launch():
             max_per_kw=max_per_kw,
             pages_per_kw=pages_per_kw,
             min_leads=min_leads,
+            secteur=secteur,
         )
         if not ok:
             return jsonify({"error": msg}), 409
@@ -272,12 +279,13 @@ def api_sniper_ecom_scan():
         city      = data.get("city", "").strip()
         max_leads = int(data.get("max_leads", 50))
         min_leads = int(data.get("min_leads", 0))
+        secteur   = data.get("secteur", "").strip()
 
         if keywords and city:
             keywords = [f"{kw} {city}" if city.lower() not in kw.lower() else kw for kw in keywords]
 
         from services.sniper_runner import launch_ecom_scraper
-        ok, msg = launch_ecom_scraper(keywords=keywords, max_leads=max_leads, min_leads=min_leads)
+        ok, msg = launch_ecom_scraper(keywords=keywords, city=city, max_leads=max_leads, min_leads=min_leads, secteur=secteur)
         if not ok:
             return jsonify({"error": msg}), 409
         return jsonify({"ok": True, "message": msg})
@@ -293,12 +301,13 @@ def api_sniper_jobs_scan():
         city      = data.get("city", "").strip()
         max_leads = int(data.get("max_leads", 50))
         days_back = int(data.get("days_back", 7))
+        secteur   = data.get("secteur", "").strip()
         
         if keywords and city:
             keywords = [f"{kw} {city}" if city.lower() not in kw.lower() else kw for kw in keywords]
             
         from services.sniper_runner import launch_jobs_scraper
-        ok, msg = launch_jobs_scraper(keywords=keywords, max_leads=max_leads, days_back=days_back)
+        ok, msg = launch_jobs_scraper(keywords=keywords, max_leads=max_leads, days_back=days_back, secteur=secteur)
         if not ok:
             return jsonify({"error": msg}), 409
         return jsonify({"ok": True, "message": msg})
@@ -427,6 +436,7 @@ def api_sniper_fb_ads_scan():
         country      = data.get("country", "FR").upper()
         max_pages    = int(data.get("max_pages", 5))
         min_leads    = int(data.get("min_leads", 0))
+        secteur      = data.get("secteur", "").strip()
         if not search_terms:
             return jsonify({"error": "search_terms requis"}), 400
 
@@ -439,6 +449,7 @@ def api_sniper_fb_ads_scan():
             country=country,
             max_pages=max_pages,
             min_leads=min_leads,
+            secteur=secteur,
         )
         if not ok:
             return jsonify({"error": msg}), 409

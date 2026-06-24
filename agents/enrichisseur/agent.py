@@ -69,7 +69,7 @@ class EnrichisseurAgent(BaseAgent):
         if site_web and not lead.get("email_valide"):
             try:
                 from core.contact_finder import find_contacts
-                contacts = find_contacts(site_web, lead.get("nom", ""))
+                contacts = find_contacts(site_web, lead.get("nom", ""), pays=lead.get("pays", "fr"))
                 fields = {k: v for k, v in contacts.items() if v is not None}
                 if fields:
                     enriched.update(fields)

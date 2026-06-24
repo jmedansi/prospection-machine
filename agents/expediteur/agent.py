@@ -10,6 +10,7 @@ Sortie  : AgentResult { success_count, failed_count, results[] }
 """
 from __future__ import annotations
 import threading
+import os
 from core.result import BaseAgent, AgentResult, timed
 from services.job_tracker import _email_job, reset_email_job
 
@@ -32,8 +33,10 @@ class ExpediteurAgent(BaseAgent):
             return self.fail("Un envoi est déjà en cours", error_type="ConflictError")
 
         from database.repos import audits_repo
-        from envoi.resend_sender import send_prospecting_email
         from database.repos import emails_repo
+        # Envoi backends: Resend (API) et SMTP direct
+        from envoi.resend_sender import send_prospecting_email as resend_send
+        from envoi.smtp_sender import send_prospecting_email_smtp
 
         candidats = audits_repo.get_ready_for_email()
 
@@ -52,6 +55,8 @@ class ExpediteurAgent(BaseAgent):
         def _run():
             try:
                 for lead in filtered:
+                    if _email_job.get("cancelled"):
+                        break
                     _email_job["current"] += 1
                     nom          = lead.get("nom", "prospect")
                     email        = (lead.get("email") or "").strip()
@@ -72,11 +77,25 @@ class ExpediteurAgent(BaseAgent):
                     if not email_corps.strip().startswith("<"):
                         html = f"<!DOCTYPE html><html><body>{email_corps.replace(chr(10), '<br>')}</body></html>"
 
-                    result = send_prospecting_email(
-                        prospect_email=email, prospect_nom=nom,
-                        email_objet=email_objet, email_corps=html,
-                        lien_rapport=lien, dry_run=False,
-                    )
+                    use_smtp = bool(os.environ.get('USE_SMTP_SEND') or os.environ.get('SMTP_HOST'))
+                    if use_smtp:
+                        result = send_prospecting_email_smtp(
+                            prospect_email=email,
+                            prospect_nom=nom,
+                            email_objet=email_objet,
+                            email_corps=html,
+                            lien_rapport=lien,
+                            dry_run=False,
+                        )
+                    else:
+                        result = resend_send(
+                            prospect_email=email,
+                            prospect_nom=nom,
+                            email_objet=email_objet,
+                            email_corps=html,
+                            lien_rapport=lien,
+                            dry_run=False,
+                        )
 
                     if result.get("success"):
                         record_id = emails_repo.insert({
@@ -90,6 +109,13 @@ class ExpediteurAgent(BaseAgent):
                         })
                         from database.repos import leads_repo
                         leads_repo.update_statut(lead["lead_id"], "envoye")
+                        # Planifier les séquences de relance auto
+                        try:
+                            from services.email_sequence_service import EmailSequenceService
+                            EmailSequenceService().plan_sequences_for_lead(lead.get("la_id"), record_id)
+                        except Exception as e:
+                            self.logger.error(f"Erreur plan_sequences_for_lead: {e}")
+                            
                         # Marquer step1_envoye pour que IMAP poller puisse détecter les réponses
                         try:
                             from database.connection import get_conn
@@ -142,7 +168,8 @@ class ExpediteurAgent(BaseAgent):
             AgentResult.data = { "message_id": str }
         """
         from database.repos import leads_repo
-        from envoi.resend_sender import send_prospecting_email
+        from envoi.resend_sender import send_prospecting_email as resend_send
+        from envoi.smtp_sender import send_prospecting_email_smtp
 
         lead = leads_repo.get_by_id(lead_id)
         if not lead:
@@ -154,14 +181,25 @@ class ExpediteurAgent(BaseAgent):
         if not email_corps:
             return self.fail("Pas d'email généré pour ce lead", error_type="MissingDataError")
 
-        result = send_prospecting_email(
-            prospect_email=to_email,
-            prospect_nom=lead.get("nom", "Test"),
-            email_objet=f"[TEST] {email_objet or 'Email de test'}",
-            email_corps=email_corps,
-            lien_rapport=lead.get("lien_rapport", ""),
-            dry_run=False,
-        )
+        use_smtp = bool(os.environ.get('USE_SMTP_SEND') or os.environ.get('SMTP_HOST'))
+        if use_smtp:
+            result = send_prospecting_email_smtp(
+                prospect_email=to_email,
+                prospect_nom=lead.get("nom", "Test"),
+                email_objet=f"[TEST] {email_objet or 'Email de test'}",
+                email_corps=email_corps,
+                lien_rapport=lead.get("lien_rapport", ""),
+                dry_run=False,
+            )
+        else:
+            result = resend_send(
+                prospect_email=to_email,
+                prospect_nom=lead.get("nom", "Test"),
+                email_objet=f"[TEST] {email_objet or 'Email de test'}",
+                email_corps=email_corps,
+                lien_rapport=lead.get("lien_rapport", ""),
+                dry_run=False,
+            )
 
         if result.get("success"):
             return self.ok({"message_id": result.get("message_id"), "to": to_email})

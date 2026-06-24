@@ -51,7 +51,7 @@ def make_audit_for_label(label: str) -> dict:
 
 def test_situation_to_profile_and_template_mapping():
     expected_title_snippets = {
-        'A': "n'a pas de site web",
+        'A': "voici une ébauche gratuite de votre site web",
         'B': 'Votre site web est lent',
         'C': 'vos concurrents sont loin devant',
         'D': 'est invisible sur Google',

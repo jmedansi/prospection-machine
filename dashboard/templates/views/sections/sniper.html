@@ -136,6 +136,11 @@
             <span id="sniper-leads-count"
                 style="font-size:11px;color:var(--ink3);background:var(--surface2);padding:2px 8px;border-radius:10px"></span>
             <div style="flex:1"></div>
+            <select id="sniper-filter-list"
+                style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);width:140px"
+                onchange="sniperLoadLeads()">
+                <option value="">Toutes listes</option>
+            </select>
             <select id="sniper-filter-source"
                 style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);width:130px"
                 onchange="sniperLoadLeads()">

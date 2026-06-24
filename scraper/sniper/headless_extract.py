@@ -131,7 +131,7 @@ async def _detect_captcha(page) -> bool:
 
 async def search_one(keyword: str, port: int) -> list:
     os.makedirs(PROFILES_DIR, exist_ok=True)
-    profile_idx = (port % 4) + 1  # 4 profils en rotation
+    profile_idx = (port % 8) + 1  # 8 profils en rotation
     profile_dir = os.path.join(PROFILES_DIR, f"profile_{profile_idx}")
     proc = None
     captcha_detected = False
@@ -155,37 +155,13 @@ async def search_one(keyword: str, port: int) -> list:
             if not browser.contexts: return []
             page = await browser.contexts[0].new_page()
 
-            # Vider cookies + cache pour éviter détection par session
+            # Vider TOUT le stockage pour éviter détection
             try:
                 await browser.contexts[0].clear_cookies()
+                await page.evaluate("localStorage.clear(); sessionStorage.clear()")
             except: pass
 
-            # ── 1. GOOGLE.FR + WARMUP ─────────────────────────────
-            try:
-                await page.goto("https://www.google.fr", wait_until="domcontentloaded", timeout=20_000)
-            except Exception:
-                logger.info(f"  TIMEOUT google.fr '{keyword}' — IP bloquée ?")
-                await browser.close()
-                return ["__timeout__"]
-            if await _detect_captcha(page):
-                captcha_detected = True
-                _CAPTCHA_INSTANCES[port] = {"proc": proc, "profile_dir": profile_dir, "keyword": keyword}
-                return ["__captcha__"]
-            await page.wait_for_timeout(random.randint(1500, 3000))
-
-            # Warmup : recherche bénigne pour réchauffer la session Google
-            try:
-                warmup_url = f"https://www.google.fr/search?q={'météo+' + keyword.split()[-1]}&gl=fr&hl=fr"
-                await page.goto(warmup_url, wait_until="domcontentloaded", timeout=15_000)
-                await page.wait_for_timeout(random.randint(2000, 4000))
-                if await _detect_captcha(page):
-                    captcha_detected = True
-                    _CAPTCHA_INSTANCES[port] = {"proc": proc, "profile_dir": profile_dir, "keyword": keyword}
-                    return ["__captcha__"]
-            except Exception:
-                pass  # warmup non bloquant
-
-            # ── 2. RECHERCHE RÉELLE ───────────────────────────────
+            # ── RECHERCHE DIRECTE ──────────────────────────────────
             search_url = f"https://www.google.fr/search?q={keyword}&gl=fr&hl=fr&num=10"
             try:
                 await page.goto(search_url, wait_until="domcontentloaded", timeout=30_000)
@@ -199,14 +175,11 @@ async def search_one(keyword: str, port: int) -> list:
                 return ["__captcha__"]
 
             # ── 3. ATTENTE RENDU + SCROLL ────────────────────────
-            await page.wait_for_timeout(random.randint(4000, 7000))
-            await page.evaluate("window.scrollBy(0, 300)")
-            await page.wait_for_timeout(800)
-            await page.evaluate("window.scrollBy(0, 500)")
-            await page.wait_for_timeout(800)
+            await page.wait_for_timeout(random.randint(2000, 4000))
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(1200)
+            await page.wait_for_timeout(600)
             await page.evaluate("window.scrollTo(0, 0)")
+            await page.wait_for_timeout(400)
             await page.wait_for_timeout(500)
 
             if await _detect_captcha(page):

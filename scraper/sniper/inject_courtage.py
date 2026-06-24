@@ -52,7 +52,7 @@ def main():
     for lid, lead in inserted:
         logger.info(f"→ #{lid} {lead['nom']}")
         try:
-            contacts = find_contacts(lead["site_web"], lead["nom"], enrich_ceo=True, fast_mode=False)
+            contacts = find_contacts(lead["site_web"], lead["nom"], pays=lead.get("pays", "fr"), enrich_ceo=True, fast_mode=False)
             with get_conn() as conn:
                 updates = {}
                 if contacts.get("email_valide"):

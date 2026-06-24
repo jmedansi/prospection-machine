@@ -80,12 +80,31 @@ class ActionsModule {
 
     static async sendApprovedEmailsImpl() {
         const UI = getUI();
-        UI.toast('Envoi des emails approuvés...', 'info');
+        const selected = this.getSelectedIds();
+        if (selected.length === 0) {
+            UI.toast('Sélectionnez des leads à envoyer', 'warning');
+            return;
+        }
+        const ok = await UI.confirm(`Envoyer l'email à ${selected.length} lead(s) ?`);
+        if (!ok) return;
+        UI.toast(`Envoi de ${selected.length} emails...`, 'info');
         try {
-            const r = await fetch('/api/email/send-approved', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+            const r = await fetch('/api/email/send-approved', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lead_ids: selected.map(Number) }) });
             const d = await r.json();
             if (d.error) UI.toast('Erreur: ' + d.error, 'error');
-            else UI.toast(`${d.sent || 0} emails envoyés`, 'success');
+            else UI.toast(`${d.total || 0} emails en cours d'envoi`, 'success');
+        } catch (e) { UI.toast('Erreur: ' + e.message, 'error'); }
+    }
+
+    static async cancelSend() {
+        const UI = getUI();
+        const ok = await UI.confirm('Annuler l\'envoi en cours ?');
+        if (!ok) return;
+        try {
+            const r = await fetch('/api/email/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const d = await r.json();
+            if (d.success) UI.toast('Envoi annulé', 'success');
+            else UI.toast('Erreur: ' + (d.error || 'Impossible d\'annuler'), 'error');
         } catch (e) { UI.toast('Erreur: ' + e.message, 'error'); }
     }
 
@@ -293,4 +312,8 @@ class ActionsModule {
 
 // Expose to window
 window.ActionsModule = ActionsModule;
+
+// Alias global pour que ListsModule puisse accéder aux IDs sélectionnés
+// depuis la vue Leads sans couplage fort
+window.ulGetSelectedIds = () => ActionsModule.getSelectedIds();
 

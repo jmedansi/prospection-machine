@@ -42,6 +42,14 @@ def api_email_send():
     return jsonify({"statut": "lance", **result.data})
 
 
+@emails_bp.route("/api/email/cancel", methods=["POST"])
+def api_email_cancel():
+    """Annule l'envoi en cours."""
+    from services.job_tracker import _email_job
+    _email_job["cancelled"] = True
+    return jsonify({"success": True, "message": "Envoi annulé"})
+
+
 @emails_bp.route("/api/email/status")
 def api_email_status():
     return jsonify(expediteur_agent.status())
@@ -72,6 +80,7 @@ def api_emails_list():
     try:
         from database import get_conn
         statut  = request.args.get("statut")        # opened/clicked/replied/bounce
+        list_id = request.args.get("list_id", type=int)
         limit   = int(request.args.get("limit", 50))
         page    = int(request.args.get("page", 1))
         offset  = (page - 1) * limit
@@ -82,6 +91,10 @@ def api_emails_list():
         elif statut == "replied": where.append("ee.repondu = 1")
         elif statut == "bounce":  where.append("ee.bounce = 1")
         elif statut == "spam":    where.append("ee.spam = 1")
+
+        if list_id:
+            where.append("ee.lead_id IN (SELECT lead_id FROM lead_list_items WHERE list_id = ?)")
+            params.append(list_id)
 
         where_sql = "WHERE " + " AND ".join(where) if where else ""
         with get_conn() as conn:
@@ -229,6 +242,7 @@ def api_crm_list():
     try:
         from database import get_conn
         filter_type = request.args.get("filter", "tous")
+        list_id = request.args.get("list_id", type=int)
         limit = int(request.args.get("limit", 50))
         page = int(request.args.get("page", 1))
         offset = (page - 1) * limit
@@ -248,6 +262,10 @@ def api_crm_list():
             where_clauses.append("ee.bounce = 1")
         elif filter_type == "spam":
             where_clauses.append("ee.spam = 1")
+
+        if list_id:
+            where_clauses.append("ee.lead_id IN (SELECT lead_id FROM lead_list_items WHERE list_id = ?)")
+            params.append(list_id)
 
         where_sql = " AND ".join(where_clauses)
 
@@ -360,5 +378,206 @@ def api_tracking_list():
                 })
 
         return jsonify({"tracking": events, "events": events})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@emails_bp.route("/api/sequences")
+def api_sequences_list():
+    """
+    Vue complète des séquences de relances par lead.
+    Retourne pour chaque lead : email initial + statut de chaque relance.
+    """
+    try:
+        with get_conn() as conn:
+            # Grouper toutes les séquences par lead_id (leads_audites.id)
+            rows = conn.execute("""
+                SELECT
+                    seq.lead_id      AS la_id,
+                    lb.nom,
+                    lb.ville,
+                    lb.category,
+                    ee_init.email_destinataire AS email,
+                    ee_init.date_envoi         AS date_email_initial,
+                    seq.id                     AS seq_id,
+                    seq.email_type,
+                    seq.statut                 AS seq_statut,
+                    seq.date_planifiee,
+                    seq.date_envoi             AS seq_date_envoi
+                FROM email_sequences seq
+                JOIN leads_audites la   ON la.id  = seq.lead_id
+                JOIN leads_bruts   lb   ON lb.id  = la.lead_id
+                JOIN emails_envoyes ee_init ON ee_init.id = seq.email_record_id
+                ORDER BY la.id, seq.email_type
+            """).fetchall()
+
+        # Pivot : un objet par lead avec ses 3 relances
+        leads = {}
+        for r in rows:
+            la_id = r['la_id']
+            if la_id not in leads:
+                leads[la_id] = {
+                    "la_id":             la_id,
+                    "nom":               r['nom'],
+                    "ville":             r['ville'],
+                    "category":          r['category'],
+                    "email":             r['email'],
+                    "date_email_initial": r['date_email_initial'],
+                    "relance_1":         None,
+                    "relance_2":         None,
+                    "relance_special":   None,
+                }
+            step = r['email_type']
+            if step in ('relance_1', 'relance_2', 'relance_special'):
+                leads[la_id][step] = {
+                    "seq_id":          r['seq_id'],
+                    "statut":          r['seq_statut'],
+                    "date_planifiee":  r['date_planifiee'],
+                    "date_envoi":      r['seq_date_envoi'],
+                }
+
+        return jsonify({
+            "sequences": list(leads.values()),
+            "total":     len(leads),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Nouvelles routes pour la page Relances ─────────────────────────────────
+
+@emails_bp.route("/api/sequences/pending")
+def api_sequences_pending():
+    """Retourne toutes les séquences en pending_approval avec contenu."""
+    try:
+        with get_conn() as conn:
+            rows = conn.execute("""
+                SELECT
+                    seq.id, seq.lead_id, seq.email_type, seq.statut,
+                    seq.date_planifiee, seq.email_objet, seq.email_corps,
+                    lb.nom, lb.ville,
+                    ee_init.email_destinataire AS email
+                FROM email_sequences seq
+                JOIN leads_audites la ON la.id = seq.lead_id
+                JOIN leads_bruts lb   ON lb.id = la.lead_id
+                JOIN emails_envoyes ee_init ON ee_init.id = seq.email_record_id
+                WHERE seq.statut = 'pending_approval'
+                ORDER BY seq.date_planifiee ASC
+            """).fetchall()
+        return jsonify({"sequences": [dict(r) for r in rows], "total": len(rows)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@emails_bp.route("/api/sequences/history")
+def api_sequences_history():
+    """Historique paginé des séquences avec stats globales."""
+    try:
+        statut = request.args.get("statut")
+        page   = int(request.args.get("page", 1))
+        limit  = int(request.args.get("limit", 30))
+        offset = (page - 1) * limit
+
+        where = ""
+        params = []
+        if statut:
+            where = "WHERE seq.statut = ?"
+            params.append(statut)
+
+        with get_conn() as conn:
+            total = conn.execute(
+                f"SELECT COUNT(*) FROM email_sequences seq {where}", params
+            ).fetchone()[0]
+
+            rows = conn.execute(f"""
+                SELECT
+                    seq.id, seq.lead_id, seq.email_type, seq.statut,
+                    seq.date_planifiee, seq.date_envoi,
+                    lb.nom, lb.ville,
+                    ee_init.email_destinataire AS email,
+                    ee_init.date_envoi AS date_email_initial
+                FROM email_sequences seq
+                JOIN leads_audites la ON la.id = seq.lead_id
+                JOIN leads_bruts lb   ON lb.id = la.lead_id
+                JOIN emails_envoyes ee_init ON ee_init.id = seq.email_record_id
+                {where}
+                ORDER BY seq.date_planifiee DESC
+                LIMIT ? OFFSET ?
+            """, params + [limit, offset]).fetchall()
+
+            # Stats globales
+            stats_row = conn.execute("""
+                SELECT
+                    SUM(CASE WHEN statut='sent' THEN 1 ELSE 0 END)             AS sent,
+                    SUM(CASE WHEN statut='sent' AND email_type='relance_1' THEN 1 ELSE 0 END) AS relance_1,
+                    SUM(CASE WHEN statut='sent' AND email_type='relance_2' THEN 1 ELSE 0 END) AS relance_2,
+                    SUM(CASE WHEN statut='sent' AND email_type='relance_special' THEN 1 ELSE 0 END) AS relance_special,
+                    SUM(CASE WHEN statut='cancelled' THEN 1 ELSE 0 END)        AS cancelled,
+                    SUM(CASE WHEN statut='pending_approval' THEN 1 ELSE 0 END) AS pending
+                FROM email_sequences
+            """).fetchone()
+
+        return jsonify({
+            "sequences":   [dict(r) for r in rows],
+            "total":       total,
+            "page":        page,
+            "total_pages": max(1, (total + limit - 1) // limit),
+            "stats":       dict(stats_row) if stats_row else {},
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@emails_bp.route("/api/sequences/approve", methods=["POST"])
+def api_sequence_approve():
+    """Approuve et envoie une séquence individuelle."""
+    data   = request.get_json() or {}
+    seq_id = data.get("seq_id")
+    if not seq_id:
+        return jsonify({"error": "seq_id requis"}), 400
+    try:
+        from services.email_sequence_service import EmailSequenceService
+        ok = EmailSequenceService().approve_and_send(int(seq_id))
+        return jsonify({"success": ok})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@emails_bp.route("/api/sequences/approve-bulk", methods=["POST"])
+def api_sequences_approve_bulk():
+    """Approuve et envoie plusieurs séquences (ou toutes si seq_ids=null)."""
+    data    = request.get_json() or {}
+    seq_ids = data.get("seq_ids")  # None = toutes
+    try:
+        from services.email_sequence_service import EmailSequenceService
+        svc = EmailSequenceService()
+        if seq_ids is None:
+            # Toutes les pending_approval
+            sent = svc.approve_all_pending()
+        else:
+            sent = 0
+            for sid in seq_ids:
+                if svc.approve_and_send(int(sid)):
+                    sent += 1
+        return jsonify({"success": True, "sent": sent})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@emails_bp.route("/api/sequences/cancel", methods=["POST"])
+def api_sequence_cancel():
+    """Annule une séquence planifiée ou en attente."""
+    data   = request.get_json() or {}
+    seq_id = data.get("seq_id")
+    if not seq_id:
+        return jsonify({"error": "seq_id requis"}), 400
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE email_sequences SET statut='cancelled' WHERE id=? AND statut IN ('planned','pending_approval')",
+                (int(seq_id),)
+            )
+            conn.commit()
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

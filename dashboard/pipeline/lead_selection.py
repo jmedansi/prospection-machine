@@ -20,6 +20,7 @@ def get_leads_for_pipeline(limit: int = 60) -> list:
                 LEFT JOIN leads_audites la ON la.lead_id = lb.id
                 WHERE lb.email IS NOT NULL AND lb.email != ''
                   AND lb.statut NOT IN ('envoye', 'email_sent')
+                  AND (lb.site_web IS NOT NULL AND lb.site_web != '')
                   AND lb.id NOT IN (
                       SELECT DISTINCT lead_id FROM emails_envoyes
                       WHERE lead_id IS NOT NULL
@@ -58,6 +59,7 @@ def _get_leads_for_batch(batch_size: int = 50) -> list:
                 WHERE lb.email IS NOT NULL AND lb.email != ''
                   AND (lb.email_valide = 'Valide' OR lb.email_valide IS NULL)
                   AND lb.statut NOT IN ('envoye', 'email_sent', 'scheduled')
+                  AND (lb.site_web IS NOT NULL AND lb.site_web != '')
                   AND la.approuve = 1
                   AND la.email_corps IS NOT NULL AND la.email_corps != ''
                 ORDER BY la.score_temperature DESC, lb.id DESC

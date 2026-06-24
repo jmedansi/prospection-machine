@@ -45,6 +45,12 @@ def migrate_db():
                     conn.execute("ALTER TABLE leads_bruts ADD COLUMN campaign_id INTEGER REFERENCES campagnes(id) ON DELETE SET NULL")
                 except Exception:
                     pass
+            if 'logo_url' not in cols:
+                try:
+                    conn.execute("ALTER TABLE leads_bruts ADD COLUMN logo_url TEXT DEFAULT ''")
+                    print("  [MIGRATION] Colonne ajoutée: leads_bruts.logo_url")
+                except Exception:
+                    pass
 
         if 'leads_audites' in table_names:
             cols = [r[1] for r in conn.execute("PRAGMA table_info(leads_audites)").fetchall()]
@@ -181,6 +187,57 @@ def migrate_db():
                 pass
 
         migrate_email_events_table()
+        migrate_lead_lists()
+
+        # ─── Migration: pays pour leads_bruts et campagnes ───────────
+        if 'leads_bruts' in table_names:
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(leads_bruts)").fetchall()]
+            if 'pays' not in cols:
+                try:
+                    conn.execute("ALTER TABLE leads_bruts ADD COLUMN pays TEXT DEFAULT 'fr'")
+                    print("  [MIGRATION] Colonne ajoutée: leads_bruts.pays")
+                except Exception:
+                    pass
+
+        if 'campagnes' in table_names:
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(campagnes)").fetchall()]
+            if 'pays' not in cols:
+                try:
+                    conn.execute("ALTER TABLE campagnes ADD COLUMN pays TEXT DEFAULT 'fr'")
+                    print("  [MIGRATION] Colonne ajoutée: campagnes.pays")
+                except Exception:
+                    pass
+
+        # ─── Migration: campaign_id dans lead_lists pour auto-listes ──
+        if 'lead_lists' in table_names:
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(lead_lists)").fetchall()]
+            if 'campaign_id' not in cols:
+                try:
+                    conn.execute("ALTER TABLE lead_lists ADD COLUMN campaign_id INTEGER REFERENCES campagnes(id) ON DELETE SET NULL")
+                    print("  [MIGRATION] Colonne ajoutée: lead_lists.campaign_id")
+                except Exception:
+                    pass
+
+        # ─── Migration: colonnes note/relance/archivage pour lead_lists ──
+        if 'lead_lists' in table_names:
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(lead_lists)").fetchall()]
+            new_cols = {
+                'note': "ALTER TABLE lead_lists ADD COLUMN note TEXT DEFAULT ''",
+                'contactee': "ALTER TABLE lead_lists ADD COLUMN contactee INTEGER DEFAULT 0",
+                'contacted_at': "ALTER TABLE lead_lists ADD COLUMN contacted_at TEXT",
+                'relance_j3': "ALTER TABLE lead_lists ADD COLUMN relance_j3 INTEGER DEFAULT 0",
+                'relance_j7': "ALTER TABLE lead_lists ADD COLUMN relance_j7 INTEGER DEFAULT 0",
+                'relance_j14': "ALTER TABLE lead_lists ADD COLUMN relance_j14 INTEGER DEFAULT 0",
+                'archived': "ALTER TABLE lead_lists ADD COLUMN archived INTEGER DEFAULT 0",
+                'archived_at': "ALTER TABLE lead_lists ADD COLUMN archived_at TEXT",
+            }
+            for col_name, sql in new_cols.items():
+                if col_name not in cols:
+                    try:
+                        conn.execute(sql)
+                        print(f"  [MIGRATION] Colonne ajoutée: lead_lists.{col_name}")
+                    except Exception:
+                        pass
 
 
 def migrate_emails_envoyes_critical_fields():
@@ -247,6 +304,35 @@ def migrate_email_events_table():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_lead ON email_events(lead_id);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_type ON email_events(event_type);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_timestamp ON email_events(timestamp);")
+
+
+def migrate_lead_lists():
+    """Crée les tables lead_lists et lead_list_items si elles n'existent pas."""
+    with get_conn() as conn:
+        conn.executescript("""
+            -- ─── LISTES DE LEADS (gestion manuelle) ────────────────────────────
+            CREATE TABLE IF NOT EXISTS lead_lists (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                nom         TEXT    NOT NULL,
+                description TEXT,
+                couleur     TEXT    DEFAULT '#6366f1',
+                icone       TEXT    DEFAULT '📋',
+                created_at  TEXT    DEFAULT (datetime('now')),
+                updated_at  TEXT    DEFAULT (datetime('now'))
+            );
+
+            -- ─── LIAISON LEADS ↔ LISTES (many-to-many) ──────────────────────────
+            CREATE TABLE IF NOT EXISTS lead_list_items (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_id     INTEGER NOT NULL REFERENCES lead_lists(id) ON DELETE CASCADE,
+                lead_id     INTEGER NOT NULL REFERENCES leads_bruts(id) ON DELETE CASCADE,
+                added_at    TEXT    DEFAULT (datetime('now')),
+                UNIQUE(list_id, lead_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_list_items_list ON lead_list_items(list_id);
+            CREATE INDEX IF NOT EXISTS idx_list_items_lead ON lead_list_items(lead_id);
+        """)
 
 
 def init_db():

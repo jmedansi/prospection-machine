@@ -25,6 +25,202 @@ def verify_rapport_link(url: str, timeout: int = 5) -> bool:
     except:
         return False
 
+
+def pluralize_category(cat: str) -> str:
+    """Convertit une catégorie GMB au pluriel pour le email. ex: 'Restaurant italien' → 'restaurants italiens'"""
+    if not cat:
+        return 'établissements'
+    cat = cat.strip()
+    words = cat.split()
+    if not words:
+        return 'établissements'
+
+    # Dictionnaire complet singulier → pluriel (noms de secteurs)
+    plural_map = {
+        # Restauration
+        'restaurant': 'restaurants',
+        'bar': 'bars',
+        'café': 'cafés', 'cafe': 'cafés',
+        'boulangerie': 'boulangeries',
+        'pâtisserie': 'pâtisseries',
+        'pizzeria': 'pizzerias',
+        'brasserie': 'brasseries',
+        'bistro': 'bistros',
+        'créperie': 'créperies',
+        'traiteur': 'traiteurs',
+        'snack': 'snacks',
+        'brasserie': 'brasseries',
+        # Hôtellerie / Tourisme
+        'hôtel': 'hôtels', 'hotel': 'hôtels',
+        'auberge': 'auberges',
+        'camping': 'campings',
+        'gîte': 'gîtes',
+        # Santé
+        'cabinet': 'cabinets',
+        'cabinet dentaire': 'cabinets dentaires',
+        'clinique': 'cliniques',
+        'pharmacie': 'pharmacies',
+        'médecin': 'médecins',
+        'dentiste': 'dentistes',
+        'kinésithérapeute': 'kinésithérapeutes',
+        'ostéopathe': 'ostéopathes',
+        'psychologue': 'psychologues',
+        'infirmier': 'infirmiers',
+        'opticien': 'opticiens',
+        # Beauté / Bien-être
+        'salon': 'salons',
+        'coiffeur': 'coiffeurs',
+        'coiffure': 'coiffures',
+        'barbier': 'barbiers',
+        'esthéticien': 'esthéticiens',
+        'institut': 'instituts',
+        'spa': 'spas',
+        'tatoueur': 'tatoueurs',
+        'perruquier': 'perruccariers',
+        # Commerce
+        'magasin': 'magasins',
+        'boutique': 'boutiques',
+        'commerce': 'commerces',
+        'librairie': 'librairies',
+        'jouet': 'jouets',
+        'fleuriste': 'fleuristes',
+        'bijouterie': 'bijouteries',
+        'optique': 'optiques',
+        'quincaillerie': 'quincailleries',
+        # Artisanat / BTP
+        'artisan': 'artisans',
+        'plombier': 'plombiers',
+        'électricien': 'électriciens',
+        'maçon': 'maçons',
+        'peintre': 'peintres',
+        'couvreur': 'couvreurs',
+        'carreleur': 'carreleurs',
+        'menuisier': 'menuisiers',
+        'serrurier': 'serruriers',
+        'chauffagiste': 'chauffagistes',
+        'climaticien': 'climaticiens',
+        'paysagiste': 'paysagistes',
+        'jardinier': 'jardiniers',
+        'nettoyage': 'nettoyages',
+        'déménageur': 'déménageurs',
+        'entreprise': 'entreprises',
+        'société': 'sociétés',
+        # Auto / Transport
+        'garage': 'garages',
+        'automobile': 'automobiles',
+        'concessionnaire': 'concessionnaires',
+        'carrossier': 'carrossiers',
+        'pneumatique': 'pneumatiques',
+        'lavage': 'lavages',
+        'taxi': 'taxis',
+        'vtc': 'vtc',
+        'livraison': 'livraisons',
+        # Services / Conseil
+        'agence': 'agences',
+        'cabinet comptable': 'cabinets comptables',
+        'expert-comptable': 'experts-comptables',
+        'comptable': 'comptables',
+        'avocat': 'avocats',
+        'notaire': 'notaires',
+        'assurance': 'assurances',
+        'immobilier': 'immobiliers',
+        'courtier': 'courtiers',
+        'formation': 'formations',
+        'informatique': 'informatiques',
+        'développeur': 'développeurs',
+        'webdesigner': 'webdesigners',
+        'communicant': 'communicants',
+        'graphiste': 'graphistes',
+        'photographe': 'photographes',
+        'vidéaste': 'vidéastes',
+        # Sport / Loisirs
+        'salle': 'salles',
+        'gym': 'gyms',
+        'fitness': 'fitness',
+        'dojo': 'dojos',
+        'club': 'clubs',
+        'coach': 'coaches',
+        'entraîneur': 'entraîneurs',
+        # Alimentation
+        'épicerie': 'épiceries',
+        'boucherie': 'boucheries',
+        'fromagerie': 'fromageries',
+        'maraîcher': 'maraîchers',
+        'poissonnerie': 'poissonneries',
+        'caviste': 'cavistes',
+        # Autres
+        'funéraire': 'funéraires',
+        'pompes': 'pompes',
+        'pompes funèbres': 'pompes funèbres',
+        'animalerie': 'animaleries',
+        'vétérinaire': 'vétérinaires',
+        'pressing': 'pressings',
+        'laverie': 'laveries',
+    }
+
+    # Mapping des adjectifs au pluriel
+    adj_plural_map = {
+        'italien': 'italiens',
+        'français': 'français',
+        'japonais': 'japonais',
+        'libanais': 'libanais',
+        'chinois': 'chinois',
+        'indien': 'indiens',
+        'thaï': 'thaïs',
+        'thailandais': 'thaïlandais',
+        'mexicain': 'mexicains',
+        'américain': 'américains',
+        'africain': 'africains',
+        'végétarien': 'végétariens',
+        'grec': 'grecs',
+        'turc': 'turcs',
+        'espagnol': 'espagnols',
+        'coréen': 'coréens',
+        'vietnamien': 'vietnamiens',
+        'marocain': 'marocains',
+        'cubain': 'cubains',
+        'caribéen': 'caribéens',
+        'méditerranéen': 'méditerranéens',
+        'pakistanais': 'pakistanais',
+        'moderne': 'modernes',
+        'luxe': 'de luxe',
+        'bio': 'bios',
+        'bios': 'bios',
+        'artisanal': 'artisanals',
+        'premium': 'premium',
+        'gastronomique': 'gastronomiques',
+        'asiatique': 'asiatiques',
+        'européen': 'européens',
+        'fusion': 'fusion',
+        'rapide': 'rapides',
+        'contemporain': 'contemporains',
+        'traditionnel': 'traditionnels',
+        'authentique': 'authentiques',
+        'équestre': 'équestres',
+        'canin': 'canins',
+        'sportif': 'sportifs',
+        'immobilière': 'immobilières',
+        'dentaire': 'dentaires',
+        'comptable': 'comptables',
+    }
+
+    # Mapper le premier mot au pluriel
+    first = words[0].lower()
+    if first in plural_map:
+        words[0] = plural_map[first]
+    elif first.endswith('e') and not first.endswith('ee'):
+        words[0] = first[:-1] + 's'
+    else:
+        words[0] = first + 's'
+
+    # Mapper le second mot (adjectif) au pluriel si possible
+    if len(words) > 1:
+        adj = words[1].lower()
+        if adj in adj_plural_map:
+            words[1] = adj_plural_map[adj]
+
+    return ' '.join(words)
+
 def build_premium_email(lead_data, verify_link: bool = True):
     """
     Assemble l'email selon le profil.
@@ -67,7 +263,8 @@ def build_premium_email(lead_data, verify_link: bool = True):
         nom = "votre etablissement"
     
     ville = lead_data.get('ville', '') or ''
-    category = lead_data.get('category', '') or lead_data.get('secteur', 'etablissement')
+    category_raw = lead_data.get('category', '') or lead_data.get('secteur', 'etablissement')
+    category = pluralize_category(category_raw)
     lcp_ms = lead_data.get('lcp_ms', 0) or 0
     lcp_s = round(float(lcp_ms) / 1000, 1) if lcp_ms else 0
     mobile_score = lead_data.get('mobile_score', 0) or 0

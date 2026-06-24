@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def main():
     with get_conn() as conn:
         cur = conn.execute(
-            "SELECT id, nom, site_web, secteur FROM leads_bruts "
+            "SELECT id, nom, site_web, secteur, pays FROM leads_bruts "
             "WHERE source='ads' AND secteur IS NOT NULL AND secteur != '' "
             "AND (email_valide IS NULL OR email_valide = '') "
             "ORDER BY secteur, id"
@@ -20,14 +20,14 @@ def main():
     logger.info(f"{len(leads)} leads à enrichir\n")
 
     ok = 0
-    for i, (lid, nom, site_web, secteur) in enumerate(leads, 1):
+    for i, (lid, nom, site_web, secteur, pays) in enumerate(leads, 1):
         if not site_web:
             logger.info(f"[{i}/{len(leads)}] #{lid} {nom[:40]:40s} — pas de site web, skip")
             continue
 
         logger.info(f"[{i}/{len(leads)}] [{secteur:25s}] #{lid} {nom[:40]:40s} {site_web}")
         try:
-            contacts = find_contacts(site_web, nom, enrich_ceo=True, fast_mode=False)
+            contacts = find_contacts(site_web, nom, pays=pays or "fr", enrich_ceo=True, fast_mode=False)
 
             updates = {}
             if contacts.get("email_valide"):

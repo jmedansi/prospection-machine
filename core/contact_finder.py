@@ -36,11 +36,12 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
-# ─── Regex téléphone FR ────────────────────────────────────────────────────────
+# ─── Regex téléphone (FR + Bénin) ──────────────────────────────────────────────
 
 _PHONE_RE = re.compile(
     r"(?:(?:\+|00)33[\s.\-]?(?:\(0\)[\s.\-]?)?|0)"
     r"[1-9](?:[\s.\-]?\d{2}){4}"
+    r"|(?:\+|00)229[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}[\s.\-]?\d{2}"
 )
 
 
@@ -50,6 +51,7 @@ def find_contacts(
     url: str,
     company_name: str = "",
     *,
+    pays: str = "fr",
     enrich_ceo: bool = True,
     fast_mode: bool = False,
 ) -> dict:
@@ -59,6 +61,7 @@ def find_contacts(
     Args:
         url:          URL du site (http:// ou https://)
         company_name: Nom de l'entreprise (améliore la détection CEO)
+        pays:         Code pays ISO (défaut: "fr"). "bj" pour Bénin.
         enrich_ceo:   Tenter d'identifier le CEO (défaut True)
 
     Returns:
@@ -109,7 +112,7 @@ def find_contacts(
         try:
             from sniper.enrichment.ceo_finder import find_ceo
             name = company_name or _company_from_domain(domain)
-            ceo  = find_ceo(name, domain, url)
+            ceo  = find_ceo(name, domain, url, pays=pays)
             result.update({
                 "ceo_prenom":      ceo.get("ceo_prenom"),
                 "ceo_nom":         ceo.get("ceo_nom"),
@@ -254,7 +257,7 @@ def _extract_phone_from_url(url: str) -> Optional[str]:
 
 
 def _parse_phone(html: str) -> Optional[str]:
-    """Extrait et normalise un numéro de téléphone FR depuis du HTML."""
+    """Extrait et normalise un numéro de téléphone (FR ou Bénin) depuis du HTML."""
     matches = _PHONE_RE.findall(html)
     if not matches:
         return None
@@ -263,4 +266,8 @@ def _parse_phone(html: str) -> Optional[str]:
         phone = "0" + phone[3:]
     elif phone.startswith("0033"):
         phone = "0" + phone[4:]
+    elif phone.startswith("+229"):
+        pass  # Garder le format +229XXXXXXXX pour le Bénin
+    elif phone.startswith("00229"):
+        phone = "+229" + phone[5:]
     return phone

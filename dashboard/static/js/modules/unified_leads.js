@@ -5,7 +5,69 @@
 
 const _ul = { leads: [], page: 1, totalPages: 1, total: 0, editingId: null, view: 'list' };
 
-function unifiedLeadsInit() { unifiedLeadsLoad(); }
+function unifiedLeadsInit() {
+    if (typeof window.unifiedLeadsLoadLists === 'function') {
+        window.unifiedLeadsLoadLists().then(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const listId = urlParams.get('list_id');
+            if (listId) {
+                const selectEl = document.getElementById('ul-filter-list');
+                if (selectEl) {
+                    selectEl.value = listId;
+                }
+            }
+            unifiedLeadsLoad();
+        });
+    } else {
+        unifiedLeadsLoad();
+    }
+}
+
+window.unifiedLeadsLoadLists = async function() {
+    try {
+        const r = await fetch('/api/lists');
+        const d = await r.json();
+        const lists = d.lists || [];
+        
+        // Populate dropdown in Leads view
+        const selectLeads = document.getElementById('ul-filter-list');
+        if (selectLeads) {
+            const currentVal = selectLeads.value;
+            selectLeads.innerHTML = '<option value="">Toutes listes</option>' + 
+                lists.map(lst => `<option value="${lst.id}">${lst.icone} ${lst.nom} (${lst.nb_leads})</option>`).join('');
+            selectLeads.value = currentVal;
+        }
+
+        // Populate dropdown in Tracking Board view
+        const selectTracking = document.getElementById('tracking-filter-list');
+        if (selectTracking) {
+            const currentVal = selectTracking.value;
+            selectTracking.innerHTML = '<option value="">Toutes listes</option>' + 
+                lists.map(lst => `<option value="${lst.id}">${lst.icone} ${lst.nom}</option>`).join('');
+            selectTracking.value = currentVal;
+        }
+
+        // Populate dropdown in Sniper view
+        const selectSniper = document.getElementById('sniper-filter-list');
+        if (selectSniper) {
+            const currentVal = selectSniper.value;
+            selectSniper.innerHTML = '<option value="">Toutes listes</option>' + 
+                lists.map(lst => `<option value="${lst.id}">${lst.icone} ${lst.nom}</option>`).join('');
+            selectSniper.value = currentVal;
+        }
+
+        // Populate dropdown in CRM view (if it exists)
+        const selectCRM = document.getElementById('crm-filter-list');
+        if (selectCRM) {
+            const currentVal = selectCRM.value;
+            selectCRM.innerHTML = '<option value="">Toutes listes</option>' + 
+                lists.map(lst => `<option value="${lst.id}">${lst.icone} ${lst.nom}</option>`).join('');
+            selectCRM.value = currentVal;
+        }
+    } catch (e) {
+        console.error('[unifiedLeadsLoadLists] Error:', e);
+    }
+};
 
 async function unifiedLeadsLoad(page = 1) {
     _ul.page = page;
@@ -15,6 +77,7 @@ async function unifiedLeadsLoad(page = 1) {
 
     const limit = document.getElementById('ul-filter-limit')?.value || 50;
     const params = new URLSearchParams({ page, limit });
+    const listId = document.getElementById('ul-filter-list')?.value || '';
     const source = document.getElementById('ul-filter-source')?.value || '';
     const statut = document.getElementById('ul-filter-statut')?.value || '';
     const tag = document.getElementById('ul-filter-tag')?.value || '';
@@ -28,6 +91,7 @@ async function unifiedLeadsLoad(page = 1) {
         sector = _activeSector;
     }
     const search = document.getElementById('ul-search')?.value?.trim() || '';
+    if (listId) params.set('list_id', listId);
     if (source) params.set('source', source);
     if (statut) params.set('statut', statut);
     if (tag) params.set('tag', tag);

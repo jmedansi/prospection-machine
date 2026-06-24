@@ -115,6 +115,31 @@ def _extract_domain(email_addr: str) -> str:
     return ""
 
 
+def _normalize_email(email_addr: str) -> str:
+    """Normalise une adresse email pour comparer les variantes (plus tags, Gmail dots)."""
+    if not email_addr:
+        return ""
+
+    email_addr = email_addr.strip().lower()
+    if "@" not in email_addr:
+        return email_addr
+
+    local_part, domain = email_addr.split("@", 1)
+    if "+" in local_part:
+        local_part = local_part.split("+", 1)[0]
+
+    if domain in ("gmail.com", "googlemail.com"):
+        local_part = local_part.replace(".", "")
+        domain = "gmail.com"
+
+    return f"{local_part}@{domain}"
+
+
+def _is_email_variant(email_a: str, email_b: str) -> bool:
+    """Retourne True si deux adresses sont équivalentes après normalisation."""
+    return _normalize_email(email_a) == _normalize_email(email_b)
+
+
 # ─── Recherche en DB ──────────────────────────────────────────────────────────
 
 def _find_lead_by_sender(sender_email: str, sender_domain: str) -> Optional[dict]:
@@ -122,12 +147,16 @@ def _find_lead_by_sender(sender_email: str, sender_domain: str) -> Optional[dict
     Cherche le lead Sniper dont l'email correspond à l'expéditeur.
 
     Priorité :
-      1. Match exact sur email_valide (leads_audites)
-      2. Match domaine sur site_web (leads_bruts) — fallback si email non validé
+      1. Match exact sur email_valide (leads_audites) / lb.email
+      2. Match sur variante d'email (plus tags, Gmail dots)
+      3. Fallback domaine sur site_web (leads_bruts)
 
     Retourne un dict lead ou None.
     """
     from database.connection import get_conn
+
+    sender_email = (sender_email or "").strip().lower()
+    sender_normalized = _normalize_email(sender_email)
 
     with get_conn() as conn:
         # 1. Match exact email
@@ -150,7 +179,30 @@ def _find_lead_by_sender(sender_email: str, sender_domain: str) -> Optional[dict
         if row:
             return dict(row)
 
-        # 2. Fallback domaine
+        # 2. Match via variante d'adresse email
+        if sender_normalized and sender_domain:
+            rows = conn.execute("""
+                SELECT la.id AS audit_id, la.lead_id, la.lien_rapport,
+                       la.email_objet, la.statut_prospection,
+                       la.ceo_prenom, la.ceo_nom, la.copywriting_mode,
+                       lb.nom, lb.site_web, lb.email, la.email_valide
+                FROM leads_audites la
+                JOIN leads_bruts lb ON lb.id = la.lead_id
+                WHERE lb.source IN ('ads', 'tech', 'jobs', 'maps')
+                  AND la.statut_prospection = 'step1_envoye'
+                  AND (
+                    LOWER(la.email_valide) LIKE ?
+                    OR LOWER(lb.email) LIKE ?
+                  )
+            """, (f"%{sender_domain}%", f"%{sender_domain}%")).fetchall()
+
+            for candidate in rows:
+                if _is_email_variant(sender_email, candidate['email_valide']) or _is_email_variant(sender_email, candidate['email']):
+                    return dict(candidate)
+                if _is_email_variant(sender_normalized, candidate['email_valide']) or _is_email_variant(sender_normalized, candidate['email']):
+                    return dict(candidate)
+
+        # 3. Fallback domaine
         if sender_domain:
             row = conn.execute("""
                 SELECT la.id AS audit_id, la.lead_id, la.lien_rapport,
@@ -187,6 +239,12 @@ def _mark_as_replied(audit_id: int, lead_id: int):
             WHERE lead_id=? AND repondu=0
         """, (now, lead_id))
         conn.commit()
+
+    try:
+        from services.email_sequence_service import EmailSequenceService
+        EmailSequenceService().cancel_lead_sequences(lead_id)
+    except Exception as e:
+        logger.warning(f"imap_poller: impossible d'annuler les sequences pour lead {lead_id} — {e}")
 
     logger.info(f"imap_poller: lead {lead_id} → statut_prospection=repondu")
 

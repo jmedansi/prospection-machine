@@ -63,7 +63,7 @@ def create_app():
     from dashboard.routes import (
         leads_bp, audits_bp, emails_bp, campaigns_bp,
         stats_bp, review_bp, pages_bp, rapports_bp, health_bp,
-        sniper_bp, deploy_bp, templates_bp, webhooks_bp
+        sniper_bp, deploy_bp, templates_bp, webhooks_bp, lists_bp
     )
 
     app.register_blueprint(leads_bp)
@@ -79,6 +79,7 @@ def create_app():
     app.register_blueprint(deploy_bp)
     app.register_blueprint(templates_bp)
     app.register_blueprint(webhooks_bp)
+    app.register_blueprint(lists_bp)
     
     # Discovery of child modules (Phase 4.2)
     def _discover_modules():

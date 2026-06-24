@@ -100,6 +100,7 @@ def _commit_files(files: list, message: str) -> bool:
         return False
     
     success_count = 0
+    committed_paths = set()
     for file_info in files:
         path = file_info["path"]
         content = file_info["content"]
@@ -134,6 +135,7 @@ def _commit_files(files: list, message: str) -> bool:
                 if resp.status_code in [200, 201]:
                     logger.info(f"Successfully committed {path} to GitHub")
                     success_count += 1
+                    committed_paths.add(path)
                     committed = True
                     break
                 elif resp.status_code == 409:
@@ -163,7 +165,16 @@ def _commit_files(files: list, message: str) -> bool:
         if not committed:
             logger.error(f"Failed to commit {path} after {max_retries} attempts")
     
-    # Considérer le batch comme réussi si au moins la moitié des fichiers ont été commités
+    # Exiger qu'au moins un index.html ait été commité (sinon le rapport est inaccessible)
+    has_index = any(f["path"].endswith("/index.html") for f in files)
+    index_committed = has_index and any(
+        f["path"].endswith("/index.html") and f["path"] in committed_paths
+        for f in files
+    )
+    if has_index and not index_committed:
+        logger.error("Aucun index.html n'a été commité — batch considéré comme échoué")
+        return False
+    # Pour les batches sans index.html (reviews, etc.), garder la logique ancienne
     return success_count >= len(files) // 2
 
 

@@ -201,60 +201,106 @@ function _renderPanelForm(key) {
     return (forms[key] || (() => '<p>Formulaire non disponible</p>'))();
 }
 
+function _renderSectorSelect(prefix, targetKwInputId) {
+    const onchangeAttr = targetKwInputId ? `onchange="const sel=this.options[this.selectedIndex]; const kwIn=document.getElementById('${targetKwInputId}'); if(kwIn && sel.dataset.kw) { kwIn.value=sel.dataset.kw; }"` : "";
+    return `
+        <select id="sf-${prefix}-sector" ${onchangeAttr} style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; background:var(--surface); color:var(--ink)">
+            <option value="" data-kw="">— Choisir un secteur —</option>
+            <optgroup label="⚒ Artisans / BTP">
+                <option value="Plombier" data-kw="plombier">Plombier</option>
+                <option value="Électricien" data-kw="électricien">Électricien</option>
+                <option value="Menuisier" data-kw="menuisier">Menuisier</option>
+                <option value="Peintre" data-kw="peintre bâtiment">Peintre en bâtiment</option>
+                <option value="Maçon" data-kw="maçon">Maçon</option>
+                <option value="Couvreur" data-kw="couvreur">Couvreur</option>
+                <option value="Carreleur" data-kw="carreleur">Carreleur</option>
+                <option value="Chauffagiste" data-kw="chauffagiste">Chauffagiste</option>
+                <option value="Serrurier" data-kw="serrurier">Serrurier</option>
+                <option value="Architecte" data-kw="architecte">Architecte</option>
+                <option value="Paysagiste" data-kw="paysagiste">Paysagiste / Jardinier</option>
+                <option value="Climatisation" data-kw="climatisation installation">Climatisation / Froid</option>
+            </optgroup>
+            <optgroup label="🏥 Santé / Bien-être">
+                <option value="Kinésithérapeute" data-kw="kinésithérapeute">Kinésithérapeute</option>
+                <option value="Ostéopathe" data-kw="ostéopathe">Ostéopathe</option>
+                <option value="Naturopathe" data-kw="naturopathe">Naturopathe</option>
+                <option value="Psychologue" data-kw="psychologue">Psychologue</option>
+                <option value="Dentiste" data-kw="dentiste">Dentiste</option>
+                <option value="Infirmier" data-kw="infirmier libéral">Infirmier libéral</option>
+                <option value="Médecin" data-kw="médecin généraliste">Médecin généraliste</option>
+                <option value="Podologue" data-kw="podologue">Podologue</option>
+            </optgroup>
+            <optgroup label="💅 Beauté / Coiffure">
+                <option value="Coiffeur" data-kw="coiffeur">Coiffeur / Salon de coiffure</option>
+                <option value="Esthéticienne" data-kw="esthéticienne">Esthéticienne</option>
+                <option value="Massage" data-kw="salon massage">Salon de massage</option>
+                <option value="Onglerie" data-kw="onglerie nail art">Onglerie</option>
+                <option value="Barbier" data-kw="barbier">Barbier</option>
+            </optgroup>
+            <optgroup label="⚖️ Professions libérales">
+                <option value="Avocat" data-kw="avocat">Avocat</option>
+                <option value="Expert-comptable" data-kw="expert-comptable">Expert-comptable</option>
+                <option value="Notaire" data-kw="notaire">Notaire</option>
+                <option value="Huissier" data-kw="huissier de justice">Huissier de justice</option>
+                <option value="Conseiller financier" data-kw="conseiller financier">Conseiller financier</option>
+            </optgroup>
+            <optgroup label="📣 Services aux entreprises">
+                <option value="Agence communication" data-kw="agence communication">Agence de communication</option>
+                <option value="Agence immobilière" data-kw="agence immobilière">Agence immobilière</option>
+                <option value="Consultant" data-kw="consultant">Consultant</option>
+                <option value="Coach" data-kw="coach professionnel">Coach</option>
+                <option value="Formation" data-kw="centre de formation">Organisme de formation</option>
+                <option value="Traducteur" data-kw="traducteur interprète">Traducteur</option>
+                <option value="Comptable" data-kw="cabinet comptable">Cabinet comptable</option>
+            </optgroup>
+            <optgroup label="🚗 Auto / Transport">
+                <option value="Garagiste" data-kw="garage automobile">Garagiste</option>
+                <option value="Carrossier" data-kw="carrosserie auto">Carrossier</option>
+                <option value="Auto-école" data-kw="auto-école">Auto-école</option>
+                <option value="Déménageur" data-kw="déménageur">Déménageur</option>
+                <option value="Taxi" data-kw="taxi vtc">Taxi / VTC</option>
+            </optgroup>
+            <optgroup label="📸 Numérique / Créatif">
+                <option value="Photographe" data-kw="photographe">Photographe</option>
+                <option value="Vidéaste" data-kw="vidéaste">Vidéaste</option>
+                <option value="Graphiste" data-kw="graphiste">Graphiste</option>
+                <option value="Web designer" data-kw="web designer">Web designer</option>
+            </optgroup>
+            <optgroup label="🎓 Éducation / Sport">
+                <option value="Auto-école" data-kw="auto-école">Auto-école</option>
+                <option value="Soutien scolaire" data-kw="soutien scolaire">Soutien scolaire</option>
+                <option value="Salle de sport" data-kw="salle de sport fitness">Salle de sport / Fitness</option>
+                <option value="Coach sportif" data-kw="coach sportif">Coach sportif</option>
+                <option value="Yoga" data-kw="yoga pilates">Yoga / Pilates</option>
+                <option value="École de danse" data-kw="école de danse">École de danse</option>
+            </optgroup>
+            <optgroup label="🛒 Commerce local">
+                <option value="Fleuriste" data-kw="fleuriste">Fleuriste</option>
+                <option value="Bijouterie" data-kw="bijouterie">Bijouterie</option>
+                <option value="Boulangerie" data-kw="boulangerie pâtisserie">Boulangerie / Pâtisserie</option>
+                <option value="Traiteur" data-kw="traiteur">Traiteur</option>
+                <option value="Opticien" data-kw="opticien">Opticien</option>
+                <option value="Librairie" data-kw="librairie">Librairie</option>
+            </optgroup>
+            <option value="Autre" data-kw="">Autre (saisir manuellement)</option>
+        </select>
+    `;
+}
+
 function _formMaps() {
     return `
     <div class="src-form">
         <div class="src-form-row">
             <label>Secteur / Niche</label>
-            <select id="sf-maps-sector" onchange="document.getElementById('sf-maps-kw').value=this.options[this.selectedIndex].dataset.kw||''" style="width:100%">
-                <option value="" data-kw="">— Choisir —</option>
-                <optgroup label="⚒ Artisans / BTP">
-                    <option data-kw="plombier">Plombier</option>
-                    <option data-kw="électricien">Électricien</option>
-                    <option data-kw="menuisier">Menuisier</option>
-                    <option data-kw="maçon">Maçon</option>
-                    <option data-kw="couvreur">Couvreur</option>
-                    <option data-kw="peintre bâtiment">Peintre</option>
-                    <option data-kw="carreleur">Carreleur</option>
-                    <option data-kw="chauffagiste">Chauffagiste</option>
-                    <option data-kw="serrurier">Serrurier</option>
-                </optgroup>
-                <optgroup label="🏥 Santé / Bien-être">
-                    <option data-kw="kinésithérapeute">Kinésithérapeute</option>
-                    <option data-kw="ostéopathe">Ostéopathe</option>
-                    <option data-kw="dentiste">Dentiste</option>
-                    <option data-kw="médecin généraliste">Médecin généraliste</option>
-                </optgroup>
-                <optgroup label="💅 Beauté">
-                    <option data-kw="coiffeur">Coiffeur</option>
-                    <option data-kw="esthéticienne">Esthéticienne</option>
-                    <option data-kw="barbier">Barbier</option>
-                </optgroup>
-                <optgroup label="⚖️ Professions libérales">
-                    <option data-kw="avocat">Avocat</option>
-                    <option data-kw="expert-comptable">Expert-comptable</option>
-                    <option data-kw="notaire">Notaire</option>
-                </optgroup>
-                <optgroup label="🚗 Auto / Transport">
-                    <option data-kw="garage automobile">Garagiste</option>
-                    <option data-kw="carrosserie auto">Carrossier</option>
-                    <option data-kw="taxi vtc">Taxi / VTC</option>
-                </optgroup>
-                <optgroup label="🛒 Commerce">
-                    <option data-kw="boulangerie pâtisserie">Boulangerie</option>
-                    <option data-kw="fleuriste">Fleuriste</option>
-                    <option data-kw="opticien">Opticien</option>
-                </optgroup>
-                <option value="autre" data-kw="">Autre (saisir manuellement)</option>
-            </select>
+            ${_renderSectorSelect('maps', 'sf-maps-kw')}
         </div>
         <div class="src-form-row">
             <label>Mot-clé Google Maps</label>
-            <input id="sf-maps-kw" type="text" placeholder="plombier, avocat..." class="inp">
+            <input id="sf-maps-kw" type="text" placeholder="hôtel, restaurant, salon..." class="inp">
         </div>
         <div class="src-form-row">
             <label>Ville</label>
-            <input id="sf-maps-city" type="text" placeholder="Paris, Lyon, Marseille..." class="inp">
+            <input id="sf-maps-city" type="text" placeholder="Cotonou, Porto-Novo, Paris..." class="inp">
         </div>
         <div class="src-form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <div>
@@ -266,13 +312,37 @@ function _formMaps() {
                 <input id="sf-maps-min-emails" type="number" value="5" min="0" class="inp">
             </div>
         </div>
-        <div style="display:flex;gap:12px;margin-top:4px">
+        <div class="src-form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+                <label>Pays</label>
+                <select id="sf-maps-country" class="inp" onchange="_mapsCountryChange(this.value)">
+                    <option value="fr">🇫🇷 France</option>
+                    <option value="bj">🇧🇯 Bénin</option>
+                </select>
+            </div>
+            <div>
+                <label>Nb. passes max</label>
+                <input id="sf-maps-max-passes" type="number" value="30" min="5" max="100" class="inp">
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:4px;flex-wrap:wrap">
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
                 <input type="checkbox" id="sf-maps-multi" checked> Multi-zones
             </label>
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
-                <input type="checkbox" id="sf-maps-verify" checked> Vérifier emails
+                <input type="checkbox" id="sf-maps-require-contact" checked> Avec tél. ou email uniquement
             </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+                <input type="checkbox" id="sf-maps-variants" checked> Variantes LLM (mots-clés)
+            </label>
+        </div>
+        <div class="src-form-row" style="margin-top:8px">
+            <label>Filtrer par site web</label>
+            <select id="sf-maps-site-filter" class="inp">
+                <option value="all">Tous (avec et sans site)</option>
+                <option value="without_site" selected>Sans site uniquement</option>
+                <option value="with_site">Avec site uniquement</option>
+            </select>
         </div>
         <div id="sf-maps-log" class="src-log" style="display:none"></div>
         <div class="src-form-actions">
@@ -284,6 +354,10 @@ function _formMaps() {
 function _formAds() {
     return `
     <div class="src-form">
+        <div class="src-form-row">
+            <label>Secteur / Niche</label>
+            ${_renderSectorSelect('ads', 'sf-ads-kw')}
+        </div>
         <div class="src-form-row">
             <label>Mots-clés (un par ligne ou séparés par virgule)</label>
             <textarea id="sf-ads-kw" rows="4" class="inp" placeholder="avocat paris\nplombier lyon\nclimatisation installation"></textarea>
@@ -340,6 +414,10 @@ function _formFbAds() {
     return `
     <div class="src-form">
         <div class="src-form-row">
+            <label>Secteur / Niche</label>
+            ${_renderSectorSelect('fb_ads', 'sf-fb_ads-terms')}
+        </div>
+        <div class="src-form-row">
             <label>Termes de recherche <span style="font-weight:400;color:var(--ink3)">(un par ligne)</span></label>
             <textarea id="sf-fb_ads-terms" rows="4" class="inp"
                 placeholder="agence immobilière\ncoach sportif\nplombier paris"></textarea>
@@ -380,6 +458,10 @@ function _formTech() {
     return `
     <div class="src-form">
         <div class="src-form-row">
+            <label>Secteur / Niche</label>
+            ${_renderSectorSelect('tech', 'sf-tech-kw')}
+        </div>
+        <div class="src-form-row">
             <label>Mots-clés E-commerce (séparés par virgule, vide = défaut)</label>
             <textarea id="sf-tech-kw" rows="3" class="inp" placeholder="boutique vêtements, bijoux fantaisie..."></textarea>
         </div>
@@ -402,6 +484,10 @@ function _formTech() {
 function _formJobs() {
     return `
     <div class="src-form">
+        <div class="src-form-row">
+            <label>Secteur / Niche</label>
+            ${_renderSectorSelect('jobs', 'sf-jobs-kw')}
+        </div>
         <div class="src-form-row">
             <label>Mots-clés RH (optionnel — vide = 12 par défaut)</label>
             <textarea id="sf-jobs-kw" rows="3" class="inp" placeholder="développeur web\nresponsable marketing"></textarea>
@@ -475,16 +561,21 @@ async function _launchMaps() {
     const sector  = document.getElementById('sf-maps-sector')?.value || '';
     const limit   = parseInt(document.getElementById('sf-maps-limit')?.value) || 20;
     const minMails= parseInt(document.getElementById('sf-maps-min-emails')?.value) || 0;
+    const country = document.getElementById('sf-maps-country')?.value || 'fr';
+    const requireContact = document.getElementById('sf-maps-require-contact')?.checked || false;
+    const keywordVariants = document.getElementById('sf-maps-variants')?.checked || false;
+    const multiZone = document.getElementById('sf-maps-multi')?.checked || false;
+    const siteFilter = document.getElementById('sf-maps-site-filter')?.value || 'all';
     if (!kw) { _srcLog('maps', '⚠ Mot-clé requis'); _setSourceRunning('maps', false); return; }
 
     const r = await fetch('/api/scraper/launch', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ keyword: kw, city, sector, limit, min_emails: minMails }),
+        body:    JSON.stringify({ keyword: kw, city, sector, limit, min_emails: minMails, country, require_contact: requireContact, keyword_variants: keywordVariants, multi_zone: multiZone, site_filter: siteFilter }),
     });
     const d = await r.json();
     if (d.error) { _srcLog('maps', `✗ ${d.error}`); _setSourceRunning('maps', false); return; }
-    _srcLog('maps', `✓ Campagne #${d.campaign_id} lancée — ${kw} · ${city}`);
+    _srcLog('maps', `✓ Campagne #${d.campaign_id} lancée — ${kw} · ${city} · ${country === 'bj' ? 'Bénin' : 'France'}`);
     _srcPollUntilDone('maps', '/api/scraper/status');
 }
 
@@ -495,6 +586,7 @@ async function _launchAds() {
     const city       = document.getElementById('sf-ads-city')?.value || '';
     const rotation   = document.getElementById('sf-ads-rotation')?.checked || false;
     const minLeads   = rotation ? (parseInt(document.getElementById('sf-ads-min-leads')?.value) || maxPer) : 0;
+    const secteur    = document.getElementById('sf-ads-sector')?.value || '';
     let   keywords   = [];
 
     if (useBatch) {
@@ -507,7 +599,7 @@ async function _launchAds() {
     }
     if (!keywords.length) { _srcLog('ads', '⚠ Entrer au moins un mot-clé'); _setSourceRunning('ads', false); return; }
 
-    const body = { keywords, country, max_per_kw: maxPer, min_leads: minLeads };
+    const body = { keywords, country, max_per_kw: maxPer, min_leads: minLeads, secteur };
     if (city.trim()) body.city = city.trim();
 
     if (rotation) {
@@ -530,6 +622,7 @@ async function _launchFbAds() {
     const country = document.getElementById('sf-fb_ads-country')?.value || 'FR';
     const city    = document.getElementById('sf-fb_ads-city')?.value?.trim() || '';
     const pages   = parseInt(document.getElementById('sf-fb_ads-pages')?.value) || 3;
+    const secteur = document.getElementById('sf-fb_ads-sector')?.value || '';
 
     if (!terms.length) {
         _srcLog('fb_ads', '⚠ Entrer au moins un terme de recherche');
@@ -545,7 +638,7 @@ async function _launchFbAds() {
     const r = await fetch('/api/sniper/fb-ads-scan', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ search_terms, country, max_pages: pages }),
+        body:    JSON.stringify({ search_terms, country, max_pages: pages, secteur }),
     });
     const d = await r.json();
     if (d.error) {
@@ -561,7 +654,8 @@ async function _launchTech() {
     const rawKw   = document.getElementById('sf-tech-kw')?.value || '';
     const city    = document.getElementById('sf-tech-city')?.value || '';
     const maxL    = parseInt(document.getElementById('sf-tech-max')?.value) || 50;
-    const body    = { max_leads: maxL };
+    const secteur = document.getElementById('sf-tech-sector')?.value || '';
+    const body    = { max_leads: maxL, secteur };
     
     if (rawKw.trim()) {
         body.keywords = rawKw.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
@@ -585,7 +679,8 @@ async function _launchJobs() {
     const city  = document.getElementById('sf-jobs-city')?.value || '';
     const days  = parseInt(document.getElementById('sf-jobs-days')?.value) || 7;
     const maxL  = parseInt(document.getElementById('sf-jobs-max')?.value) || 50;
-    const body  = { max_leads: maxL, days_back: days };
+    const secteur = document.getElementById('sf-jobs-sector')?.value || '';
+    const body  = { max_leads: maxL, days_back: days, secteur };
     
     if (raw.trim()) body.keywords = raw.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
     if (city.trim()) body.city = city.trim();

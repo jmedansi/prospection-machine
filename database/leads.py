@@ -73,7 +73,7 @@ def insert_lead(lead: dict) -> int | None:
                 if lead.get('email') and not existing['email']:
                     updates['email'] = lead['email']
                     updates['email_valide'] = lead.get('statut_email', lead.get('email_valide', ''))
-                if lead.get('site_web') and not existing['site_web']:
+                if lead.get('site_web') and (not existing['site_web'] or existing['site_web'] == ''):
                     updates['site_web'] = lead['site_web']
                 if tel and not existing['telephone']:
                     updates['telephone'] = tel
@@ -81,6 +81,15 @@ def insert_lead(lead: dict) -> int | None:
                 new_avis = lead.get('nb_avis') or 0
                 if new_avis and (not existing['nb_avis'] or int(new_avis) > int(existing['nb_avis'] or 0)):
                     updates['nb_avis'] = new_avis
+                
+                # Mise à jour du logo si présent
+                if lead.get('logo_url') and not existing.get('logo_url'):
+                    updates['logo_url'] = lead['logo_url']
+                
+                # Mise à jour du pays si nouveau
+                new_pays = lead.get('pays')
+                if new_pays and not existing.get('pays'):
+                    updates['pays'] = new_pays
                 
                 if updates:
                     set_clause = ', '.join(f"{k}=?" for k in updates)
@@ -96,15 +105,15 @@ def insert_lead(lead: dict) -> int | None:
             INSERT INTO leads_bruts
             (campaign_id, nom, adresse, site_web, telephone, email,
              email_valide, rating, nb_avis, category,
-             mot_cle, ville, lien_maps,
+             mot_cle, ville, lien_maps, logo_url,
              source, tag_urgence, niveau_urgence, donnees_audit,
-             secteur)
+             secteur, pays)
             VALUES
             (:campaign_id, :nom, :adresse, :site_web, :telephone, :email,
              :email_valide, :rating, :nb_avis, :category,
-             :mot_cle, :ville, :lien_maps,
+             :mot_cle, :ville, :lien_maps, :logo_url,
              :source, :tag_urgence, :niveau_urgence, :donnees_audit,
-             :secteur)
+             :secteur, :pays)
         """, {
             'campaign_id':    lead.get('campaign_id'),
             'nom':            nom,
@@ -119,11 +128,13 @@ def insert_lead(lead: dict) -> int | None:
             'mot_cle':        lead.get('mot_cle', ''),
             'ville':          ville,
             'lien_maps':      lead.get('lien_maps', ''),
+            'logo_url':       lead.get('logo_url', ''),
             'source':         lead.get('source', 'maps'),
             'tag_urgence':    lead.get('tag_urgence'),
             'niveau_urgence': int(lead.get('niveau_urgence') or 0),
             'donnees_audit':  lead.get('donnees_audit'),
             'secteur':        lead.get('secteur'),
+            'pays':           lead.get('pays', 'fr'),
         })
         conn.commit()
         return cur.lastrowid

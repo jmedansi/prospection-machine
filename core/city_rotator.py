@@ -59,6 +59,12 @@ _CITIES: dict = {
         "Luxembourg", "Esch-sur-Alzette", "Differdange", "Dudelange",
         "Pétange", "Sanem", "Hesperange", "Bertrange",
     ],
+    "bj": [
+        "Cotonou", "Porto-Novo", "Parakou", "Djougou", "Bohicon",
+        "Abomey", "Natitingou", "Lokossa", "Comè", "Ouidah",
+        "Sèmè-Kpodji", "Abomey-Calavi", "Allada", "Kétou", "Pobè",
+        "Sakété", "Dassa-Zoumè", "Savalou", "Bassila", "Glo-Djigbé",
+    ],
 }
 
 

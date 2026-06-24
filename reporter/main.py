@@ -4,14 +4,11 @@ import sys
 import shutil
 import asyncio
 import logging
-import json
-import argparse
-import base64
 from datetime import datetime
 from typing import Dict, Any, List
 from types import SimpleNamespace
 from jinja2 import Environment, FileSystemLoader
-from core.browser import cdp_tab_headless as cdp_headless, cdp_tab_headless_async as cdp_headless_async
+from core.browser import cdp_tab_headless_async as cdp_headless_async
 
 # Configuration des imports pour trouver config_manager.py au root
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -471,6 +468,10 @@ async def generate_and_publish_report(audit_data: Dict[str, Any]) -> str:
     
     template_used = audit_data.get("template_used", "audit")
     
+    # reports_dir doit être défini avant la chaîne if/elif
+    reports_dir = os.path.join(os.path.dirname(__file__), "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    
     # Mapping spécifique selon le template
     if template_used == "reputation" or audit_data.get("profil") == "C":
         # Template utilisateur : rapport-profil-c-gmb.html
@@ -501,9 +502,43 @@ async def generate_and_publish_report(audit_data: Dict[str, Any]) -> str:
             "LIEN_CALENDLY": "https://calendly.com/jmedansi/15min"
         }
     elif template_used == "maquette" or not enriched.get("has_site"):
-        # Maquette = uniquement si pas de site (sinon c'est une erreur de template_used)
-        template = env.get_template("rapport-profil-a-maquette.html")
-        mapping_data = enriched
+        # ===== PROFIL A : le HTML mockup est déjà sauvegardé par mockup_generator.py =====
+        # On ne régénère pas — on utilise le fichier existant dans reporter/reports/{slug}/
+        rapport_slug = audit_data.get("rapport_slug") or generate_slug(nom)
+        preview_dir = os.path.join(reports_dir, rapport_slug)
+        local_html_path = os.path.join(preview_dir, "index.html")
+
+        if os.path.exists(local_html_path):
+            with open(local_html_path, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            logger.info(f"[REPORTER] Profil A : HTML mockup trouvé dans {preview_dir}")
+        else:
+            # Fallback : générer le rapport wrapper si le mockup n'existe pas
+            logger.warning(f"[REPORTER] Profil A : pas de mockup dans {preview_dir}, génération du wrapper")
+            template = env.get_template("rapport-profil-a-maquette.html")
+            html_content = template.render(**enriched)
+
+        # Sauvegarder en DB et retourner directement
+        lead_id = audit_data.get('lead_id') or audit_data.get('id')
+        local_url = f"local://{rapport_slug}/"
+
+        desktop_path = audit_data.get("screenshot_desktop", "") or enriched.get("screenshot_desktop", "")
+        mobile_path = audit_data.get("screenshot_mobile", "") or enriched.get("screenshot_mobile", "")
+
+        if lead_id:
+            try:
+                from database.db_manager import get_conn
+                with get_conn() as conn:
+                    conn.execute(
+                        "UPDATE leads_audites SET rapport_html = ?, screenshot_desktop = ?, screenshot_mobile = ?, lien_rapport = ? WHERE lead_id = ?",
+                        (html_content, desktop_path, mobile_path, local_url, lead_id)
+                    )
+                    conn.commit()
+                    logger.info(f"[REPORTER] Profil A : DB mise à jour avec {local_url}")
+            except Exception as e:
+                logger.warning(f"Impossible de sauvegarder en base: {e}")
+
+        return local_url
     elif template_used == "seo":
         # SEO - reutilise le template technique avec arguments SEO
         template = env.get_template("rapport-profil-b-technique.html")
@@ -524,10 +559,6 @@ async def generate_and_publish_report(audit_data: Dict[str, Any]) -> str:
     # Récupérer les screenshots depuis la base ou le générateur de maquette
     desktop_path = audit_data.get("screenshot_desktop", "") or enriched.get("screenshot_desktop", "")
     mobile_path = audit_data.get("screenshot_mobile", "") or enriched.get("screenshot_mobile", "")
-    
-    # Définir reports_dir ici pour qu'il soit toujours dans le scope
-    reports_dir = os.path.join(os.path.dirname(__file__), "reports")
-    os.makedirs(reports_dir, exist_ok=True)
     
     if not desktop_path and site_url and enriched.get("has_site"):
         try:
@@ -637,109 +668,16 @@ async def generate_and_publish_report(audit_data: Dict[str, Any]) -> str:
             if local_path and os.path.exists(local_path):
                 used_files.add(os.path.basename(local_path))
         used_files.add('index.html')
-        
+
         for f in os.listdir(preview_dir):
             if f not in used_files:
                 try:
                     os.remove(os.path.join(preview_dir, f))
                 except:
                     pass
-    
+
     return local_url
 
-
-# --- GÉNÉRATION PDF ---
-async def capture_screenshot(url: str, output_path: str):
-    try:
-        async with cdp_headless_async(viewport={'width': 1280, 'height': 720}) as page:
-            await page.goto(url, timeout=30000, wait_until="networkidle")
-            await page.screenshot(path=output_path)
-            return True
-    except:
-        return False
-
-async def generate_pdf(audit_data: Dict[str, Any], output_pdf_path: str):
-    enriched = enrich_data(audit_data)
-    template_dir = os.path.join(os.path.dirname(__file__), "templates")
-    env = Environment(loader=FileSystemLoader(template_dir))
-    
-    # Choix du template selon le profil
-    template_name = "reputation_template.html" if audit_data.get("template_used") == "reputation" else "audit_template.html"
-    template = env.get_template(template_name)
-    
-    # Screenshot
-    img_tag = ""
-    if enriched["has_site"]:
-        site_url = audit_data.get("site_web")
-        screenshot_path = os.path.join(os.path.dirname(__file__), "reports", "temp_site.png")
-        os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
-        if await capture_screenshot(site_url, screenshot_path):
-            with open(screenshot_path, "rb") as f:
-                img_tag = f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
-            if os.path.exists(screenshot_path): os.remove(screenshot_path)
-    
-    enriched["screenshot_path"] = img_tag
-    html_content = template.render(**enriched)
-    
-    async with cdp_headless_async() as page:
-        await page.set_content(html_content)
-        await asyncio.sleep(1)
-        await page.pdf(path=output_pdf_path, format="A4", print_background=True)
-    return True
-
-async def main_execute(limit=None):
-    sheet = get_sheet("Leads")
-    all_rows = sheet.get_all_values()
-    if not all_rows: return
-    headers = all_rows[0]
-    processed = 0
-    for i, row in enumerate(all_rows[1:]):
-        row_num = i + 2
-        data = dict(zip(headers, row))
-        if data.get("Service Proposé") and not data.get("Lien Rapport PDF"):
-            print(f"   [Agent Reporter] Génération PDF pour {data.get('Nom')}...")
-            try: full_data = json.loads(data.get("JSON Complet", "{}"))
-            except: full_data = data
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            pdf_filename = f"Audit_{data.get('Nom').replace(' ', '_')}_{timestamp}.pdf"
-            pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "reports", pdf_filename))
-            os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
-            
-            # Détection Profil A (sans site)
-            has_site = full_data.get("site_web") not in [None, "", "sans_site", "SANS SITE"]
-            
-            if not has_site:
-                print(f"   [Agent Reporter] 🎨 Profil A (sans site) : Génération de la Maquette...")
-                from synthetiseur.mockup_generator import generate_mockup
-                
-                if 'id' not in full_data: full_data['id'] = row_num
-                full_data['nom'] = full_data.get('nom') or data.get('Nom', '')
-                full_data['ville'] = full_data.get('ville') or data.get('Ville', '')
-                full_data['category'] = full_data.get('category') or data.get('Mot Cible', data.get('Catégorie', ''))
-                
-                mockup = generate_mockup(full_data)
-                if mockup["success"]:
-                    print(f"   [OK] Maquette générée")
-                    # Sauvegarder les chemins en base
-                    if full_data.get('id'):
-                        try:
-                            from database.db_manager import get_conn
-                            with get_conn() as db_conn:
-                                db_conn.execute("""
-                                    UPDATE leads_audites 
-                                    SET screenshot_desktop = ?, screenshot_mobile = ?
-                                    WHERE lead_id = ?
-                                """, (mockup.get("screenshot_desktop", ""), mockup.get("screenshot_mobile", ""), full_data.get('id')))
-                                db_conn.commit()
-                        except Exception as e:
-                            logger.warning(f"Impossible de sauvegarder screenshots: {e}")
-                else:
-                    print(f"   [ERREUR] Échec de la maquette: {mockup.get('erreur')}")
-            else:
-                print(f"   [Agent Reporter] Rapport HTML publié (PDF désactivé)")
-                
-            processed += 1
-            if limit and processed >= limit: break
 
 # --- REPUBLICATION DEPUIS HTML STOCKE ---
 def republish_from_db(lead_id: int = None, nom: str = None) -> str:
@@ -876,8 +814,3 @@ def verify_and_republish(lead_id: int = None, nom: str = None) -> str:
         print(f"[ERREUR] Aucun HTML stocke pour republier")
         return None
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=None)
-    args = parser.parse_args()
-    asyncio.run(main_execute(args.limit))

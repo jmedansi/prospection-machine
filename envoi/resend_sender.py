@@ -9,6 +9,7 @@ Logs dans errors.log.
 import os
 import logging
 import requests
+import sqlite3
 from typing import Dict, Any, Optional
 
 from core.config import ensure_env
@@ -32,15 +33,19 @@ def get_next_resend_account():
     """Récupère le prochain compte disponible avec du quota."""
     from database.db_manager import get_conn
     with get_conn() as conn:
-        conn.execute("UPDATE resend_accounts SET daily_usage = 0, last_reset = date('now') WHERE last_reset != date('now')")
-        conn.commit()
-        
-        acc = conn.execute("""
-            SELECT * FROM resend_accounts 
-            WHERE actif = 1 AND daily_usage < 100 
-            ORDER BY daily_usage ASC LIMIT 1
-        """).fetchone()
-        return dict(acc) if acc else None
+        try:
+            conn.execute("UPDATE resend_accounts SET daily_usage = 0, last_reset = date('now') WHERE last_reset != date('now')")
+            conn.commit()
+            acc = conn.execute("""
+                SELECT * FROM resend_accounts 
+                WHERE actif = 1 AND daily_usage < 100 
+                ORDER BY daily_usage ASC LIMIT 1
+            """).fetchone()
+            return dict(acc) if acc else None
+        except sqlite3.OperationalError as exc:
+            if 'no such table: resend_accounts' in str(exc):
+                return None
+            raise
 
 
 def send_prospecting_email(
@@ -204,6 +209,8 @@ def schedule_email_batch(lead_ids: list, scheduled_at) -> list:
                   AND la.approuve = 1
                   AND la.email_corps IS NOT NULL AND la.email_corps != ''
             """, (lead_id,)).fetchone()
+            if row:
+                row = dict(row)
 
             if not row or not row['email'] or not row['email_corps']:
                 continue
@@ -233,14 +240,25 @@ def schedule_email_batch(lead_ids: list, scheduled_at) -> list:
                 msg_id = r.json().get("id", "")
                 if msg_id:
                     message_ids.append(msg_id)
-                    conn.execute("""
+                    cur = conn.execute("""
                         INSERT INTO emails_envoyes
                             (lead_id, message_id_resend, email_objet, email_corps,
                              lien_rapport, email_destinataire, statut_envoi, template_variant)
                         VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?)
                     """, (lead_id, msg_id, row['email_objet'], row['email_corps'],
-                          row['lien_rapport'], row['email'], row.get('template_variant', 'v1')))
+                          row['lien_rapport'], row['email'], row.get('template_variant') or 'v1'))
+                    record_id = cur.lastrowid
                     conn.execute("UPDATE leads_bruts SET statut='scheduled' WHERE id=?", (lead_id,))
+                    
+                    la_row = conn.execute("SELECT id FROM leads_audites WHERE lead_id=?", (lead_id,)).fetchone()
+                    if la_row and record_id:
+                        try:
+                            from services.email_sequence_service import EmailSequenceService
+                            # date_envoi est null pour les scheduled, mais on planifie quand même
+                            EmailSequenceService().plan_sequences_for_lead(la_row[0], record_id)
+                        except Exception as e:
+                            logger.error(f"Erreur plan_sequences_for_lead (batch): {e}")
+                            
                     if current_account_id:
                         conn.execute("UPDATE resend_accounts SET daily_usage = daily_usage + 1 WHERE id = ?", (current_account_id,))
             except Exception as e:
@@ -496,6 +514,28 @@ def check_bounces() -> dict:
     return stats
 
 
+def get_message_status(message_id: str) -> dict:
+    """Récupère le statut d'un email Resend via son message_id."""
+    from config_manager import get_config
+
+    config = get_config()
+    resend_key = config.get("resend_key")
+    if not resend_key:
+        return {"success": False, "error": "RESEND_API_KEY manquante"}
+
+    headers = {"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"}
+    try:
+        r = requests.get(f"https://api.resend.com/emails/{message_id}", headers=headers, timeout=15)
+        if r.status_code == 401:
+            return {"success": False, "error": "Clé API Resend sans permission lecture"}
+        r.raise_for_status()
+        data = r.json()
+        return {"success": True, "data": data}
+    except Exception as e:
+        logger.error(f"get_message_status {message_id}: {e}")
+        return {"success": False, "error": str(e)}
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -503,6 +543,7 @@ if __name__ == "__main__":
     parser.add_argument("--lead-id", type=int, help="ID du lead dans leads_bruts")
     parser.add_argument("--dry-run", action="store_true", help="Simulation sans envoi réel")
     parser.add_argument("--sync-tracking", action="store_true", help="Sync le tracking depuis Resend")
+    parser.add_argument("--verify-message", help="Vérifie le statut Resend d'un message_id")
     args = parser.parse_args()
 
     if args.sync_tracking:
@@ -510,6 +551,14 @@ if __name__ == "__main__":
         if "error" in result:
             print(f"[ERROR] {result['error']}")
             sys.exit(1)
+        sys.exit(0)
+
+    if args.verify_message:
+        result = get_message_status(args.verify_message)
+        if not result.get("success"):
+            print(f"[ERROR] {result.get('error')}")
+            sys.exit(1)
+        print(result["data"])
         sys.exit(0)
 
     if not args.lead_id:
@@ -547,17 +596,27 @@ if __name__ == "__main__":
     if result['success']:
         if not args.dry_run:
             with get_conn() as conn:
-                conn.execute("""
+                cur = conn.execute("""
                     INSERT INTO emails_envoyes
                         (lead_id, message_id_resend, email_objet, email_corps, lien_rapport, template_variant)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, (args.lead_id, result.get('message_id'),
                       d['email_objet'], d['email_corps'], d.get('lien_rapport'), d.get('template_variant', 'v1')))
+                record_id = cur.lastrowid
                 conn.execute(
                     "UPDATE leads_bruts SET statut='envoye' WHERE id=?",
                     (args.lead_id,)
                 )
+                la_row = conn.execute("SELECT id FROM leads_audites WHERE lead_id=?", (args.lead_id,)).fetchone()
+                la_id = la_row[0] if la_row else None
                 conn.commit()
+                
+            if la_id and record_id:
+                try:
+                    from services.email_sequence_service import EmailSequenceService
+                    EmailSequenceService().plan_sequences_for_lead(la_id, record_id)
+                except Exception as e:
+                    print(f"Erreur plan_sequences_for_lead: {e}")
         print(f"[OK] Email envoyé à {d['email']}")
         sys.exit(0)
     else:

@@ -86,9 +86,7 @@ logger = logging.getLogger(__name__)
 
 # Import des sous-agents techniques
 from auditeur.agents.gmb_extractor import collect_gmb
-from auditeur.agents.web_analyzer import run_web_analysis
 from synthetiseur.mockup_generator import generate_mockup
-from synthetiseur.vercel_publisher import publish_rapport
 
 
 # ===========================================================
@@ -122,7 +120,16 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
     if limit:
         leads = leads[:limit]
 
-    print(f"   [OK] {len(leads)} leads à auditer depuis SQLite.")
+    # Ne traiter que les leads sans site web.
+    leads = [
+        lead for lead in leads
+        if not (lead.get('site_web') or '').strip().lower().startswith(('http://', 'https://'))
+    ]
+    if not leads:
+        print("   [!] Aucun lead sans site web à auditer.")
+        return
+
+    print(f"   [OK] {len(leads)} leads sans site à auditer depuis SQLite.")
     processed = 0
 
     for lead in leads:
@@ -151,236 +158,66 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
 
             audit_result.update(gmb_data)
 
-            # 1. Analyse Web Technique avec retry
-            max_retries = 3
+            # 1. Audit no-site uniquement
             audit_success = False
-
-            if not skip_analysis:
-                if not (site_url and site_url.startswith(('http://', 'https://'))):
-                    # Pas de site = Profil A (pas de retry nécessaire)
-                    print(f"   [!] Pas de site web pour {nom} - Profil A")
-                    audit_result['mobile_score'] = 0
-                    audit_result['score_seo'] = 0
-                    audit_result['score_urgence'] = 8.0
-                    audit_success = True
-                else:
-                    for attempt in range(1, max_retries + 1):
-                        print(f"   [Orchestrateur] Lancement de l'audit technique (tentative {attempt}/{max_retries})...")
-                        try:
-                            # Création du dossier temporaire pour les captures d'écran si nécessaire
-                            report_dir = None
-                            if lead.get('id'):
-                                report_dir = f"data/reports/{lead['id']}"
-                                os.makedirs(report_dir, exist_ok=True)
-                                print(f"   [Orchestrateur] Dossier de rapport : {report_dir}")
-
-                            web_results = safe_run_async(run_web_analysis(site_url, report_dir=report_dir))
-                            audit_result.update(web_results)
-
-                            # Détection rapide des erreurs réseau/connexion critiques
-                            perf_err = audit_result.get('mobile_performance_error') or audit_result.get('desktop_performance_error')
-                            if perf_err:
-                                s_err = str(perf_err).lower()
-                                if any(k in s_err for k in ('connect', 'dns', 'refused', 'reset', 'err_connection', 'connectivity')):
-                                    print("   [Orchestrateur] [CRITICAL] Site inaccessible détecté -> nettoyage navigateurs et passage au lead suivant.")
-                                    logger.warning(f"Site inaccessible détecté pour lead {lead_id} ({site_url}): {perf_err}")
-                                    try:
-                                        close_all_browsers_sync()
-                                    except Exception as e_close:
-                                        logger.warning(f"Erreur close_all_browsers_sync après détection inaccessible: {e_close}")
-                                    # Marquer comme échec et sortir des tentatives
-                                    audit_result['audit_failed'] = True
-                                    audit_result['mobile_score'] = 0
-                                    audit_result['score_seo'] = 0
-                                    audit_result['score_urgence'] = 0
-                                    break
-
-                            # Vérification des données essentielles
-                            mobile_score = audit_result.get('mobile_score')
-                            performance_error = audit_result.get('mobile_performance_error')
-                            
-                            if mobile_score is not None and mobile_score > 0 and not performance_error:
-                                print(f"   [Orchestrateur] [OK] Audit technique réussi (Score Mobile: {mobile_score})")
-                                audit_success = True
-                                break
-                            else:
-                                if performance_error:
-                                    print(f"   [Orchestrateur] [WARN] Échec performance détecté : {performance_error}")
-                                else:
-                                    print(f"   [Orchestrateur] [WARN] Données incomplètes (tentative {attempt})")
-
-                        except Exception as e:
-                            logger.error(f"Erreur web analyzer pour {nom} (tentative {attempt}): {e}")
-                            print(f"   [Orchestrateur] [ERROR] ÉCHEC critique : {e}")
-
-                        if attempt < max_retries:
-                            print(f"   [Orchestrateur] Pause 3s avant nouvelle tentative...")
-                            time.sleep(3)
-            
-            # Si audit échoué après les tentatives — utiliser données partielles si disponibles
-            if not audit_success and site_url:
-                performance_error = audit_result.get('mobile_performance_error')
-                partial_score = audit_result.get('mobile_score') or audit_result.get('desktop_score') or 0
-                seo_partial = audit_result.get('has_meta_description') is not None or audit_result.get('has_https') is not None
-                if performance_error:
-                    print(f"   [ERREUR] Analyse technique échouée après {max_retries} tentatives : {performance_error}")
-                    audit_result['mobile_score'] = 0
-                    audit_result['score_seo'] = 0
-                    audit_result['score_urgence'] = 0
-                    audit_result['audit_failed'] = True
-                elif partial_score > 0 or seo_partial:
-                    # Don't use a score of 0 if failed, mark as partial
-                    print(f"   [PARTIEL] Données partielles disponibles (score={partial_score}) — audit sauvegardé en mode dégradé")
-                    audit_success = True
-                    audit_result['audit_partial'] = True
-                    if not audit_result.get('mobile_score'):
-                        audit_result['mobile_score'] = partial_score
-                else:
-                    print(f"   [ERREUR] Échec de l'analyse après {max_retries} tentatives — aucune donnée exploitable")
-                    audit_result['mobile_score'] = 0
-                    audit_result['score_seo'] = 0
-                    audit_result['score_urgence'] = 0
-                    audit_result['audit_failed'] = True
-
-            # Calcul des scores agrégés (si analyse réussie)
-            if audit_success and site_url:
-                mobile_score = audit_result.get('mobile_score', 0)
-                seo_flags = [
-                    bool(audit_result.get('has_https')),
-                    bool(audit_result.get('has_meta_description')),
-                    (audit_result.get('h1_count') or 0) > 0,
-                    bool(audit_result.get('has_schema')),
-                    bool(audit_result.get('has_contact_button')),
-                ]
-                score_seo = round(sum(seo_flags) / len(seo_flags) * 100)
-                score_urgence = _calculer_score_urgence(mobile_score, score_seo)
-
-                audit_result['score_performance'] = int(mobile_score)
-                audit_result['score_seo']         = score_seo
-                audit_result['score_urgence']      = score_urgence
-
-                print(f"   [OK] Performance: {mobile_score} | SEO: {score_seo} | Urgence: {score_urgence}/10")
+            if site_url and site_url.strip().lower().startswith(('http://', 'https://')):
+                print(f"   [SKIP] Lead avec site web détecté : {site_url} - traitement no-site uniquement.")
+                audit_result['audit_failed'] = True
+                audit_result['lien_rapport'] = None
+                audit_result['template_used'] = 'ignored'
+            else:
+                print(f"   [OK] Pas de site web pour {nom} - Profil A")
+                audit_result['mobile_score'] = 0
+                audit_result['score_seo'] = 0
+                audit_result['score_urgence'] = 8.0
+                audit_success = True
             
             # Déterminer le profil de l'entreprise
             # Priorité: audit_result (GMB extractor) > lead (scraper)
             rating = audit_result.get('rating') or lead.get('rating', 0) or 0
             reviews = audit_result.get('nb_avis') or lead.get('nb_avis', 0) or 0
-            m_score = audit_result.get('mobile_score', 0) or 0
-            lcp_ms = audit_result.get('lcp_ms', 0) or 0
-            has_meta = audit_result.get('has_meta_description', False)
-            has_schema = audit_result.get('has_schema', False)
-            has_robots = audit_result.get('has_robots', False)
-            has_sitemap = audit_result.get('has_sitemap', False)
-            
-            # Logique des profils (ordre de priorite):
-            # 1. Pas de site -> Maquette (A)
-            # 2. Site lent (m_score < 60 OU lcp >= 3000) -> Audit technique (B)
-            # 3. Site OK mais SEO incomplet (!has_meta OR !has_schema OR !has_robots OR !has_sitemap) -> SEO (D)
-            # 4. GMB mediochre (rating < 4.5 OU reviews < 50) -> Reputation (C)
-            # 5. Tout OK -> Ignored
-            
+
             # Verifier si l'audit a echoue
             if audit_result.get('audit_failed', False):
-                print(f"   [ERREUR] Audit echoue apres {max_retries} tentatives - pas de rapport genere")
+                print(f"   [ERREUR] Audit échoué - pas de rapport généré")
                 audit_result['lien_rapport'] = None
                 audit_result['template_used'] = 'failed'
-                
-            elif not site_url:
+
+            elif not site_url or not site_url.strip():
                 # ===== PROFIL A (pas de site) =====
                 print(f"   [Agent Reporter] Création du rapport HTML Profil A (maquette)...")
                 mockup_result = generate_mockup(lead)
                 audit_result.update(mockup_result)
                 audit_result['template_used'] = 'maquette'
+                lien_rapport = None
                 try:
                     from reporter.main import generate_and_publish_report
                     lien_rapport = safe_run_async(generate_and_publish_report(audit_result))
                     audit_result['lien_rapport'] = lien_rapport
-                    print(f"   [OK] Rapport Profil A (HTML) publié: {lien_rapport}")
+                    print(f"   [OK] Rapport Profil A (HTML) généré: {lien_rapport}")
                 except Exception as e:
                     logger.error(f"Erreur HTML pour {nom}: {e}")
                     print(f"   [ERREUR] HTML: {e}")
-            
-            elif m_score < 60 or lcp_ms >= 3000:
-                # ===== AUDIT TECHNIQUE (site avec problemes de performance) =====
-                print(f"   [Agent Reporter] Generation rapport HTML Technique... (score={m_score}, lcp={lcp_ms}ms)")
-                audit_result['template_used'] = 'audit'
-                audit_result['rating'] = rating
-                audit_result['reviews_count'] = reviews
-                audit_result['category'] = lead.get('category', lead.get('secteur', 'Entreprise'))
-                audit_result['ville'] = lead.get('ville', '')
-                
-                try:
-                    from reporter.main import generate_and_publish_report
-                    print(f"   [Reporter] Lancement de la génération HTML pour {nom}...")
-                    lien_rapport = safe_run_async(generate_and_publish_report(audit_result))
-                    audit_result['lien_rapport'] = lien_rapport
-                    print(f"   [Reporter] [OK] Rapport publié : {lien_rapport}")
-                except Exception as e:
-                    logger.error(f"Erreur Technique HTML pour {nom}: {e}")
-                    print(f"   [Reporter] [ERROR] ÉCHEC génération HTML : {e}")
-            
-            elif not has_meta or not has_schema or not has_robots or not has_sitemap:
-                # ===== SEO (site OK en performance mais problemes SEO) =====
-                print(f"   [Agent Reporter] Generation rapport HTML SEO...")
-                audit_result['template_used'] = 'seo'
-                audit_result['rating'] = rating
-                audit_result['reviews_count'] = reviews
-                audit_result['category'] = lead.get('category', lead.get('secteur', 'Entreprise'))
-                audit_result['ville'] = lead.get('ville', '')
-                
-                try:
-                    from reporter.main import generate_and_publish_report
-                    lien_rapport = safe_run_async(generate_and_publish_report(audit_result))
-                    audit_result['lien_rapport'] = lien_rapport
-                    print(f"   [OK] Rapport SEO (HTML) public: {lien_rapport}")
-                except Exception as e:
-                    logger.error(f"Erreur SEO HTML pour {nom}: {e}")
-                    print(f"   [ERREUR] SEO HTML: {e}")
-                    audit_result['lien_rapport'] = None
-            
-            elif rating < 4.5 or reviews < 50:
-                # ===== REPUTATION (fiche GMB à améliorer) =====
-                print(f"   [Agent Reporter] Génération rapport HTML Réputation (Note={rating}, Avis={reviews})...")
-                audit_result['template_used'] = 'reputation'
-                audit_result['profile'] = 'C'
-                
-                audit_result['rating'] = rating
-                audit_result['reviews_count'] = reviews
-                audit_result['category'] = lead.get('category', lead.get('secteur', 'Entreprise'))
-                audit_result['ville'] = lead.get('ville', '')
-                
-                try:
-                    from reporter.main import generate_and_publish_report
-                    lien_rapport = safe_run_async(generate_and_publish_report(audit_result))
-                    audit_result['lien_rapport'] = lien_rapport
-                    print(f"   [OK] Rapport Réputation (HTML) publié: {lien_rapport}")
-                except Exception as e:
-                    logger.error(f"Erreur Réputation HTML pour {nom}: {e}")
-                    print(f"   [ERREUR] Réputation HTML: {e}")
-            
-            elif rating >= 4.5 and reviews >= 50 and m_score >= 60 and lcp_ms < 3000 and has_meta:
-                # ===== IGNORED (tout va bien) =====
-                print(f"   [IGNORER] Entreprise OK: site={m_score}/100, GMB={rating}/5 ({reviews} avis)")
+
+                # ── Publication automatique sur GitHub Pages ──
+                if lien_rapport and lien_rapport.startswith("local://"):
+                    slug = lien_rapport.replace("local://", "").strip("/")
+                    try:
+                        from dashboard.pipeline.report_publishing import publish_reports_batch
+                        public_url = publish_reports_batch([slug])
+                        if public_url:
+                            audit_result['lien_rapport'] = public_url
+                            print(f"   [OK] Rapport publié sur GitHub : {public_url}")
+                        else:
+                            print(f"   [WARN] Publication GitHub échouée pour {slug}, lien local conservé")
+                    except Exception as e:
+                        logger.error(f"Erreur publication GitHub pour {slug}: {e}")
+                        print(f"   [ERROR] Publication GitHub : {e}")
+
+            else:
+                print(f"   [SKIP] Lead avec site web ignoré par le module no-site.")
                 audit_result['lien_rapport'] = None
                 audit_result['template_used'] = 'ignored'
-            
-            else:
-                # ===== FALLBACK (cas limite) =====
-                print(f"   [Agent Reporter] Génération rapport HTML Technique (fallback)...")
-                audit_result['template_used'] = 'audit'
-                audit_result['rating'] = rating
-                audit_result['reviews_count'] = reviews
-                audit_result['category'] = lead.get('category', lead.get('secteur', 'Entreprise'))
-                audit_result['ville'] = lead.get('ville', '')
-                
-                try:
-                    from reporter.main import generate_and_publish_report
-                    lien_rapport = safe_run_async(generate_and_publish_report(audit_result))
-                    audit_result['lien_rapport'] = lien_rapport
-                    print(f"   [OK] Rapport Technique (HTML) publié: {lien_rapport}")
-                except Exception as e:
-                    logger.error(f"Erreur Technique HTML pour {nom}: {e}")
-                    print(f"   [ERREUR] Technique HTML: {e}")
             
             # 3. Persistance dans SQLite
             try:
@@ -537,15 +374,10 @@ def run_tech_audit_sheets(limit=None):
             full_data["ville"]    = ville
             full_data["site_web"] = site_url
 
-            if site_url and "http" in site_url:
-                print(f"   [Agent Web] Analyse technique de {site_url}...")
-                try:
-                    web_results = safe_run_async(run_web_analysis(site_url))
-                    full_data.update(web_results)
-                    res_tech = f"Mobile: {web_results.get('mobile_score')}/100"
-                except Exception as e:
-                    logger.error(f"Erreur web analyzer pour {nom}: {e}")
-                    res_tech = "ERREUR TECH"
+            if site_url and site_url.strip().lower().startswith(('http://', 'https://')):
+                print(f"   [SKIP] Lead avec site web détecté en Sheets : {site_url} - traitement no-site uniquement.")
+                full_data["mobile_score"] = 0
+                res_tech = "SANS SITE"
             else:
                 full_data["mobile_score"] = 0
                 res_tech = "SANS SITE"
