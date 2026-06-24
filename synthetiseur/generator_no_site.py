@@ -384,6 +384,10 @@ def render_html(lead: dict) -> tuple[str, Path]:
     output_path = RAPPORTS_DIR / f'rapport_{lead_id}_{safe_name}.html'
     # S'assurer que le HTML est responsive pour les aperçus / captures
     html = ensure_responsive(html)
+    html = html.replace(
+        '</head>',
+        '<script defer data-domain="audit.incidenx.com" src="https://plausible.io/js/script.js"></script>\n</head>'
+    )
     output_path.write_text(html, encoding='utf-8')
 
     return html, output_path

@@ -408,6 +408,10 @@ def generate_mockup(lead: dict) -> dict:
             html_path = current_dir / f"tmp_{nom_slug}.html"
         # Rendre responsive avant d'écrire
         html = ensure_responsive(html)
+        html = html.replace(
+            '</head>',
+            '<script defer data-domain="audit.incidenx.com" src="https://plausible.io/js/script.js"></script>\n</head>'
+        )
         html_path.write_text(html, encoding="utf-8")
 
         # 8. Dossier de sortie
