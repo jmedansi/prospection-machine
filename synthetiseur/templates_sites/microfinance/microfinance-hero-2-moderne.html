@@ -1,16 +1,14 @@
 ﻿<!DOCTYPE html>
-<html lang="fr">
 
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{NOM_ENTREPRISE}}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet">
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{NOM_ENTREPRISE}}</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
     :root {
       --color-accent: #0891b2;
       --color-accent-light: #67e8f9;
@@ -1579,321 +1577,279 @@
       }
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 </head>
-
 <body>
-
-  <svg style="display:none" aria-hidden="true">
-    <symbol id="icon-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <path
-        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </symbol>
-    <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </symbol>
-    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </symbol>
-    <symbol id="icon-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <polygon
-        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </symbol>
-    <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </symbol>
-    <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </symbol>
-    <symbol id="icon-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-      <polyline points="17 6 23 6 23 12" />
-    </symbol>
-    <symbol id="icon-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-      stroke-linecap="round" stroke-linejoin="round">
-      <path
-        d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-      <path
-        d="M16.5 13.5c-.3-.15-1.5-.75-1.75-.83s-.4-.13-.57.13-.67.83-.82 1-.3.2-.6.07a7 7 0 0 1-2.14-1.32 7.58 7.58 0 0 1-1.48-1.85c-.16-.27 0-.43.12-.57s.27-.3.4-.45a2 2 0 0 0 .27-.45.49.49 0 0 0 0-.48c-.02-.1-.58-1.4-.8-1.92s-.42-.44-.58-.45h-.5a1 1 0 0 0-.7.33 2.9 2.9 0 0 0-.92 2.17 5 5 0 0 0 1.07 2.87 11.67 11.67 0 0 0 4.43 3.1 5 5 0 0 0 2.87.53 2.9 2.9 0 0 0 2.17-1.39c.2-.34.13-.63.07-.73z" />
-    </symbol>
-  </svg>
-
-  <header>
-    <nav class="nav" aria-label="Navigation principale">
-      <a href="#" class="logo-text" aria-label="Accueil">{{NOM_ENTREPRISE}}<span>.</span></a>
-      <ul class="nav-list">
-        <li><a href="#">Services</a></li>
-        <li><a href="#">À propos</a></li>
-        <li><a href="#">Contact</a></li>
-        <li><a href="#" class="nav-cta">Ouvrir un compte</a></li>
-      </ul>
-      <div class="nav-row">
-        <a href="tel:{{TELEPHONE}}" class="nav-tel">
-          <svg class="icon" aria-hidden="true">
-            <use href="#icon-phone" />
-          </svg>
+<svg aria-hidden="true" style="display:none">
+<symbol fill="none" id="icon-phone" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+</symbol>
+<symbol fill="none" id="icon-arrow-right" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<line x1="5" x2="19" y1="12" y2="12"></line>
+<polyline points="12 5 19 12 12 19"></polyline>
+</symbol>
+<symbol fill="none" id="icon-check" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<polyline points="20 6 9 17 4 12"></polyline>
+</symbol>
+<symbol fill="none" id="icon-star" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+</symbol>
+<symbol fill="none" id="icon-shield" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+</symbol>
+<symbol fill="none" id="icon-clock" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<polyline points="12 6 12 12 16 14"></polyline>
+</symbol>
+<symbol fill="none" id="icon-trending-up" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+<polyline points="17 6 23 6 23 12"></polyline>
+</symbol>
+<symbol fill="none" id="icon-whatsapp" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+<path d="M16.5 13.5c-.3-.15-1.5-.75-1.75-.83s-.4-.13-.57.13-.67.83-.82 1-.3.2-.6.07a7 7 0 0 1-2.14-1.32 7.58 7.58 0 0 1-1.48-1.85c-.16-.27 0-.43.12-.57s.27-.3.4-.45a2 2 0 0 0 .27-.45.49.49 0 0 0 0-.48c-.02-.1-.58-1.4-.8-1.92s-.42-.44-.58-.45h-.5a1 1 0 0 0-.7.33 2.9 2.9 0 0 0-.92 2.17 5 5 0 0 0 1.07 2.87 11.67 11.67 0 0 0 4.43 3.1 5 5 0 0 0 2.87.53 2.9 2.9 0 0 0 2.17-1.39c.2-.34.13-.63.07-.73z"></path>
+</symbol>
+</svg>
+<header>
+<nav aria-label="Navigation principale" class="nav">
+<a aria-label="Accueil" class="logo-text" href="#">{{NOM_ENTREPRISE}}<span>.</span></a>
+<ul class="nav-list">
+<li><a href="#">Services</a></li>
+<li><a href="#">À propos</a></li>
+<li><a href="#">Contact</a></li>
+<li><a class="nav-cta" href="#">Ouvrir un compte</a></li>
+</ul>
+<div class="nav-row">
+<a class="nav-tel" href="tel:{{TELEPHONE}}">
+<svg aria-hidden="true" class="icon">
+<use href="#icon-phone"></use>
+</svg>
           {{TELEPHONE}}
         </a>
-        <button class="hamburger" aria-label="Menu" aria-expanded="false">
-          <span class="hamburger-line"></span>
-          <span class="hamburger-line"></span>
-          <span class="hamburger-line"></span>
-        </button>
-      </div>
-    </nav>
-
-    <div class="mobile-menu" aria-hidden="true" role="dialog" aria-label="Menu de navigation">
-      <button class="mobile-menu-close" aria-label="Fermer le menu">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
-      <ul class="mobile-menu-list">
-        <li><a href="#">Accueil</a></li>
-        <li><a href="#">Services</a></li>
-        <li><a href="#">À propos</a></li>
-        <li><a href="#">Contact</a></li>
-      </ul>
-      <div class="mobile-menu-divider" aria-hidden="true"></div>
-      <a href="#" class="mobile-menu-cta">Ouvrir un compte</a>
-      <a href="tel:{{TELEPHONE}}" class="mobile-menu-tel">
-        <svg class="icon" aria-hidden="true">
-          <use href="#icon-phone" />
-        </svg>
+<button aria-expanded="false" aria-label="Menu" class="hamburger">
+<span class="hamburger-line"></span>
+<span class="hamburger-line"></span>
+<span class="hamburger-line"></span>
+</button>
+</div>
+</nav>
+<div aria-hidden="true" aria-label="Menu de navigation" class="mobile-menu" role="dialog">
+<button aria-label="Fermer le menu" class="mobile-menu-close">
+<svg aria-hidden="true" fill="none" viewbox="0 0 24 24">
+<line x1="18" x2="6" y1="6" y2="18"></line>
+<line x1="6" x2="18" y1="6" y2="18"></line>
+</svg>
+</button>
+<ul class="mobile-menu-list">
+<li><a href="#">Accueil</a></li>
+<li><a href="#">Services</a></li>
+<li><a href="#">À propos</a></li>
+<li><a href="#">Contact</a></li>
+</ul>
+<div aria-hidden="true" class="mobile-menu-divider"></div>
+<a class="mobile-menu-cta" href="#">Ouvrir un compte</a>
+<a class="mobile-menu-tel" href="tel:{{TELEPHONE}}">
+<svg aria-hidden="true" class="icon">
+<use href="#icon-phone"></use>
+</svg>
         {{TELEPHONE}}
       </a>
-    </div>
-  </header>
-
-  <main>
-    <section class="hero" aria-label="Présentation">
-      <div class="hero-bg"></div>
-      <div class="hero-overlay"></div>
-      <div class="hero-circle" aria-hidden="true"></div>
-      <div class="hero-circle2" aria-hidden="true"></div>
-
-      <div class="hero-grid">
-        <div class="hero-content">
-          <div class="hero-kicker">
+</div>
+</header>
+<main>
+<section aria-label="Présentation" class="hero">
+<div class="hero-bg"></div>
+<div class="hero-overlay"></div>
+<div aria-hidden="true" class="hero-circle"></div>
+<div aria-hidden="true" class="hero-circle2"></div>
+<div class="hero-grid">
+<div class="hero-content">
+<div class="hero-kicker">
             {{VILLE}} · Fintech
           </div>
-
-          <h1 class="hero-title">
-            La finance <em>intelligente</em> qui fait la différence
-          </h1>
-
-          <p class="hero-desc">
-            {{NOM_ENTREPRISE}} — innovation technologique et service humain pour une finance moderne à {{VILLE}}.
-          </p>
-
-          <div class="hero-actions">
-            <a href="#" class="btn-primary">
-              Démarrer
-              <svg class="icon icon--md" aria-hidden="true">
-                <use href="#icon-arrow-right" />
-              </svg>
-            </a>
-            <a href="tel:{{TELEPHONE}}" class="btn-secondary">
-              <svg class="icon" aria-hidden="true">
-                <use href="#icon-phone" />
-              </svg>
-              <span class="btn-sec-underline">{{TELEPHONE}}</span>
-            </a>
-          </div>
-        </div>
-
-        <div class="hero-card-panel">
-          <div class="hero-card">
-            <div class="hero-card-icon">
-              <svg aria-hidden="true">
-                <use href="#icon-star" />
-              </svg>
-            </div>
-            <div>
-              <span class="hero-card-strong">{{RATING}} — {{NB_CLIENTS}} avis</span>
-              <span class="hero-card-small">Note vérifiée · Google</span>
-            </div>
-          </div>
-          <div class="hero-card">
-            <div class="hero-card-icon">
-              <svg aria-hidden="true">
-                <use href="#icon-shield" />
-              </svg>
-            </div>
-            <div>
-              <span class="hero-card-strong">Garantie sécurité</span>
-              <span class="hero-card-small">Fonds garantis · BCEAO</span>
-            </div>
-          </div>
-          <div class="hero-card">
-            <div class="hero-card-icon">
-              <svg aria-hidden="true">
-                <use href="#icon-clock" />
-              </svg>
-            </div>
-            <div>
-              <span class="hero-card-strong">Réponse rapide</span>
-              <span class="hero-card-small">Délai sous 24h</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="hero-stats">
-        <div class="hero-stat">
-          <span class="hero-stat-num">{{NB_CLIENTS}}+</span>
-          <span class="hero-stat-label">Clients</span>
-        </div>
-        <div class="hero-stat">
-          <span class="hero-stat-num">{{RATING}}</span>
-          <span class="hero-stat-label">Note</span>
-        </div>
-        <div class="hero-stat">
-          <span class="hero-stat-num">0</span>
-          <span class="hero-stat-label">Frais cachés</span>
-        </div>
-      </div>
-
-      <div class="hero-scroll" aria-hidden="true">
-        <span>Découvrir</span>
-        <div class="hero-scroll-line"></div>
-      </div>
-    </section>
-
-    <!-- Section suite floue -->
-    <section class="section-suite-floue">
-      <div class="suite-container">
-        <span class="suite-subtitle">La finance au service de tous</span>
-        <h2 class="suite-title">Nos offres de micro-crédit</h2>
-        <div class="suite-grid">
-          <div class="suite-card">
-            <div class="suite-card-img"
-              style="background-image: url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=600&amp;q=80')">
-            </div>
-            <div class="suite-card-body">
-              <h3>Micro-crédit</h3>
-              <p>Un financement adapté à votre projet.</p>
-            </div>
-          </div>
-          <div class="suite-card">
-            <div class="suite-card-img"
-              style="background-image: url('https://images.unsplash.com/photo-1777805866020-e56953302a08?w=600&amp;q=80')">
-            </div>
-            <div class="suite-card-body">
-              <h3>Épargne & planification</h3>
-              <p>Construisez votre avenir financier.</p>
-            </div>
-          </div>
-          <div class="suite-card">
-            <div class="suite-card-img"
-              style="background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&amp;q=80')">
-            </div>
-            <div class="suite-card-body">
-              <h3>Accompagnement</h3>
-              <p>Formation et conseil pour gérer votre argent.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="suite-blur-overlay">
-        <div class="suite-blur-layer"></div>
-        <div class="suite-blur-card">
-          <span class="suite-blur-tag">La suite vous attend</span>
-          <h3 class="suite-blur-title">Vous voulez voir la suite de la maquette ?</h3>
-          <p class="suite-blur-text">Nous pouvons personnaliser le reste du site et le mettre en ligne sous quelques
+<h1 class="hero-title">Gérez vos finances en toute simplicité.</h1>
+<p class="hero-desc">{{NOM_ENTREPRISE}} offre des services financiers rapides, sécurisés et innovants, pensés exclusivement pour faciliter votre quotidien.</p>
+<div class="hero-actions">
+<a class="btn-primary" href="#">Ouvrir un compte <svg aria-hidden="true" class="icon icon--md">
+<use href="#icon-arrow-right"></use>
+</svg></a>
+<a class="btn-secondary" href="tel:{{TELEPHONE}}">
+<svg aria-hidden="true" class="icon">
+<use href="#icon-phone"></use>
+</svg>
+<span class="btn-sec-underline">{{TELEPHONE}}</span>
+</a>
+</div>
+</div>
+<div class="hero-card-panel">
+<div class="hero-card">
+<div class="hero-card-icon">
+<svg aria-hidden="true">
+<use href="#icon-star"></use>
+</svg>
+</div>
+<div>
+<span class="hero-card-strong">{{RATING}} — {{NB_CLIENTS}} avis</span>
+<span class="hero-card-small">Note vérifiée · Google</span>
+</div>
+</div>
+<div class="hero-card">
+<div class="hero-card-icon">
+<svg aria-hidden="true">
+<use href="#icon-shield"></use>
+</svg>
+</div>
+<div>
+<span class="hero-card-strong">Garantie sécurité</span>
+<span class="hero-card-small">Fonds garantis · BCEAO</span>
+</div>
+</div>
+<div class="hero-card">
+<div class="hero-card-icon">
+<svg aria-hidden="true">
+<use href="#icon-clock"></use>
+</svg>
+</div>
+<div>
+<span class="hero-card-strong">Réponse rapide</span>
+<span class="hero-card-small">Délai sous 24h</span>
+</div>
+</div>
+</div>
+</div>
+<div class="hero-stats">
+<div class="hero-stat">
+<span class="hero-stat-num">{{NB_CLIENTS}}+</span>
+<span class="hero-stat-label">Clients</span>
+</div>
+<div class="hero-stat">
+<span class="hero-stat-num">{{RATING}}</span>
+<span class="hero-stat-label">Note</span>
+</div>
+<div class="hero-stat">
+<span class="hero-stat-num">0</span>
+<span class="hero-stat-label">Frais cachés</span>
+</div>
+</div>
+<div aria-hidden="true" class="hero-scroll">
+<span>Découvrir</span>
+<div class="hero-scroll-line"></div>
+</div>
+</section>
+<!-- Section suite floue -->
+<section class="section-suite-floue">
+<div class="suite-container">
+<span class="suite-subtitle">La finance au service de tous</span>
+<h2 class="suite-title">Nos offres de micro-crédit</h2>
+<div class="suite-grid">
+<div class="suite-card">
+<div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=600&amp;q=80')">
+</div>
+<div class="suite-card-body">
+<h3>Micro-crédit</h3>
+<p>Un financement adapté à votre projet.</p>
+</div>
+</div>
+<div class="suite-card">
+<div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1777805866020-e56953302a08?w=600&amp;q=80')">
+</div>
+<div class="suite-card-body">
+<h3>Épargne &amp; planification</h3>
+<p>Construisez votre avenir financier.</p>
+</div>
+</div>
+<div class="suite-card">
+<div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&amp;q=80')">
+</div>
+<div class="suite-card-body">
+<h3>Accompagnement</h3>
+<p>Formation et conseil pour gérer votre argent.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="suite-blur-overlay">
+<div class="suite-blur-layer"></div>
+<div class="suite-blur-card">
+<span class="suite-blur-tag">La suite vous attend</span>
+<h3 class="suite-blur-title">Vous voulez voir la suite de la maquette ?</h3>
+<p class="suite-blur-text">Nous pouvons personnaliser le reste du site et le mettre en ligne sous quelques
             jours.</p>
-          <a href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NOM_ENTREPRISE}}"
-            class="suite-blur-btn" target="_blank">
-            <svg class="icon icon--md" aria-hidden="true">
-              <use href="#icon-whatsapp"></use>
-            </svg>
+<a class="suite-blur-btn" href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NOM_ENTREPRISE}}" target="_blank">
+<svg aria-hidden="true" class="icon icon--md">
+<use href="#icon-whatsapp"></use>
+</svg>
             Nous contacter — 0143681453
           </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section arguments -->
-    <section class="profil-a-preview-section">
-      <div class="profil-a-info-grid">
-        <div class="profil-a-info-text">
-          <h2>Pourquoi votre entreprise mérite cette présence.</h2>
-          <p>Aujourd'hui, 82% des clients à Paris effectuent une recherche Google avant de choisir un professionnel.
+</div>
+</div>
+</section>
+<!-- Section arguments -->
+<section class="profil-a-preview-section">
+<div class="profil-a-info-grid">
+<div class="profil-a-info-text">
+<h2>Pourquoi votre entreprise mérite cette présence.</h2>
+<p>Aujourd'hui, 82% des clients à Paris effectuent une recherche Google avant de choisir un professionnel.
             Être invisible, c'est laisser le champ libre à vos concurrents.</p>
-        </div>
-        <div class="profil-a-info-args">
-          <div class="profil-a-arg-item">
-            <div class="profil-a-arg-num">1</div>
-            <div class="profil-a-arg-content">
-              <h3>Crédibilité immédiate</h3>
-              <p>Une présence web soignée transforme un prospect hésitant en client convaincu.</p>
-            </div>
-          </div>
-          <div class="profil-a-arg-item">
-            <div class="profil-a-arg-num">2</div>
-            <div class="profil-a-arg-content">
-              <h3>Capture mobile 24/7</h3>
-              <p>Votre futur site est optimisé pour transformer chaque clic sur smartphone en appel direct.</p>
-            </div>
-          </div>
-          <div class="profil-a-arg-item">
-            <div class="profil-a-arg-num">3</div>
-            <div class="profil-a-arg-content">
-              <h3>Expansion locale</h3>
-              <p>Attirez des clients au-delà de votre quartier grâce à un référencement Google Maps maîtrisé.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="profil-a-cta-box">
-      <div class="profil-a-cta-title">Ce site peut être en ligne dans 3 semaines.</div>
-      <p class="profil-a-cta-sub">
+</div>
+<div class="profil-a-info-args">
+<div class="profil-a-arg-item">
+<div class="profil-a-arg-num">1</div>
+<div class="profil-a-arg-content">
+<h3>Crédibilité immédiate</h3>
+<p>Une présence web soignée transforme un prospect hésitant en client convaincu.</p>
+</div>
+</div>
+<div class="profil-a-arg-item">
+<div class="profil-a-arg-num">2</div>
+<div class="profil-a-arg-content">
+<h3>Capture mobile 24/7</h3>
+<p>Votre futur site est optimisé pour transformer chaque clic sur smartphone en appel direct.</p>
+</div>
+</div>
+<div class="profil-a-arg-item">
+<div class="profil-a-arg-num">3</div>
+<div class="profil-a-arg-content">
+<h3>Expansion locale</h3>
+<p>Attirez des clients au-delà de votre quartier grâce à un référencement Google Maps maîtrisé.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA -->
+<section class="profil-a-cta-box">
+<div class="profil-a-cta-title">Ce site peut être en ligne dans 3 semaines.</div>
+<p class="profil-a-cta-sub">
         Nous avons déjà préparé toute la structure technique. Il ne manque plus que votre feu vert pour finaliser les
         contenus.
       </p>
-      <a href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NOM_ENTREPRISE}}"
-        class="suite-blur-btn" target="_blank">
-        <svg class="icon icon--md" aria-hidden="true">
-          <use href="#icon-whatsapp"></use>
-        </svg>
+<a class="suite-blur-btn" href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NOM_ENTREPRISE}}" target="_blank">
+<svg aria-hidden="true" class="icon icon--md">
+<use href="#icon-whatsapp"></use>
+</svg>
         Nous contacter — 0143681453
       </a>
-    </section>
-
-    <!-- Footer -->
-    <footer class="profil-a-footer">
-      <div class="footer-services-container">
-        <div class="footer-services-title">Nos expertises &amp; prestations</div>
-        <ul class="footer-services-list">
-          <li>Création de site internet</li>
-          <li>Optimisation Google Maps</li>
-          <li>E-réputation &amp; Avis clients</li>
-          <li>Création d'application web</li>
-          <li>Visibilité locale &amp; SEO</li>
-        </ul>
+</section>
+<!-- Footer -->
+<footer class="profil-a-footer">
+<div class="footer-services-container">
+<div class="footer-services-title">Nos expertises &amp; prestations</div>
+<ul class="footer-services-list">
+<li>Création de site internet</li>
+<li>Optimisation Google Maps</li>
+<li>E-réputation &amp; Avis clients</li>
+<li>Création d'application web</li>
+<li>Visibilité locale &amp; SEO</li>
+</ul>
+</div>
+<div>
+        Confidentiel · Proposition réalisée par l'équipe d'IncidenX · 2026
       </div>
-      <div>
-        Confidentiel &middot; Proposition réalisée par l'équipe d'IncidenX &middot; 2026
-      </div>
-    </footer>
-
-  </main>
-
-  <script>
+</footer>
+</main>
+<script>
     (function () {
       var hamburger = document.querySelector('.hamburger');
       var mobileMenu = document.querySelector('.mobile-menu');
@@ -1935,10 +1891,8 @@
       });
     })();
   </script>
-
-  <script>
+<script>
     (function () { var m = window.matchMedia('(prefers-reduced-motion:reduce)'); if (m.matches) return; gsap.registerPlugin(ScrollTrigger); var b = document.querySelector('.hero-bg'); if (b) { gsap.fromTo(b, { scale: 1.08 }, { scale: 1, duration: 1.5, ease: 'power2.out' }) } var h = document.querySelector('.hero-content,.hero-inner,.hero-body'); if (h) { var c = []; for (var i = 0; i < h.children.length; i++) { c.push(h.children[i]) } gsap.fromTo(c, { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: .65, stagger: .1, ease: 'power2.out', delay: .15 }) } var s = document.querySelectorAll('.hero-stat-num,.stat-num'); s.forEach(function (e) { var t = e.textContent.trim(); if (/^\d+$/.test(t)) { var n = parseInt(t, 10); if (n > 0 && !isNaN(n)) { var o = { val: 0 }; gsap.to(o, { val: n, duration: 2, ease: 'power2.out', scrollTrigger: { trigger: e.closest('.hero-stats,.hero-stats-row') || e.parentElement, start: 'top 90%', once: true }, onUpdate: function () { e.textContent = Math.round(o.val) } }) } } }) })();
   </script>
 </body>
-
 </html>
