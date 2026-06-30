@@ -6,11 +6,11 @@
 <title>{{NOM_ENTREPRISE}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&family=Sora:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&Sora:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
-  --color-accent: #0d9488;
-  --color-accent-light: #5eead4;
+  --color-accent: #7c3aed;
+  --color-accent-light: #b794f4;
   --color-bg-dark: #080c14;
   --color-text: #ffffff;
   --color-text-muted: rgba(255, 255, 255, 0.65);
@@ -19,7 +19,6 @@
   --color-border-light: rgba(255, 255, 255, 0.05);
 
   --ff-heading: 'Lora', serif;
-  --ff-logo: 'EB Garamond', serif;
   --ff-body: 'Sora', sans-serif;
 
   --fs-title: clamp(2rem, 7.5vw, 2.8rem);
@@ -144,14 +143,13 @@ button {
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   overflow: hidden;
 }
 
 .hero-bg {
   position: absolute;
   inset: 0;
-  background: url('https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1600&q=90') center / cover no-repeat;
+  background: url('https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8?w=1600&q=90') center / cover no-repeat;
   transform: scale(1.06);
   animation: zoomin 10s ease-out forwards;
   will-change: transform;
@@ -208,12 +206,11 @@ button {
   justify-content: space-between;
   height: var(--nav-height);
   padding-inline: var(--container-padding);
-  border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
 }
 
 .nav-logo-img {
-  height: 34px;
+  height: 36px;
   max-width: 160px;
   width: auto;
   object-fit: contain;
@@ -221,12 +218,18 @@ button {
   display: none;
 }
 
+.nav-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
 .nav-logo-text {
-  font-family: var(--ff-logo);
-  font-size: 1.15rem;
-  font-weight: 500;
+  font-family: var(--ff-body);
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--color-text);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -243,10 +246,10 @@ button {
 
 .nav-list a {
   font-size: var(--fs-nav);
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.55);
   transition: color var(--duration-fast);
 }
 
@@ -361,8 +364,8 @@ button {
 
 .mobile-menu-list a {
   font-size: var(--fs-btn);
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
   transition: color var(--duration-fast);
@@ -437,7 +440,7 @@ body:has(.mobile-menu--open) {
   border-radius: 50%;
   background: var(--color-accent);
   flex-shrink: 0;
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.3);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
 }
 
 .ew-text {
@@ -516,7 +519,7 @@ body:has(.mobile-menu--open) {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 20px rgba(13, 148, 136, 0.4);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
   transition: background var(--duration-fast),
               color var(--duration-fast),
               transform var(--duration-fast),
@@ -566,7 +569,92 @@ body:has(.mobile-menu--open) {
 }
 
 @media (max-width: 767px) {
-  .hero-content { text-align: center; margin: 0 auto; }
+  /* Navigation mobile premium */
+  .nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(8, 12, 20, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .nav-name { font-size: 1.25rem !important; }
+  .nav-sub { font-size: 0.7rem !important; }
+  .hamburger { width: 1.85rem !important; height: 1.2rem !important; }
+  .mobile-menu-list a { font-size: 1.1rem !important; letter-spacing: 0.15em !important; }
+  .mobile-menu-cta { padding: 1rem 2.5rem !important; font-size: 0.9rem !important; font-weight: 600 !important; }
+  .mobile-menu-tel { font-size: 1rem !important; }
+
+  /* Hero mobile layout */
+  .hero { min-height: 80svh !important; align-items: center !important; }
+
+  .hero-content {
+    text-align: center;
+    margin: 0 auto;
+    width: 100%;
+    padding-top: calc(var(--nav-height) + 5rem) !important;
+    padding-bottom: 3rem !important;
+  }
+
+  .hero-eyebrow, .hero-kicker, .hero-badge, .hero-pre { justify-content: center; margin-bottom: 2rem !important; }
+  .eyebrow-bar { display: none; }
+  .hero-left { display: flex; flex-direction: column; align-items: center; }
+
+  .hero-title {
+    text-align: center;
+    font-size: clamp(1.8rem, 7vw, 2.8rem) !important;
+    line-height: 1.25 !important;
+    margin-bottom: 2.5rem !important;
+  }
+
+  .hero-divider, .hero-rule, .hero-sub-line { justify-content: center; margin: 1.5rem 0 2rem !important; }
+
+  .hero-desc {
+    text-align: center;
+    margin: 0 auto 3rem !important;
+    width: 100%;
+    font-size: 1.15rem !important;
+    line-height: 1.7 !important;
+  }
+
+  .hero-features, .hero-specialites, .hero-stats, .hero-cards,
+  .hero-badge-panel, .hero-bar, .hero-panel, .hero-bottom { justify-content: center; }
+
+  /* Boutons responsives et asymétriques */
+  .hero-ctas { align-items: stretch !important; gap: 1.25rem !important; width: 100% !important; }
+
+  .btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+    background: var(--color-accent) !important;
+    color: var(--color-text) !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    min-height: 3.25rem !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.18) !important;
+  }
+
+  .btn-ghost {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: var(--color-text) !important;
+    padding: 1rem 2rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-sm, 4px) !important;
+    min-height: 3.25rem !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  .hero-panel { justify-content: center; }
+  .footer-services-container { text-align: center; }
+  .profil-a-info-text { text-align: center; }
+  .logo-text { font-size: 0.85rem !important; }
+  .profil-a-info-grid { grid-template-columns: 1fr !important; }
   .hero-eyebrow { justify-content: center; }
   .hero-title { text-align: center; }
   .hero-sub-line { justify-content: center; }
@@ -578,11 +666,11 @@ body:has(.mobile-menu--open) {
 
 @media (min-width: 768px) {
   .nav-logo-text {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
   }
 
   .hero-content {
-    padding-top: 5rem;
+    padding-top: 4rem;
     padding-bottom: 3rem;
   }
 
@@ -628,7 +716,6 @@ body:has(.mobile-menu--open) {
   }
 
   .hero-content {
-    padding-top: 5rem;
     padding-bottom: 4rem;
   }
 
@@ -737,6 +824,25 @@ body:has(.mobile-menu--open) {
 @media(max-width:768px){.section-suite-floue{padding:6rem 1.5rem calc(10rem + 30px);width:100%}.suite-blur-overlay{padding-bottom:4rem}.suite-blur-card{padding:2rem 1.5rem}.suite-grid{grid-template-columns:1fr}.suite-card:nth-child(n+2){display:none}.profil-a-preview-section{padding:4rem 1.25rem}.profil-a-info-grid{grid-template-columns:1fr;gap:2rem}.profil-a-cta-box{padding:5rem 1.25rem}.footer-services-list{grid-template-columns:1fr;gap:1rem}}
 @media(max-width:480px){.section-suite-floue{padding:4rem 1rem calc(8rem + 30px)}.suite-title{margin-bottom:2rem}.suite-card-img{height:180px}.suite-card-body{padding:1.25rem}.suite-blur-card{padding:1.5rem 1rem;max-width:90%}.suite-blur-title{font-size:1.25rem}.suite-blur-btn{width:100%;justify-content:center;padding:1rem 1.5rem;font-size:.8rem}.profil-a-preview-section{padding:3rem 1rem}.profil-a-info-text h2{font-size:1.5rem}.profil-a-arg-item{padding:1rem;flex-direction:column;gap:.75rem}.profil-a-cta-box{padding:4rem 1rem}.profil-a-cta-title{font-size:1.4rem}.profil-a-footer{padding:3rem 1rem 2rem}.footer-services-title{font-size:.8rem}.footer-services-list li{font-size:.82rem}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}html{scroll-behavior:auto}}
+
+/* ── RESPONSIVE TABLET ── */
+@media(max-width:1024px){
+  nav{padding:1.5rem 2rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:2rem!important;padding-right:2rem!important}
+}
+/* ── RESPONSIVE MOBILE ── */
+@media(max-width:768px){
+  .nav-cta,.nav-rdv,.nav-tel{font-size:.62rem!important;padding:.5rem .875rem!important;white-space:nowrap}
+  .hero-content,.hero-inner,.hero-left{max-width:100%!important}
+  .page-preview{height:auto!important;min-height:60vh!important}
+}
+/* ── RESPONSIVE SMALL PHONE ── */
+@media(max-width:480px){
+  nav{padding:.75rem 1rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:1rem!important;padding-right:1rem!important;}
+  .stat-num{font-size:1.3rem!important}
+  .stat-block{padding:.75rem 1rem!important}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -759,6 +865,10 @@ body:has(.mobile-menu--open) {
     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
     <polyline points="22,6 12,13 2,6"/>
   </symbol>
+  <symbol id="icon-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    <path d="M16.5 13.5c-.3-.15-1.5-.75-1.75-.83s-.4-.13-.57.13-.67.83-.82 1-.3.2-.6.07a7 7 0 0 1-2.14-1.32 7.58 7.58 0 0 1-1.48-1.85c-.16-.27 0-.43.12-.57s.27-.3.4-.45a2 2 0 0 0 .27-.45.49.49 0 0 0 0-.48c-.02-.1-.58-1.4-.8-1.92s-.42-.44-.58-.45h-.5a1 1 0 0 0-.7.33 2.9 2.9 0 0 0-.92 2.17 5 5 0 0 0 1.07 2.87 11.67 11.67 0 0 0 4.43 3.1 5 5 0 0 0 2.87.53 2.9 2.9 0 0 0 2.17-1.39c.2-.34.13-.63.07-.73z"/>
+  </symbol>
 </svg>
 
 <section class="hero" aria-label="Présentation">
@@ -772,9 +882,9 @@ body:has(.mobile-menu--open) {
       <a href="#" class="nav-logo-text" aria-label="Accueil">{{NOM_ENTREPRISE}}<span class="nav-logo-dot">.</span></a>
     </div>
     <ul class="nav-list">
-      <li><a href="#">Services</a></li>
-      <li><a href="#">À propos</a></li>
-      <li><a href="#">Contact</a></li>
+      <li><a href="#">Nos actions</a></li>
+      <li><a href="#">Qui sommes-nous</a></li>
+      <li><a href="#">Nous soutenir</a></li>
     </ul>
     <a href="tel:{{TELEPHONE}}" class="nav-cta">
       <svg class="icon" aria-hidden="true"><use href="#icon-phone"/></svg>
@@ -795,10 +905,10 @@ body:has(.mobile-menu--open) {
       </svg>
     </button>
     <ul class="mobile-menu-list">
-      <li><a href="#">Services</a></li>
-      <li><a href="#">À propos</a></li>
-      <li><a href="#">Contact</a></li>
-      <li><a href="#" class="mobile-menu-cta">Nous contacter</a></li>
+      <li><a href="#">Nos actions</a></li>
+      <li><a href="#">Qui sommes-nous</a></li>
+      <li><a href="#">Nous soutenir</a></li>
+      <li><a href="#" class="mobile-menu-cta">Rejoignez-nous</a></li>
     </ul>
     <div class="mobile-menu-divider" aria-hidden="true"></div>
     <a href="tel:{{TELEPHONE}}" class="mobile-menu-tel">
@@ -810,12 +920,11 @@ body:has(.mobile-menu--open) {
   <div class="hero-content">
     <div class="hero-eyebrow">
       <div class="ew-dot" aria-hidden="true"></div>
-      <span class="ew-text">Créativité &amp; Digital · {{VILLE}}</span>
+      <span class="ew-text">Engagement Solidaire · {{VILLE}}</span>
     </div>
 
     <h1 class="hero-title">
-      {{NOM_ENTREPRISE}}<br>
-      <em>à votre service.</em>
+      {{NOM_ENTREPRISE}} <em>Votre mission sociale</em> au cœur de {{VILLE}}
     </h1>
 
     <div class="hero-sub-line" aria-hidden="true">
@@ -824,12 +933,12 @@ body:has(.mobile-menu--open) {
     </div>
 
     <p class="hero-desc">
-      Création digitale, stratégie web et innovation à {{VILLE}} — transformez votre vision en réalité.
+      Agir ensemble pour une société plus solidaire à {{VILLE}} — chaque geste compte.
     </p>
 
     <div class="hero-ctas">
       <a href="#" class="btn-primary">
-        Nous contacter
+        Rejoignez-nous
         <svg class="icon icon--md" aria-hidden="true"><use href="#icon-envelope"/></svg>
       </a>
       <a href="tel:{{TELEPHONE}}" class="btn-ghost">
@@ -842,11 +951,11 @@ body:has(.mobile-menu--open) {
   <div class="hero-stats">
     <div class="hero-stat">
       <span class="hero-stat-num">{{NB_AVIS}}</span>
-      <span class="hero-stat-label">Avis Google</span>
+      <span class="hero-stat-label">Bénévoles actifs</span>
     </div>
     <div class="hero-stat">
-      <span class="hero-stat-num">4.8â˜…</span>
-      <span class="hero-stat-label">Note moyenne</span>
+      <span class="hero-stat-num">{{RATING}}★</span>
+      <span class="hero-stat-label">Personnes aidées</span>
     </div>
   </div>
 
@@ -856,9 +965,7 @@ body:has(.mobile-menu--open) {
       <strong>{{ADRESSE}}</strong>, {{VILLE}}
     </div>
     <div class="hero-bar-item">
-      <svg class="icon" aria-hidden="true"><use href="#icon-phone"/>
-  <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M16.5 13.5c-.3-.15-1.5-.75-1.75-.83s-.4-.13-.57.13-.67.83-.82 1-.3.2-.6.07a7 7 0 0 1-2.14-1.32 7.58 7.58 0 0 1-1.48-1.85c-.16-.27 0-.43.12-.57s.27-.3.4-.45a2 2 0 0 0 .27-.45.49.49 0 0 0 0-.48c-.02-.1-.58-1.4-.8-1.92s-.42-.44-.58-.45h-.5a1 1 0 0 0-.7.33 2.9 2.9 0 0 0-.92 2.17 5 5 0 0 0 1.07 2.87 11.67 11.67 0 0 0 4.43 3.1 5 5 0 0 0 2.87.53 2.9 2.9 0 0 0 2.17-1.39c.2-.34.13-.63.07-.73z"/></symbol>
-</svg>
+      <svg class="icon" aria-hidden="true"><use href="#icon-phone"/></svg>
       <strong>{{TELEPHONE}}</strong>
     </div>
   </div>
@@ -867,28 +974,28 @@ body:has(.mobile-menu--open) {
 <!-- Section suite floue -->
 <section class="section-suite-floue">
   <div class="suite-container">
-    <span class="suite-subtitle">L'innovation à votre mesure</span>
-    <h2 class="suite-title">Nos solutions numériques</h2>
+    <span class="suite-subtitle">Notre impact au quotidien</span>
+    <h2 class="suite-title">Nos missions solidaires</h2>
     <div class="suite-grid">
       <div class="suite-card">
-        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&amp;q=80')"></div>
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=600&amp;q=80')"></div>
         <div class="suite-card-body">
-          <h3>Développement web</h3>
-          <p>Sites et applications performants.</p>
+          <h3>Aide alimentaire</h3>
+          <p>Distribution de repas et colis aux familles.</p>
         </div>
       </div>
       <div class="suite-card">
-        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&amp;q=80')"></div>
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600&amp;q=80')"></div>
         <div class="suite-card-body">
-          <h3>Marketing digital</h3>
-          <p>Une stratégie qui génère des résultats.</p>
+          <h3>Insertion sociale</h3>
+          <p>Accompagnement vers l'autonomie et l'emploi.</p>
         </div>
       </div>
       <div class="suite-card">
-        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&amp;q=80')"></div>
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=600&amp;q=80')"></div>
         <div class="suite-card-body">
-          <h3>Support & maintenance</h3>
-          <p>Votre outil toujours à jour et opérationnel.</p>
+          <h3>Lien social</h3>
+          <p>Animations et ateliers pour recréer du lien.</p>
         </div>
       </div>
     </div>
@@ -896,12 +1003,12 @@ body:has(.mobile-menu--open) {
   <div class="suite-blur-overlay">
     <div class="suite-blur-layer"></div>
     <div class="suite-blur-card">
-      <span class="suite-blur-tag">La suite vous attend</span>
-      <h3 class="suite-blur-title">Vous voulez voir la suite de la maquette ?</h3>
-      <p class="suite-blur-text">Nous pouvons personnaliser le reste du site et le mettre en ligne sous quelques jours.</p>
+      <span class="suite-blur-tag">Nos projets en cours</span>
+      <h3 class="suite-blur-title">Vous voulez découvrir nos projets en détail ?</h3>
+      <p class="suite-blur-text">Nous pouvons finaliser ce site et le mettre en ligne pour amplifier notre action.</p>
       <a href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NOM_ENTREPRISE}}" class="suite-blur-btn" target="_blank">
         <svg class="icon icon--md" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
-        Nous contacter — 0143681453
+        Rejoignez-nous — {{TELEPHONE}}
       </a>
     </div>
   </div>
@@ -911,29 +1018,29 @@ body:has(.mobile-menu--open) {
 <section class="profil-a-preview-section">
   <div class="profil-a-info-grid">
     <div class="profil-a-info-text">
-      <h2>Pourquoi votre entreprise mérite cette présence.</h2>
-      <p>Aujourd'hui, 82% des clients à Paris effectuent une recherche Google avant de choisir un professionnel. Être invisible, c'est laisser le champ libre à vos concurrents.</p>
+      <h2>Pourquoi votre association mérite cette visibilité.</h2>
+      <p>Aujourd'hui, 73% des dons passent par une recherche en ligne. Être invisible, c'est priver votre cause de soutiens précieux.</p>
     </div>
     <div class="profil-a-info-args">
       <div class="profil-a-arg-item">
         <div class="profil-a-arg-num">1</div>
         <div class="profil-a-arg-content">
-          <h3>Crédibilité immédiate</h3>
-          <p>Une présence web soignée transforme un prospect hésitant en client convaincu.</p>
+          <h3>Crédibilité &amp; Confiance</h3>
+          <p>Un site clair et professionnel rassure vos donateurs et partenaires.</p>
         </div>
       </div>
       <div class="profil-a-arg-item">
         <div class="profil-a-arg-num">2</div>
         <div class="profil-a-arg-content">
-          <h3>Capture mobile 24/7</h3>
-          <p>Votre futur site est optimisé pour transformer chaque clic sur smartphone en appel direct.</p>
+          <h3>Visibilité 24h/24</h3>
+          <p>Votre action visible partout, à tout moment — pour mobiliser au maximum.</p>
         </div>
       </div>
       <div class="profil-a-arg-item">
         <div class="profil-a-arg-num">3</div>
         <div class="profil-a-arg-content">
-          <h3>Expansion locale</h3>
-          <p>Attirez des clients au-delà de votre quartier grâce à un référencement Google Maps maîtrisé.</p>
+          <h3>Rayonnement local</h3>
+          <p>Faites connaître votre mission bien au-delà de votre quartier grâce au référencement local.</p>
         </div>
       </div>
     </div>
@@ -944,24 +1051,24 @@ body:has(.mobile-menu--open) {
 <section class="profil-a-cta-box">
   <div class="profil-a-cta-title">Ce site peut être en ligne dans 3 semaines.</div>
   <p class="profil-a-cta-sub">
-    Nous avons déjà préparé toute la structure technique. Il ne manque plus que votre feu vert pour finaliser les contenus.
+    Nous avons déjà préparé toute la structure technique. Il ne manque plus que votre validation pour finaliser les contenus.
   </p>
-  <a href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NOM_ENTREPRISE}}" class="suite-blur-btn" target="_blank">
-    <svg class="icon icon--md" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
-    Nous contacter — 0143681453
-  </a>
-</section>
+    <a href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NOM_ENTREPRISE}}" class="suite-blur-btn" target="_blank">
+      <svg class="icon icon--md" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
+      Rejoignez-nous — {{TELEPHONE}}
+    </a>
+  </section>
 
-<!-- Footer -->
-<footer class="profil-a-footer">
+  <!-- Footer -->
+  <footer class="profil-a-footer">
   <div class="footer-services-container">
-    <div class="footer-services-title">Nos expertises &amp; prestations</div>
+    <div class="footer-services-title">Nos missions &amp; actions</div>
     <ul class="footer-services-list">
-      <li>Création de site internet</li>
-      <li>Optimisation Google Maps</li>
-      <li>E-réputation &amp; Avis clients</li>
-      <li>Création d'application web</li>
-      <li>Visibilité locale &amp; SEO</li>
+      <li>Aide alimentaire d'urgence</li>
+      <li>Insertion &amp; réinsertion</li>
+      <li>Ateliers de lien social</li>
+      <li>Accompagnement administratif</li>
+      <li>Collecte &amp; distribution</li>
     </ul>
   </div>
   <div>

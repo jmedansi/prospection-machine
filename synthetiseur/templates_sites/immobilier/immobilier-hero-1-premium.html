@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -646,14 +646,90 @@ body:has(.mobile-menu--open) {
 }
 
 @media (max-width: 767px) {
-  .hero-content { text-align: center; margin: 0 auto; }
-  .hero-title { text-align: center; }
-  .hero-divider { justify-content: center; }
-  .hero-desc { text-align: center; margin: 0 auto; }
-  .hero-stats { justify-content: center; }
-  .hero-bar { justify-content: center; }
+  /* Navigation mobile premium */
+  .logo-text { font-size: 1.35rem !important; }
+  .hamburger { width: 1.85rem !important; height: 1.2rem !important; }
+  .mobile-menu-list a { font-size: 1.1rem !important; letter-spacing: 0.15em !important; }
+  .mobile-menu-cta { padding: 1rem 2.5rem !important; font-size: 0.9rem !important; font-weight: 600 !important; }
+  .mobile-menu-tel { font-size: 1rem !important; }
+
+  /* Hero mobile layout — flush bottom */
+  .hero { min-height: 80svh !important; justify-content: flex-end !important; }
+
+  .hero-content {
+    text-align: center !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: calc(var(--nav-height) + 2rem) var(--container-padding) 3rem !important;
+  }
+
+  .hero-title {
+    text-align: center !important;
+    font-size: clamp(2.5rem, 11vw, 3.8rem) !important;
+    line-height: 1.25 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .hero-divider { justify-content: center !important; margin: 1.25rem auto 2rem !important; }
+
+  .hero-desc {
+    text-align: center !important;
+    margin: 0 auto 2rem !important;
+    max-width: 100% !important;
+    font-size: 1.1rem !important;
+    line-height: 1.7 !important;
+  }
+
+  /* Masquer les tags spécialités sur mobile : encombrent le bas */
+  .hero-specialties { display: none !important; }
+
+  /* Boutons pleine largeur asymétriques */
+  .hero-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.875rem !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+
+  .btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+    background: var(--color-accent-light) !important;
+    color: var(--color-bg-dark) !important;
+    border-color: transparent !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    min-height: 3.25rem !important;
+    box-shadow: 0 4px 18px rgba(76, 175, 130, 0.28) !important;
+  }
+
+  /* btn-ghost = lien téléphone → bouton ghost plein */
+  .btn-ghost {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.06em !important;
+    color: var(--color-text) !important;
+    padding: 1rem 2rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: var(--radius-md) !important;
+    min-height: 3.25rem !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .btn-ghost-underline { border-bottom: none !important; }
+
+  .hero-stats { display: none !important; }
+  .hero-bar { display: none !important; }
   .footer-services-container { text-align: center; }
   .profil-a-info-text { text-align: center; }
+  .profil-a-info-grid { grid-template-columns: 1fr !important; }
 }
 
 @media (min-width: 768px) {
@@ -780,6 +856,25 @@ body:has(.mobile-menu--open) {
 @media(max-width:768px){.section-suite-floue{padding:6rem 1.5rem calc(10rem + 30px);width:100%}.suite-blur-overlay{padding-bottom:4rem}.suite-blur-card{padding:2rem 1.5rem}.suite-grid{grid-template-columns:1fr}.suite-card:nth-child(n+2){display:none}.profil-a-preview-section{padding:4rem 1.25rem}.profil-a-info-grid{grid-template-columns:1fr;gap:2rem}.profil-a-cta-box{padding:5rem 1.25rem}.footer-services-list{grid-template-columns:1fr;gap:1rem}}
 @media(max-width:480px){.section-suite-floue{padding:4rem 1rem calc(8rem + 30px)}.suite-title{margin-bottom:2rem}.suite-card-img{height:180px}.suite-card-body{padding:1.25rem}.suite-blur-card{padding:1.5rem 1rem;max-width:90%}.suite-blur-title{font-size:1.25rem}.suite-blur-btn{width:100%;justify-content:center;padding:1rem 1.5rem;font-size:.8rem}.profil-a-preview-section{padding:3rem 1rem}.profil-a-info-text h2{font-size:1.5rem}.profil-a-arg-item{padding:1rem;flex-direction:column;gap:.75rem}.profil-a-cta-box{padding:4rem 1rem}.profil-a-cta-title{font-size:1.4rem}.profil-a-footer{padding:3rem 1rem 2rem}.footer-services-title{font-size:.8rem}.footer-services-list li{font-size:.82rem}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}html{scroll-behavior:auto}}
+
+/* ── RESPONSIVE TABLET ── */
+@media(max-width:1024px){
+  nav{padding:1.5rem 2rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:2rem!important;padding-right:2rem!important}
+}
+/* ── RESPONSIVE MOBILE ── */
+@media(max-width:768px){
+  .nav-cta,.nav-rdv,.nav-tel{font-size:.62rem!important;padding:.5rem .875rem!important;white-space:nowrap}
+  .hero-content,.hero-inner,.hero-left{max-width:100%!important}
+  .page-preview{height:auto!important;min-height:60vh!important}
+}
+/* ── RESPONSIVE SMALL PHONE ── */
+@media(max-width:480px){
+  nav{padding:.75rem 1rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:1rem!important;padding-right:1rem!important}
+  .stat-num{font-size:1.3rem!important}
+  .stat-block{padding:.75rem 1rem!important}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -860,7 +955,7 @@ body:has(.mobile-menu--open) {
 
     <div class="hero-content">
       <h1 class="hero-title">
-        <em>Trouver</em>
+        <strong>Trouver</strong>
         <strong>votre bien idéal</strong>
         à {{VILLE}}.
       </h1>
@@ -900,7 +995,7 @@ body:has(.mobile-menu--open) {
         <span class="hero-stat-label">Avis Google</span>
       </div>
       <div class="hero-stat" role="listitem">
-        <span class="hero-stat-num">4.8â˜…</span>
+        <span class="hero-stat-num">{{RATING}}★</span>
         <span class="hero-stat-label">Note moyenne</span>
       </div>
       <div class="hero-stat" role="listitem">

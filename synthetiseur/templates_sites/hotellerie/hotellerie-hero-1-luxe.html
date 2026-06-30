@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -20,8 +20,8 @@
   --color-panel-bg: rgba(181,146,76,.06);
   --ff-heading: 'Cormorant', serif;
   --ff-body: 'Jost', sans-serif;
-  --fs-title: clamp(2.4rem, 7.5vw, 3.2rem);
-  --fs-subtitle: 0.9375rem;
+  --fs-title: clamp(2.4rem, 8.5vw, 3.2rem);
+  --fs-subtitle: 1.05rem;
   --fs-body: 0.875rem;
   --fs-small: 0.75rem;
   --fs-tiny: 0.65rem;
@@ -69,7 +69,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .icon--md { width: 1.25em; height: 1.25em; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 
-.hero { position: relative; display: flex; align-items: center; overflow: hidden; }
+.hero { position: relative; display: flex; align-items: center; overflow: hidden; min-height: 75svh; }
 .hero-bg {
   position: absolute; inset: 0;
   background: url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1600&q=90') center / cover no-repeat;
@@ -87,7 +87,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .nav { position: absolute; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; height: var(--nav-height); padding-inline: var(--container-padding); }
 .nav-logo-img { height: 38px; max-width: 160px; width: auto; object-fit: contain; filter: brightness(0) invert(1); display: none; }
 .nav-logo-group { display: flex; align-items: center; gap: .875rem; }
-.nav-logo-text { font-family: var(--ff-heading); font-size: 1.5rem; font-weight: 300; color: var(--color-text); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.nav-logo-text { font-family: var(--ff-heading); font-size: 1rem; font-weight: 300; color: var(--color-text); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .nav-logo-text span { color: var(--color-accent); }
 .nav-list { display: none; }
 .nav-list a { font-size: var(--fs-nav); font-weight: 400; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.55); transition: color var(--duration-fast); }
@@ -120,8 +120,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .mobile-menu-divider { width: 2rem; height: 1px; background: var(--color-border); }
 body:has(.mobile-menu--open) { overflow: hidden; }
 
-.hero-inner { position: relative; z-index: 5; padding: 6rem var(--container-padding) 2rem; max-width: 700px; }
-.hero-pre { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.hero-inner { position: relative; z-index: 5; padding: 5.5rem var(--container-padding) 2rem; max-width: 700px; }
+.hero-pre { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
 .pre-ornament { font-family: var(--ff-heading); font-size: 1rem; color: var(--color-accent); letter-spacing: .1em; opacity: .8; }
 .pre-text { font-size: var(--fs-tiny); font-weight: 400; letter-spacing: .28em; text-transform: uppercase; color: var(--color-text-muted-2); }
 
@@ -129,17 +129,17 @@ body:has(.mobile-menu--open) { overflow: hidden; }
   font-family: var(--ff-heading); font-size: var(--fs-title);
   font-weight: 300; line-height: var(--lh-tight);
   color: var(--color-text); letter-spacing: .02em;
-  margin-bottom: 1.25rem; text-shadow: 0 2px 20px rgba(0,0,0,.5);
+  margin-bottom: 0.75rem; text-shadow: 0 2px 20px rgba(0,0,0,.5);
 }
 .hero-title em { font-style: italic; color: var(--color-accent); }
-.hero-rule { display: flex; align-items: center; gap: 1.25rem; margin: 1.5rem 0; }
+.hero-rule { display: flex; align-items: center; gap: 1.25rem; margin: 0.75rem 0; }
 .rule-line { flex: 1; height: 1px; background: var(--color-border); max-width: 60px; }
 .rule-mark { font-family: var(--ff-heading); font-size: 1rem; color: var(--color-accent); letter-spacing: .05em; }
 
 .hero-desc {
   font-size: var(--fs-subtitle); font-weight: 300;
   color: var(--color-text-muted); line-height: var(--lh-normal);
-  max-width: 460px; margin-bottom: 1.5rem;
+  max-width: 460px; margin-bottom: 1rem;
   text-shadow: 0 1px 8px rgba(0,0,0,.5);
 }
 .hero-ctas { display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; }
@@ -165,11 +165,104 @@ body:has(.mobile-menu--open) { overflow: hidden; }
 .hero-bottom { display: none; }
 
 @media (max-width: 767px) {
-  .hero-inner { text-align: center; margin: 0 auto; }
-  .hero-pre { justify-content: center; }
-  .hero-title { text-align: center; }
-  .hero-desc { text-align: center; margin: 0 auto; }
-  .hero-ctas { align-items: center; }
+  /* Navigation mobile premium */
+  .nav-logo-text {
+    font-size: 0.9rem !important;
+  }
+  .hamburger {
+    width: 1.85rem !important;
+    height: 1.2rem !important;
+  }
+  .mobile-menu-list a {
+    font-size: 1.1rem !important;
+    letter-spacing: 0.15em !important;
+  }
+  .mobile-menu-cta {
+    padding: 1rem 2.5rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+  }
+  .mobile-menu-tel {
+    font-size: 1rem !important;
+  }
+
+  /* Hero mobile layout */
+  .hero {
+    min-height: 80svh !important;
+    align-items: center !important;
+  }
+
+  .hero-inner {
+    text-align: center;
+    margin: 0 auto;
+    width: 100%;
+    padding-top: calc(var(--nav-height) + 2rem) !important;
+    padding-bottom: 3rem !important;
+  }
+
+  .hero-pre {
+    justify-content: center;
+    margin-bottom: 2rem !important;
+  }
+
+  .hero-title {
+    text-align: center;
+    font-size: clamp(2.8rem, 11vw, 3.8rem) !important;
+    line-height: 1.25 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .hero-rule {
+    justify-content: center;
+    margin: 1.5rem 0 2rem !important;
+  }
+
+  .hero-desc {
+    text-align: center;
+    margin: 0 auto 2rem !important;
+    width: 100%;
+    font-size: 1.15rem !important;
+    line-height: 1.7 !important;
+  }
+
+  /* Boutons responsives et asymétriques */
+  .hero-ctas {
+    align-items: stretch !important;
+    gap: 0.875rem !important;
+    width: 100% !important;
+  }
+
+  .btn-reserve {
+    width: 100% !important;
+    justify-content: center !important;
+    background: var(--color-accent) !important;
+    color: var(--color-bg-dark) !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    min-height: 3.25rem !important;
+    box-shadow: 0 4px 15px rgba(181, 146, 76, 0.25) !important;
+  }
+
+  .btn-discover {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: var(--color-text) !important;
+    padding: 1rem 2rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-sm) !important;
+    min-height: 3.25rem !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+  }
+
+  .btn-discover-underline {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+
   .hero-panel { justify-content: center; }
   .hero-bottom { justify-content: center; }
   .footer-services-container { text-align: center; }
@@ -181,21 +274,24 @@ body:has(.mobile-menu--open) { overflow: hidden; }
   .nav-right { display: flex; }
   .hamburger { display: none; }
   .mobile-menu-close { display: none; }
-  .hero-inner { padding: 8rem var(--container-padding) 3rem; }
+  .hero-inner { padding: 8rem var(--container-padding) 4rem; }
   .hero-ctas { flex-direction: row; align-items: center; }
-  .btn-reserve { padding: .75rem 2rem; min-height: 2.75rem; }
+  .btn-reserve { width: auto; padding: .75rem 2rem; min-height: 2.75rem; }
   .btn-discover { min-height: 2.75rem; }
-  
-  
 }
 @media (min-width: 1024px) {
   .hero { min-height: 100svh; }
+  .nav {
+    background: rgba(5, 8, 15, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
   .gold-line {
-    display: block; position: absolute; left: 3rem; top: 0; bottom: 0; z-index: 5;
+    display: block; position: absolute; left: 0; top: 0; bottom: 0; z-index: 5;
     width: 1px; background: linear-gradient(to bottom, transparent 0%, var(--color-accent) 30%, var(--color-accent) 70%, transparent 100%);
     opacity: .4;
   }
-  .hero-inner { padding-left: 5rem; padding-right: var(--container-padding); }
+  .hero-inner { padding-left: var(--container-padding); padding-right: var(--container-padding); }
   .hero-panel {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem;
     position: absolute; right: 0; top: 0; bottom: 0; z-index: 5;
@@ -213,9 +309,6 @@ body:has(.mobile-menu--open) { overflow: hidden; }
   .bi { flex: 1; padding: .875rem 1.5rem; display: flex; align-items: center; gap: .625rem; border-right: 1px solid var(--color-border-light); font-size: .7rem; color: rgba(255,255,255,.45); }
   .bi:last-child { border-right: none; }
   .bi strong { color: rgba(255,255,255,.75); }
-  
-  
-  
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -226,6 +319,8 @@ body:has(.mobile-menu--open) { overflow: hidden; }
 @media(max-width:768px){.section-suite-floue{padding:6rem 1.5rem calc(10rem + 30px);width:100%}.suite-blur-overlay{padding-bottom:4rem}.suite-blur-card{padding:2rem 1.5rem}.suite-grid{grid-template-columns:1fr}.suite-card:nth-child(n+2){display:none}.profil-a-preview-section{padding:4rem 1.25rem}.profil-a-info-grid{grid-template-columns:1fr;gap:2rem}.profil-a-cta-box{padding:5rem 1.25rem}.footer-services-list{grid-template-columns:1fr;gap:1rem}}
 @media(max-width:480px){.section-suite-floue{padding:4rem 1rem calc(8rem + 30px)}.suite-title{margin-bottom:2rem}.suite-card-img{height:180px}.suite-card-body{padding:1.25rem}.suite-blur-card{padding:1.5rem 1rem;max-width:90%}.suite-blur-title{font-size:1.25rem}.suite-blur-btn{width:100%;justify-content:center;padding:1rem 1.5rem;font-size:.8rem}.profil-a-preview-section{padding:3rem 1rem}.profil-a-info-text h2{font-size:1.5rem}.profil-a-arg-item{padding:1rem;flex-direction:column;gap:.75rem}.profil-a-cta-box{padding:4rem 1rem}.profil-a-cta-title{font-size:1.4rem}.profil-a-footer{padding:3rem 1rem 2rem}.footer-services-title{font-size:.8rem}.footer-services-list li{font-size:.82rem}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}html{scroll-behavior:auto}}
+
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -312,7 +407,7 @@ body:has(.mobile-menu--open) { overflow: hidden; }
     </div>
     <div class="panel-sep"></div>
     <div class="panel-item">
-      <span class="panel-num">4.8</span>
+      <span class="panel-num">{{RATING}}</span>
       <span class="panel-label">Note · /5</span>
     </div>
     <div class="panel-sep"></div>
@@ -327,7 +422,7 @@ body:has(.mobile-menu--open) { overflow: hidden; }
     <div class="bi"><svg class="icon" aria-hidden="true"><use href="#icon-phone"/></svg> <strong>{{TELEPHONE}}</strong></div>
     <div class="bi"><svg class="icon" aria-hidden="true"><use href="#icon-star"/>
   <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M16.5 13.5c-.3-.15-1.5-.75-1.75-.83s-.4-.13-.57.13-.67.83-.82 1-.3.2-.6.07a7 7 0 0 1-2.14-1.32 7.58 7.58 0 0 1-1.48-1.85c-.16-.27 0-.43.12-.57s.27-.3.4-.45a2 2 0 0 0 .27-.45.49.49 0 0 0 0-.48c-.02-.1-.58-1.4-.8-1.92s-.42-.44-.58-.45h-.5a1 1 0 0 0-.7.33 2.9 2.9 0 0 0-.92 2.17 5 5 0 0 0 1.07 2.87 11.67 11.67 0 0 0 4.43 3.1 5 5 0 0 0 2.87.53 2.9 2.9 0 0 0 2.17-1.39c.2-.34.13-.63.07-.73z"/></symbol>
-</svg> <strong>{{NB_AVIS}} avis</strong> · Note 4.8</div>
+</svg> <strong>{{NB_AVIS}} avis</strong> · Note {{RATING}}</div>
   </div>
 </section>
 

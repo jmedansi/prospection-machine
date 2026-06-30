@@ -85,7 +85,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .hero-accent { display: none; }
 
-.nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; height: var(--nav-height); padding-inline: var(--container-padding); flex-shrink: 0; border-bottom: 1px solid var(--color-border); }
+.nav { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; height: var(--nav-height); padding-inline: var(--container-padding); flex-shrink: 0; border-bottom: 1px solid var(--color-border); background: rgba(12,8,8,.75); }
 .nav-desktop { display: none; align-items: center; justify-content: space-between; width: 100%; }
 .nav-logo-img { height: 34px; max-width: 150px; width: auto; object-fit: contain; filter: brightness(0) invert(1); display: none; }
 .nav-logo-text { font-family: var(--ff-serif); font-size: 1.25rem; font-weight: 500; color: var(--color-text); letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
@@ -94,8 +94,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .nav-links a { font-size: var(--fs-nav); font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); transition: color var(--duration-fast); }
 .nav-links a:hover { color: var(--color-accent); }
 .nav-mobile { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: .75rem; }
-.nav-mobile-tel { font-size: var(--fs-tiny); font-weight: 400; letter-spacing: .08em; color: var(--color-text-muted); white-space: nowrap; transition: color var(--duration-fast); display: flex; align-items: center; gap: .375rem; }
-.nav-mobile-tel:hover { color: var(--color-text); }
 .nav-mobile-logo { flex: 1; }
 
 .hamburger { position: relative; z-index: 110; display: flex; flex-direction: column; justify-content: space-between; width: 1.5rem; height: 1rem; padding: 0; flex-shrink: 0; }
@@ -163,19 +161,86 @@ body:has(.mobile-menu--open) { overflow: hidden; }
 .hero-bar { display: none; }
 
 @media (max-width: 767px) {
-  .hero-content { text-align: center; margin: 0 auto; }
-  .hero-eyebrow { justify-content: center; }
-  .hero-title { text-align: center; }
-  .hero-sub-line { justify-content: center; }
-  .hero-desc { text-align: center; margin: 0 auto; }
-  .hero-ctas { align-items: center; }
+  /* Navigation mobile premium */
+  .nav-name { font-size: 1.25rem !important; }
+  .nav-sub { font-size: 0.7rem !important; }
+  .hamburger { width: 1.85rem !important; height: 1.2rem !important; }
+  .mobile-menu-list a { font-size: 1.1rem !important; letter-spacing: 0.15em !important; }
+  .mobile-menu-cta { padding: 1rem 2.5rem !important; font-size: 0.9rem !important; font-weight: 600 !important; }
+  /* Hero mobile layout */
+  .hero { min-height: 80svh !important; justify-content: center !important; }
+
+  .hero-content {
+    text-align: center;
+    margin: 0 auto;
+    width: 100%;
+    padding-top: calc(var(--nav-height) + 1.5rem) !important;
+    padding-bottom: 3rem !important;
+  }
+
+  .hero-eyebrow, .hero-kicker, .hero-badge, .hero-pre { justify-content: center; margin-bottom: 2rem !important; }
+  .eyebrow-bar { display: none; }
+  .hero-left { display: flex; flex-direction: column; align-items: center; }
+
+  .hero-title {
+    text-align: center;
+    font-size: clamp(2rem, 9vw, 3rem) !important;
+    line-height: 1.25 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .hero-divider, .hero-rule, .hero-sub-line { justify-content: center; margin: 1.5rem 0 2rem !important; }
+
+  .hero-desc {
+    text-align: center;
+    margin: 0 auto 2rem !important;
+    width: 100%;
+    font-size: 1.15rem !important;
+    line-height: 1.7 !important;
+  }
+
+  .hero-features, .hero-specialites, .hero-stats, .hero-cards,
+  .hero-badge-panel, .hero-bar, .hero-panel, .hero-bottom { justify-content: center; }
+
+  /* Boutons responsives et asymétriques */
+  .hero-ctas { align-items: stretch !important; gap: 0.875rem !important; width: 100% !important; }
+
+  .btn-contact {
+    width: 100% !important;
+    justify-content: center !important;
+    background: var(--color-accent) !important;
+    color: var(--color-bg-dark, #0a0a0a) !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    min-height: 3.25rem !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.18) !important;
+  }
+
+  .btn-tel {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: var(--color-text) !important;
+    padding: 1rem 2rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: var(--radius-sm, 4px) !important;
+    min-height: 3.25rem !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  .hero-panel { justify-content: center; }
   .footer-services-container { text-align: center; }
   .profil-a-info-text { text-align: center; }
+  .profil-a-info-grid { grid-template-columns: 1fr !important; }
 }
 
 @media (min-width: 768px) {
   .nav-desktop { display: flex; }
   .nav-mobile { display: none; }
+  .mobile-menu-close { display: none; }
   .hero-content { padding: 5rem var(--container-padding) 3rem; }
   .hero-ctas { flex-direction: row; align-items: center; }
   .btn-contact { padding: .75rem 2rem; min-height: 2.75rem; }
@@ -216,6 +281,25 @@ body:has(.mobile-menu--open) { overflow: hidden; }
 @media(max-width:768px){.section-suite-floue{padding:6rem 1.5rem calc(10rem + 30px);width:100%}.suite-blur-overlay{padding-bottom:4rem}.suite-blur-card{padding:2rem 1.5rem}.suite-grid{grid-template-columns:1fr}.suite-card:nth-child(n+2){display:none}.profil-a-preview-section{padding:4rem 1.25rem}.profil-a-info-grid{grid-template-columns:1fr;gap:2rem}.profil-a-cta-box{padding:5rem 1.25rem}.footer-services-list{grid-template-columns:1fr;gap:1rem}}
 @media(max-width:480px){.section-suite-floue{padding:4rem 1rem calc(8rem + 30px)}.suite-title{margin-bottom:2rem}.suite-card-img{height:180px}.suite-card-body{padding:1.25rem}.suite-blur-card{padding:1.5rem 1rem;max-width:90%}.suite-blur-title{font-size:1.25rem}.suite-blur-btn{width:100%;justify-content:center;padding:1rem 1.5rem;font-size:.8rem}.profil-a-preview-section{padding:3rem 1rem}.profil-a-info-text h2{font-size:1.5rem}.profil-a-arg-item{padding:1rem;flex-direction:column;gap:.75rem}.profil-a-cta-box{padding:4rem 1rem}.profil-a-cta-title{font-size:1.4rem}.profil-a-footer{padding:3rem 1rem 2rem}.footer-services-title{font-size:.8rem}.footer-services-list li{font-size:.82rem}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}html{scroll-behavior:auto}}
+
+/* ── RESPONSIVE TABLET ── */
+@media(max-width:1024px){
+  nav{padding:1.5rem 2rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:2rem!important;padding-right:2rem!important}
+}
+/* ── RESPONSIVE MOBILE ── */
+@media(max-width:768px){
+  .nav-cta,.nav-rdv,.nav-tel{font-size:.62rem!important;padding:.5rem .875rem!important;white-space:nowrap}
+  .hero-content,.hero-inner,.hero-left{max-width:100%!important}
+  .page-preview{height:auto!important;min-height:60vh!important}
+}
+/* ── RESPONSIVE SMALL PHONE ── */
+@media(max-width:480px){
+  nav{padding:.75rem 1rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:1rem!important;padding-right:1rem!important;}
+  .stat-num{font-size:1.3rem!important}
+  .stat-block{padding:.75rem 1rem!important}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -226,6 +310,7 @@ body:has(.mobile-menu--open) { overflow: hidden; }
   <symbol id="icon-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
   <symbol id="icon-arrow-right" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
   <symbol id="icon-map-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M16.5 13.5c-.3-.15-1.5-.75-1.75-.83s-.4-.13-.57.13-.67.83-.82 1-.3.2-.6.07a7 7 0 0 1-2.14-1.32 7.58 7.58 0 0 1-1.48-1.85c-.16-.27 0-.43.12-.57s.27-.3.4-.45a2 2 0 0 0 .27-.45.49.49 0 0 0 0-.48c-.02-.1-.58-1.4-.8-1.92s-.42-.44-.58-.45h-.5a1 1 0 0 0-.7.33 2.9 2.9 0 0 0-.92 2.17 5 5 0 0 0 1.07 2.87 11.67 11.67 0 0 0 4.43 3.1 5 5 0 0 0 2.87.53 2.9 2.9 0 0 0 2.17-1.39c.2-.34.13-.63.07-.73z"/></symbol>
 </svg>
 
 <section class="hero" aria-label="Présentation">
@@ -243,7 +328,6 @@ body:has(.mobile-menu--open) { overflow: hidden; }
       </ul>
     </div>
     <div class="nav-mobile">
-      <a href="tel:{{TELEPHONE}}" class="nav-mobile-tel"><svg class="icon" aria-hidden="true"><use href="#icon-phone"/></svg>{{TELEPHONE}}</a>
       <a href="#" class="nav-logo-text nav-mobile-logo">{{NOM_ENTREPRISE}}<span>.</span></a>
       <button class="hamburger" aria-label="Menu" aria-expanded="false">
         <span class="hamburger-line"></span>
@@ -289,14 +373,12 @@ body:has(.mobile-menu--open) { overflow: hidden; }
 
   <div class="hero-stats">
     <div class="stat-block"><span class="stat-num">{{NB_AVIS}}</span><span class="stat-label">Avis Google</span></div>
-    <div class="stat-block"><span class="stat-num">4.8</span><span class="stat-label">Note moyenne</span></div>
+    <div class="stat-block"><span class="stat-num">{{RATING}}</span><span class="stat-label">Note moyenne</span></div>
   </div>
 
   <div class="hero-bar">
     <div class="bar-item"><svg class="icon icon--md" aria-hidden="true"><use href="#icon-map-pin"/></svg> <strong>{{ADRESSE}}</strong>, {{VILLE}}</div>
-    <div class="bar-item"><svg class="icon icon--md" aria-hidden="true"><use href="#icon-phone"/>
-  <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M16.5 13.5c-.3-.15-1.5-.75-1.75-.83s-.4-.13-.57.13-.67.83-.82 1-.3.2-.6.07a7 7 0 0 1-2.14-1.32 7.58 7.58 0 0 1-1.48-1.85c-.16-.27 0-.43.12-.57s.27-.3.4-.45a2 2 0 0 0 .27-.45.49.49 0 0 0 0-.48c-.02-.1-.58-1.4-.8-1.92s-.42-.44-.58-.45h-.5a1 1 0 0 0-.7.33 2.9 2.9 0 0 0-.92 2.17 5 5 0 0 0 1.07 2.87 11.67 11.67 0 0 0 4.43 3.1 5 5 0 0 0 2.87.53 2.9 2.9 0 0 0 2.17-1.39c.2-.34.13-.63.07-.73z"/></symbol>
-</svg> <strong>{{TELEPHONE}}</strong></div>
+    <div class="bar-item"><svg class="icon icon--md" aria-hidden="true"><use href="#icon-phone"/></svg> <strong>{{TELEPHONE}}</strong></div>
   </div>
 </section>
 
