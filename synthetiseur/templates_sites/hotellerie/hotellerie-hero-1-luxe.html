@@ -322,7 +322,15 @@ body:has(.mobile-menu--open) { overflow: hidden; }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}html{scroll-behavior:auto}}
 
 
-</style>
+
+    /* --- Fix taille titre PC --- */
+    @media (min-width: 1024px) {
+      .hero-title {
+        font-size: clamp(2.4rem, 4vw, 3.2rem) !important;
+      }
+    }
+
+  </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 </head>
