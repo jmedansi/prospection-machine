@@ -94,10 +94,10 @@ SECTOR_MAP = {
     'événementiel':'evenementiel',
     'mariage':     'evenementiel',
     'microfinance':'microfinance',
-    'numerique':   'numerique',
-    'numérique':   'numerique',
-    'digital':     'numerique',
-    'web':         'numerique',
+    'ong':         'ong',
+    'association': 'ong',
+    'humanitaire': 'ong',
+    'asso':        'ong',
 }
 
 # Couleurs d'accent par secteur (même mapping qu'inject_profil_a.py)
@@ -111,7 +111,6 @@ SECTOR_COLORS = {
     'hotellerie': '#b5924c',
     'immobilier': '#1a3c34',
     'juridique':  '#1e3a5f',
-    'numerique':  '#7c3aed',
     'restaurant': '#c8a96e',
     'sante':      '#0077b6',
     'sport':      '#00c896',
@@ -119,6 +118,7 @@ SECTOR_COLORS = {
     'education':  '#c0392b',
     'evenementiel':'#d4af37',
     'microfinance':'#1a5276',
+    'ong':         '#2ecc71',
 }
 
 # Variables Jinja par secteur (valeurs par défaut métier)
@@ -134,11 +134,11 @@ SECTOR_DEFAULTS = {
     'bijouterie':  {'SECTEUR_TAGLINE': 'Joaillerie & Bijouterie', 'TYPE_BIJOUTERIE': 'Joaillerie'},
     'commerce':    {'SECTEUR_TAGLINE': 'Commerce Local', 'TYPE_COMMERCE': 'Boutique'},
     'sport':       {'SECTEUR_TAGLINE': 'Sport & Coaching', 'SPECIALITE': 'Coach sportif'},
-    'numerique':   {'SECTEUR_TAGLINE': 'Digital & Numérique', 'SPECIALITE': 'Expert digital'},
     'comptable':   {'SECTEUR_TAGLINE': 'Expertise Comptable & Gestion', 'TYPE_COMMERCE': 'Cabinet Comptable'},
     'education':   {'SECTEUR_TAGLINE': 'Éducation & Formation'},
     'evenementiel':{'SECTEUR_TAGLINE': 'Événementiel & Réception', 'TYPE_COMMERCE': 'Organisateur'},
     'microfinance':{'SECTEUR_TAGLINE': 'Microfinance & Services Financiers'},
+    'ong':         {'SECTEUR_TAGLINE': 'ONG & Association'},
     'default':     {'SECTEUR_TAGLINE': 'Commerce Local', 'TYPE_COMMERCE': 'Commerce'},
 }
 
@@ -237,32 +237,15 @@ def resolve_sector(secteur: Optional[str], category: Optional[str]) -> str:
     return 'default'
 
 
-PREFERRED_TEMPLATES = {
-    'hotellerie': [
-        'hotellerie-hero-2-urbain.html',
-    ],
-}
-
 def pick_template(sector_folder: str, lead_id: int) -> Path:
-    """Choisit un template dans le dossier du secteur (round-robin sur l'id).
-
-    Pour hotellerie sans site, on préfère un template particulier.
-    """
+    """Choisit un template dans le dossier du secteur (round-robin sur l'id)."""
     folder = TEMPLATES_DIR / sector_folder
 
-    preferred = PREFERRED_TEMPLATES.get(sector_folder, [])
-    for filename in preferred:
-        path = folder / filename
-        if path.exists():
-            return path
-
-    # On liste uniquement les fichiers HTML à la racine (pas les sous-dossiers template_1/)
     candidates = sorted([
         f for f in folder.iterdir()
         if f.is_file() and f.suffix == '.html'
     ])
     if not candidates:
-        # Fallback sur default
         folder = TEMPLATES_DIR / 'default'
         candidates = sorted([f for f in folder.iterdir() if f.is_file() and f.suffix == '.html'])
     if not candidates:
@@ -406,11 +389,11 @@ SECTOR_LABELS = {
     'bijouterie':  'bijouterie & joaillerie',
     'commerce':    'commerce local',
     'sport':       'sport & coaching',
-    'numerique':   'digital & numérique',
     'comptable':   'expertise comptable',
     'education':   'éducation & formation',
     'evenementiel':'événementiel & réception',
     'microfinance':'microfinance & services financiers',
+    'ong':         'ong & association',
     'default':     'commerce local',
 }
 

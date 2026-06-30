@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le P'tit Bistrot</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT HÔTELLERIE 2 : #e9c46a (sable doré)
+  Python remplace '#e9c46a'
+  VARIABLES : Le P'tit Bistrot paris +33 1 42 78 55 80
+              8 Rue Saint-Martin, 75004 Paris, France --  --
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  overflow:hidden;
+}
+
+/* Moitié gauche — contenu */
+.hero-left{
+  position:relative;z-index:5;
+  background:linear-gradient(135deg,#0a0a0a 0%,#1a1205 100%);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:0;overflow:hidden;
+}
+
+/* Texture subtile */
+.hero-left::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top left,rgba(233,196,106,.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* Moitié droite — image */
+.hero-right{
+  position:relative;overflow:hidden;
+}
+.hero-img{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=1200&q=90') center/cover no-repeat;
+  animation:slow-zoom 10s ease-out forwards;
+}
+@keyframes slow-zoom{from{transform:scale(1.06)}to{transform:scale(1)}}
+
+.hero-img-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to left,transparent 60%,rgba(10,10,10,.3) 100%);
+}
+
+/* ── NAV ── */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:2rem 2.5rem;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  position:relative;z-index:1;
+}
+
+.nav-logo-img{height:34px;max-width:180px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:none}
+.nav-logo-text{
+  font-family:'Syne',sans-serif;
+  font-size:1.1rem;font-weight:800;color:#fff;
+  text-decoration:none;letter-spacing:.04em;text-transform:uppercase;
+  max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-logo-text span{color:#e9c46a}
+
+.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links a {
+  font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);text-decoration:none;transition:color .2s;
+; color: rgba(255, 255, 255, 0.85) !important; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.5);}
+.nav-links a:hover{color:#e9c46a}
+
+/* ── CONTENU CENTRAL ── */
+.hero-body{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:2rem 2.5rem;position:relative;z-index:1;
+}
+
+.hero-chip{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(233,196,106,.1);border:1px solid rgba(233,196,106,.25);
+  padding:.35rem .875rem;border-radius:20px;
+  font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:#e9c46a;margin-bottom:1.75rem;width:fit-content;
+}
+
+.hero-title{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2rem,4.5vw,3.8rem);
+  font-weight:800;line-height:1.05;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 16px rgba(0,0,0,.4);
+  letter-spacing:-.01em;
+  max-width:100%;word-wrap:break-word;overflow:hidden;
+}
+.hero-title em{
+  font-style:italic;font-family:'Inter',sans-serif;
+  font-weight:300;color:#e9c46a;display:block;
+  font-size:clamp(1.6rem,3vw,2.6rem);
+}
+
+.hero-desc{
+  font-size:.9rem;font-weight:300;
+  color:rgba(255,255,255,.60);
+  line-height:1.9;max-width:380px;
+  margin-bottom:2rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.4);
+}
+
+.hero-ctas{display:flex;gap:.875rem;flex-wrap:wrap;margin-bottom:1.75rem}
+
+.btn-main{
+  display:inline-block;
+  padding:.875rem 1.75rem;
+  background:#e9c46a;color:#0a0a0a;
+  font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;
+  transition:all .25s;box-shadow:0 4px 16px rgba(233,196,106,.3);
+}
+.btn-main:hover{background:#fff;color:#0a0a0a;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.875rem 1.5rem;
+  border:1.5px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.75);
+  font-size:.72rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.btn-ghost:hover{border-color:#fff;color:#fff}
+
+/* Rating */
+.hero-rating{
+        display:flex;align-items:center;gap:1.25rem;
+        padding:1rem 1.5rem;
+        background:rgba(255,255,255,.08);
+        border:1px solid rgba(255,255,255,.14);
+        border-radius:8px;width:fit-content;
+    }
+    .rating-stars{color:#e9c46a;letter-spacing:.16em;font-size:1.05rem}
+    .rating-text{font-size:.92rem;color:rgba(255,255,255,.9);line-height:1.6;display:inline-flex;gap:.6rem;align-items:center}
+    .rating-text strong{color:#fff;letter-spacing:.01em}
+/* Barre bas gauche */
+.hero-footer{
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.07);
+  position:relative;z-index:1;
+}
+.hf-item{
+  flex:1;padding:.875rem 1.5rem;
+  border-right:1px solid rgba(255,255,255,.06);
+  font-size:.68rem;
+}
+.hf-item:last-child{border-right:none}
+.hf-strong{display:block;color:rgba(255,255,255,.78);font-weight:600;font-size:.72rem}
+.hf-small{color:rgba(255,255,255,.38);margin-top:1px}
+
+/* Stats sur image */
+.img-stats{
+  position:absolute;bottom:2rem;left:2rem;z-index:5;
+  display:flex;gap:1rem;
+}
+.img-stat{
+  background:rgba(10,10,10,.6);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:4px;
+  padding:.75rem 1.25rem;text-align:center;
+}
+.is-num{
+  font-family:'Syne',sans-serif;
+  font-size:1.5rem;font-weight:800;color:#fff;
+  display:block;line-height:1;
+}
+.is-label{
+  font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.45);display:block;margin-top:.25rem;
+}
+
+/* suite floue supprimée */
+
+@media(max-width:768px){
+  .hero{grid-template-columns:1fr;grid-template-rows:1fr}
+  .hero-right{display:none}
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-body{padding:2rem 1.5rem}
+  .hero-footer{display:none}
+}
+
+/* -- RESPONSIVE TABLET -- */
+@media(max-width:1024px){
+  nav{padding:1.5rem 2rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:2rem!important;padding-right:2rem!important}
+}
+/* -- RESPONSIVE MOBILE -- */
+@media(max-width:768px){
+  .nav-cta,.nav-rdv,.nav-tel{font-size:.62rem!important;padding:.5rem .875rem!important;white-space:nowrap}
+  .hero-title{font-size:clamp(2rem,7.5vw,3rem)!important;line-height:1.1!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.88rem!important;max-width:100%!important}
+  .hero-ctas,.cta-group{flex-direction:column!important;align-items:flex-start!important;gap:.75rem!important}
+  .hero-content,.hero-inner,.hero-left{max-width:100%!important}
+  .page-preview{height:auto!important;min-height:60vh!important}
+}
+/* -- RESPONSIVE SMALL PHONE -- */
+@media(max-width:480px){
+  nav{padding:.75rem 1rem!important}
+  .hero-title{font-size:clamp(1.6rem,9vw,2.25rem)!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:1rem!important;padding-right:1rem!important;padding-bottom:6rem!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.83rem!important}
+  .stat-num{font-size:1.3rem!important}
+  .stat-block{padding:.75rem 1rem!important}
+  .btn-contact,.btn-primary,.nav-cta,.nav-rdv{width:100%!important;text-align:center!important;justify-content:center!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFIL A — Sections rapport Incidenx
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Correction globale hero-content width ── */
+/* Les templates plein-écran avaient max-width:760px trop étroit */
+/* On force 50vw minimum sur desktop, 100% sur mobile */
+.hero-content,
+.hero-inner {
+  max-width: 52% !important;
+  min-width: min(480px, 90vw);
+}
+@media(max-width: 900px) {
+  .hero-content,
+  .hero-inner {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* ── Nav logo-text toujours lisible ── */
+.nav-logo-text {
+  max-width: 240px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block !important;
+}
+
+.profil-a-preview-section {
+  padding: 6rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+.profil-a-info-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 5rem;
+  align-items: center;
+}
+.profil-a-info-text h2 {
+  font-family: inherit;
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+  color: #0f172a;
+  line-height: 1.15;
+}
+.profil-a-info-text p {
+  color: #475569;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+.profil-a-arg-item {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.profil-a-arg-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+.profil-a-arg-item:last-child { margin-bottom: 0; }
+.profil-a-arg-num {
+  width: 42px;
+  height: 42px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #e9c46a;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+.profil-a-arg-content h3 {
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  color: #0f172a;
+}
+.profil-a-arg-content p {
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.profil-a-cta-box {
+  background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+  padding: 7rem 2rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+}
+.profil-a-cta-box::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+.profil-a-cta-title {
+  font-family: inherit;
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+.profil-a-cta-sub {
+  color: #94a3b8;
+  margin-bottom: 3.5rem;
+  max-width: 650px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+.profil-a-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #e9c46a;
+  color: #ffffff;
+  padding: 1.25rem 3rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+.profil-a-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  filter: brightness(1.1);
+}
+.profil-a-btn::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: #e9c46a;
+  opacity: 0.3;
+  z-index: -1;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 0; }
+  100% { transform: scale(0.95); opacity: 0; }
+}
+
+.profil-a-footer {
+  background: #020617;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  padding: 5rem 2rem 3rem;
+  font-size: 0.875rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  font-family: inherit;
+}
+.profil-a-footer a {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color .2s;
+}
+.profil-a-footer a:hover { color: #e9c46a; }
+
+.footer-services-container {
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+  padding-bottom: 3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+.footer-services-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+}
+.footer-services-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+}
+.footer-services-list li {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  position: relative;
+  padding-left: 1.25rem;
+}
+.footer-services-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #e9c46a;
+  font-weight: bold;
+}
+
+@media(max-width: 768px) {
+  .profil-a-preview-section { padding: 4rem 1.25rem; }
+  .profil-a-info-grid { grid-template-columns: 1fr; gap: 2rem; padding: 3rem 0; }
+  .profil-a-cta-box { padding: 5rem 1.25rem; }
+  .profil-a-btn { width: 100%; justify-content: center; }
+  .footer-services-list { grid-template-columns: 1fr; gap: 1rem; }
+}
+
+/* ── NOUVELLE SECTOR PREVIEW (ULTRA PREMIUM) ── */
+.section-suite-floue {
+  position: relative;
+  padding: 8rem 4rem 14rem;
+  background: #ffffff;
+  overflow: hidden;
+  width: 100vw;
+}
+.suite-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+.suite-subtitle {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #e9c46a;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+.suite-title {
+  font-family: inherit;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  color: #0f172a;
+  text-align: center;
+  margin-bottom: 4rem;
+  letter-spacing: -0.02em;
+}
+.suite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2.5rem;
+}
+.suite-card {
+  background: #f8fafc;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4px 30px rgba(15, 23, 42, 0.02);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.suite-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+.suite-card-img {
+  height: 220px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.suite-card-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.2));
+}
+.suite-card-body {
+  padding: 2rem;
+}
+.suite-card-body h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+.suite-card-body p {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Overlay de flou progressif — multi-couches */
+.suite-blur-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6rem;
+  pointer-events: none;
+}
+/* Couche 1 : voile blanc progressif (du transparent vers blanc) */
+.suite-blur-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, 
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0) 10%,
+    rgba(255,255,255,0.6) 30%,
+    rgba(255,255,255,0.96) 55%,
+    #ffffff 100%
+  );
+  pointer-events: none;
+}
+/* Couche 2 : backdrop-filter avec mask progressif pour le flou */
+.suite-blur-layer {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 15%, black 45%, black 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, transparent 15%, black 45%, black 100%);
+  pointer-events: none;
+}
+/* La carte CTA au dessus des couches */
+.suite-blur-overlay > .suite-blur-card {
+  pointer-events: auto;
+  position: relative;
+  z-index: 5;
+}
+.suite-blur-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  padding: 3rem;
+  max-width: 580px;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.12), 0 0 100px rgba(255, 255, 255, 0.5);
+  animation: suite_float 6s ease-in-out infinite;
+}
+@keyframes suite_float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.suite-blur-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #e9c46a;
+  margin-bottom: 1rem;
+}
+.suite-blur-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+  letter-spacing: -0.01em;
+}
+.suite-blur-text {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+.suite-blur-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 1.1rem 2.5rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2);
+}
+.suite-blur-btn:hover {
+  background: #e9c46a;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(15, 23, 42, 0.3);
+}
+
+@media(max-width: 768px) {
+  .section-suite-floue {
+    padding: 6rem 1.5rem 10rem;
+    width: 100%;
+  }
+  .suite-blur-overlay {
+    padding-bottom: 4rem;
+  }
+  .suite-blur-card {
+    padding: 2rem 1.5rem;
+  }
+  .suite-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+</style>
+<style id="incidenx-responsive-override">html,body{width:100%!important;overflow-x:hidden;}*,*::before,*::after{box-sizing:border-box;}img{max-width:100%!important;height:auto!important;}.nav-logo-img{max-height:60px;width:auto;}@media(max-width:767px){.hero-right{display:none!important;}.hero{grid-template-columns:1fr!important;min-height:100svh;}.hero-left{width:100%!important;padding:1.5rem 1.25rem!important;}.hero-body{padding:1.5rem 0!important;}.hero-footer{display:none!important;}}@media(min-width:768px) and (max-width:1024px){.hero{grid-template-columns:55% 45%;}}</style></head>
+<body>
+
+<section class="hero">
+  <!-- Gauche — contenu -->
+  <div class="hero-left">
+    <nav>
+      <div style="display:flex;align-items:center;gap:.875rem">
+        <a href="#" class="nav-logo-text nav-name">Le P'tit Bistrot<span>.</span></a>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#">Chambres</a></li>
+        <li><a href="#">Services</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </nav>
+
+    <div class="hero-body">
+      <div class="hero-chip">✦ paris · Hôtel</div>
+      <h1 class="hero-title">
+        Bienvenue<br>
+        chez vous,
+        <em>à paris.</em>
+      </h1>
+      <p class="hero-desc">
+        Le P'tit Bistrot repense l'hospitalité moderne.
+        Design soigné, service attentionné, emplacement idéal —
+        tout pour que vous vous sentiez chez vous.
+      </p>
+      <div class="hero-ctas">
+        <a href="#" class="btn-main">Réserver maintenant</a>
+        <a href="tel:+33 1 42 78 55 80" class="btn-ghost">📞 +33 1 42 78 55 80</a>
+      </div>
+      <div class="hero-rating">
+        <span class="rating-stars">★★★★★</span>
+        <span class="rating-text"><strong>-- hôtes</strong> recommandent · 4.6/5</span>
+      </div>
+    </div>
+
+    <div class="hero-footer">
+      <div class="hf-item">
+        <span class="hf-strong">8 Rue Saint-Martin, 75004 Paris, France</span>
+        <span class="hf-small">paris</span>
+      </div>
+      <div class="hf-item">
+        <span class="hf-strong">+33 1 42 78 55 80</span>
+        <span class="hf-small">Réservation directe</span>
+      </div>
+      <div class="hf-item">
+        <span class="hf-strong">Check-in 14h</span>
+        <span class="hf-small">Check-out 12h</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Droite — image -->
+  <div class="hero-right">
+    <div class="hero-img"></div>
+    <div class="hero-img-overlay"></div>
+    <div class="img-stats">
+      <div class="img-stat">
+        <span class="is-num">--</span>
+        <span class="is-label">Chambres</span>
+      </div>
+      <div class="img-stat">
+        <span class="is-num">4.6★</span>
+        <span class="is-label">Google</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-suite-floue">
+  <div class="suite-container">
+    <span class="suite-subtitle">Le luxe du confort absolu</span>
+    <h2 class="suite-title">Nos Chambres & Prestations</h2>
+    
+    <div class="suite-grid">
+      <!-- Card 1 -->
+      <div class="suite-card">
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1590490360182-c33d57733427?w=600&q=80')"></div>
+        <div class="suite-card-body">
+          <h3>Suites Deluxe</h3>
+          <p>Des espaces pensés et décorés pour votre sérénité, offrant confort haut de gamme et calme.</p>
+        </div>
+      </div>
+      <!-- Card 2 -->
+      <div class="suite-card">
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&q=80')"></div>
+        <div class="suite-card-body">
+          <h3>Spa & Bien-être</h3>
+          <p>Une véritable parenthèse de détente absolue pour le corps et l'esprit au sein de notre établissement.</p>
+        </div>
+      </div>
+      <!-- Card 3 -->
+      <div class="suite-card">
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=600&q=80')"></div>
+        <div class="suite-card-body">
+          <h3>Table d'Hôte</h3>
+          <p>Une cuisine gourmande inspirée pour éveiller délicieusement vos papilles dès le petit déjeuner.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Blur Overlay over the section content -->
+  <div class="suite-blur-overlay">
+    <div class="suite-blur-layer"></div>
+    <div class="suite-blur-card">
+      <span class="suite-blur-tag">La suite vous attend</span>
+      <h3 class="suite-blur-title">Vous voulez voir la suite de la maquette ?</h3>
+      <p class="suite-blur-text">Nous pouvons personnaliser le reste du site et le mettre en ligne sous quelques jours.</p>
+      <a href="tel:+33 1 42 78 55 80" class="suite-blur-btn">Nous contacter — +33 1 42 78 55 80 ➔</a>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     PROFIL A — Sections rapport Incidenx (inject_profil_a.py v2)
+     ===================================================================== -->
+
+<!-- Section arguments -->
+<section class="profil-a-preview-section">
+  <div class="profil-a-info-grid">
+    <div class="profil-a-info-text">
+      <h2>Pourquoi votre entreprise mérite cette présence.</h2>
+      <p>Aujourd'hui, 82% des clients à paris effectuent une recherche Google avant de choisir un professionnel. Être invisible, c'est laisser le champ libre à vos concurrents.</p>
+    </div>
+    <div class="profil-a-info-args">
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">1</div>
+        <div class="profil-a-arg-content">
+          <h3>Crédibilité immédiate</h3>
+          <p>Une présence web soignée transforme un prospect hésitant en client convaincu.</p>
+        </div>
+      </div>
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">2</div>
+        <div class="profil-a-arg-content">
+          <h3>Capture mobile 24/7</h3>
+          <p>Votre futur site est optimisé pour transformer chaque clic sur smartphone en appel direct.</p>
+        </div>
+      </div>
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">3</div>
+        <div class="profil-a-arg-content">
+          <h3>Expansion locale</h3>
+          <p>Attirez des clients au-delà de votre quartier grâce à un référencement Google Maps maîtrisé.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="profil-a-cta-box">
+  <div class="profil-a-cta-title">Ce site peut être en ligne dans 3 semaines.</div>
+  <p class="profil-a-cta-sub">
+    Nous avons déjà préparé toute la structure technique. Il ne manque plus que votre feu vert pour finaliser les contenus.
+  </p>
+  <a href="https://calendly.com/jmedansi/15min" class="profil-a-btn">
+    Prendre 15 min pour en discuter ➔
+  </a>
+</section>
+
+<!-- Footer Incidenx -->
+<footer class="profil-a-footer">
+  <div class="footer-services-container">
+    <div class="footer-services-title">Nos expertises & prestations</div>
+    <ul class="footer-services-list">
+      <li>Création de site internet</li>
+      <li>Optimisation Google Maps</li>
+      <li>E-réputation & Avis clients</li>
+      <li>Création d'application web</li>
+      <li>Visibilité locale & SEO</li>
+    </ul>
+  </div>
+  <div>
+    Confidentiel &middot; Proposition réalisée par l'équipe d'IncidenX &middot; 2026
+  </div>
+</footer>
+</body>
+</html>

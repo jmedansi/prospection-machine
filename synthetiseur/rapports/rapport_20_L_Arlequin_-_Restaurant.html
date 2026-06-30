@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'Arlequin - Restaurant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/*
+  COULEUR ACCENT HÔTELLERIE 2 : #e9c46a (sable doré)
+  Python remplace '#e9c46a'
+  VARIABLES : L'Arlequin - Restaurant paris +33 1 40 18 45 53
+              33 Rue du Faubourg Saint-Martin, 75010 Paris, France 9160  --
+*/
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;overflow-x:hidden}
+
+.hero{
+  position:relative;width:100vw;height:100vh;
+  display:grid;grid-template-columns:1fr 1fr;
+  overflow:hidden;
+}
+
+/* Moitié gauche — contenu */
+.hero-left{
+  position:relative;z-index:5;
+  background:linear-gradient(135deg,#0a0a0a 0%,#1a1205 100%);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:0;overflow:hidden;
+}
+
+/* Texture subtile */
+.hero-left::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top left,rgba(233,196,106,.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* Moitié droite — image */
+.hero-right{
+  position:relative;overflow:hidden;
+}
+.hero-img{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=1200&q=90') center/cover no-repeat;
+  animation:slow-zoom 10s ease-out forwards;
+}
+@keyframes slow-zoom{from{transform:scale(1.06)}to{transform:scale(1)}}
+
+.hero-img-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to left,transparent 60%,rgba(10,10,10,.3) 100%);
+}
+
+/* ── NAV ── */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:2rem 2.5rem;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  position:relative;z-index:1;
+}
+
+.nav-logo-img{height:34px;max-width:180px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:block}
+.nav-logo-text{
+  font-family:'Syne',sans-serif;
+  font-size:1.1rem;font-weight:800;color:#fff;
+  text-decoration:none;letter-spacing:.04em;text-transform:uppercase;
+  max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-logo-text span{color:#e9c46a}
+
+.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links a{
+  font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);text-decoration:none;transition:color .2s;
+}
+.nav-links a:hover{color:#e9c46a}
+
+/* ── CONTENU CENTRAL ── */
+.hero-body{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:2rem 2.5rem;position:relative;z-index:1;
+}
+
+.hero-chip{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(233,196,106,.1);border:1px solid rgba(233,196,106,.25);
+  padding:.35rem .875rem;border-radius:20px;
+  font-size:.65rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:#e9c46a;margin-bottom:1.75rem;width:fit-content;
+}
+
+.hero-title{
+  font-family:'Syne',sans-serif;
+  font-size:clamp(2rem,4.5vw,3.8rem);
+  font-weight:800;line-height:1.05;
+  color:#fff;margin-bottom:1.25rem;
+  text-shadow:0 2px 16px rgba(0,0,0,.4);
+  letter-spacing:-.01em;
+  max-width:100%;word-wrap:break-word;overflow:hidden;
+}
+.hero-title em{
+  font-style:italic;font-family:'Inter',sans-serif;
+  font-weight:300;color:#e9c46a;display:block;
+  font-size:clamp(1.6rem,3vw,2.6rem);
+}
+
+.hero-desc{
+  font-size:.9rem;font-weight:300;
+  color:rgba(255,255,255,.60);
+  line-height:1.9;max-width:380px;
+  margin-bottom:2rem;
+  text-shadow:0 1px 8px rgba(0,0,0,.4);
+}
+
+.hero-ctas{display:flex;gap:.875rem;flex-wrap:wrap;margin-bottom:1.75rem}
+
+.btn-main{
+  display:inline-block;
+  padding:.875rem 1.75rem;
+  background:#e9c46a;color:#0a0a0a;
+  font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;
+  transition:all .25s;box-shadow:0 4px 16px rgba(233,196,106,.3);
+}
+.btn-main:hover{background:#fff;color:#0a0a0a;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:.5rem;
+  padding:.875rem 1.5rem;
+  border:1.5px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.75);
+  font-size:.72rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.btn-ghost:hover{border-color:#fff;color:#fff}
+
+/* Rating */
+.hero-rating{
+        display:flex;align-items:center;gap:1.25rem;
+        padding:1rem 1.5rem;
+        background:rgba(255,255,255,.08);
+        border:1px solid rgba(255,255,255,.14);
+        border-radius:8px;width:fit-content;
+    }
+    .rating-stars{color:#e9c46a;letter-spacing:.16em;font-size:1.05rem}
+    .rating-text{font-size:.92rem;color:rgba(255,255,255,.9);line-height:1.6}
+    .rating-text strong{color:#fff;letter-spacing:.01em}
+/* Barre bas gauche */
+.hero-footer{
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.07);
+  position:relative;z-index:1;
+}
+.hf-item{
+  flex:1;padding:.875rem 1.5rem;
+  border-right:1px solid rgba(255,255,255,.06);
+  font-size:.68rem;
+}
+.hf-item:last-child{border-right:none}
+.hf-strong{display:block;color:rgba(255,255,255,.78);font-weight:600;font-size:.72rem}
+.hf-small{color:rgba(255,255,255,.38);margin-top:1px}
+
+/* Stats sur image */
+.img-stats{
+  position:absolute;bottom:2rem;left:2rem;z-index:5;
+  display:flex;gap:1rem;
+}
+.img-stat{
+  background:rgba(10,10,10,.6);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:4px;
+  padding:.75rem 1.25rem;text-align:center;
+}
+.is-num{
+  font-family:'Syne',sans-serif;
+  font-size:1.5rem;font-weight:800;color:#fff;
+  display:block;line-height:1;
+}
+.is-label{
+  font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,255,255,.45);display:block;margin-top:.25rem;
+}
+
+/* Suite floue */
+.page-preview{
+  height:100vh;background:linear-gradient(180deg,#faf8f2,#f0e8d8);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.preview-blur{
+  filter:blur(7px);opacity:.28;
+  pointer-events:none;user-select:none;text-align:center;
+}
+.preview-blur h2{
+  font-family:'Syne',sans-serif;
+  font-size:2.6rem;font-weight:800;color:#0a0a0a;margin-bottom:1rem;
+}
+.preview-blur p{font-size:.9rem;color:#3a3020;line-height:1.8;max-width:480px;margin:0 auto}
+.preview-cards{display:flex;gap:1.5rem;margin-top:2rem;justify-content:center}
+.preview-card{width:190px;height:120px;background:#e0d8c0;border-radius:4px}
+
+.preview-over{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+}
+.preview-tag{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#e9c46a}
+.preview-msg{
+  font-family:'Syne',sans-serif;
+  font-size:1.7rem;font-weight:700;
+  color:#0a0a0a;text-align:center;max-width:400px;line-height:1.3;
+}
+.preview-cta{
+  display:inline-block;
+  padding:.95rem 2.5rem;background:#0a0a0a;color:#fff;
+  font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  border-radius:3px;text-decoration:none;transition:all .25s;
+}
+.preview-cta:hover{background:#e9c46a;color:#0a0a0a;transform:translateY(-2px)}
+
+@media(max-width:768px){
+  .hero{grid-template-columns:1fr;grid-template-rows:1fr}
+  .hero-right{display:none}
+  nav{padding:1.25rem 1.5rem}
+  .nav-links{display:none}
+  .hero-body{padding:2rem 1.5rem}
+  .hero-footer{display:none}
+}
+
+/* -- RESPONSIVE TABLET -- */
+@media(max-width:1024px){
+  nav{padding:1.5rem 2rem!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:2rem!important;padding-right:2rem!important}
+}
+/* -- RESPONSIVE MOBILE -- */
+@media(max-width:768px){
+  .nav-cta,.nav-rdv,.nav-tel{font-size:.62rem!important;padding:.5rem .875rem!important;white-space:nowrap}
+  .hero-title{font-size:clamp(2rem,7.5vw,3rem)!important;line-height:1.1!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.88rem!important;max-width:100%!important}
+  .hero-ctas,.cta-group{flex-direction:column!important;align-items:flex-start!important;gap:.75rem!important}
+  .hero-content,.hero-inner,.hero-left{max-width:100%!important}
+  .page-preview{height:auto!important;min-height:60vh!important}
+}
+/* -- RESPONSIVE SMALL PHONE -- */
+@media(max-width:480px){
+  nav{padding:.75rem 1rem!important}
+  .hero-title{font-size:clamp(1.6rem,9vw,2.25rem)!important}
+  .hero-content,.hero-inner,.hero-left{padding-left:1rem!important;padding-right:1rem!important;padding-bottom:6rem!important}
+  .hero-desc,.hero-description,.hero-text{font-size:.83rem!important}
+  .stat-num{font-size:1.3rem!important}
+  .stat-block{padding:.75rem 1rem!important}
+  .btn-contact,.btn-primary,.nav-cta,.nav-rdv{width:100%!important;text-align:center!important;justify-content:center!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFIL A — Sections rapport Incidenx
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.profil-a-header {
+  background: #0d1117;
+  padding: 1.25rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06);
+}
+.profil-a-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: .04em;
+}
+.profil-a-brand span { color: #e9c46a; }
+.profil-a-header-date {
+  font-size: .72rem;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.profil-a-sneak-section {
+  padding: 0 2.5rem 2rem;
+}
+.profil-a-sneak-card {
+  width: clamp(220px, 22vw, 280px);
+  border-radius: 22px;
+  background: rgba(13,17,23,.92);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 18px 40px rgba(0,0,0,.15);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+.sneak-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: #e9c46a;
+  padding: 1rem 1.2rem 0;
+}
+.sneak-window {
+  position: relative;
+  margin: 1rem 1.2rem 0;
+  border-radius: 18px;
+  background: rgba(255,255,255,.06);
+  overflow: hidden;
+}
+.sneak-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 45%, rgba(255,255,255,.18) 100%);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+.sneak-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .7rem;
+  padding: 1rem 1.1rem;
+  color: #fff;
+  font-size: .82rem;
+}
+.sneak-preview strong {
+  font-size: .95rem;
+  font-weight: 700;
+}
+.sneak-copy {
+  padding: 1rem 1.2rem 1.4rem;
+  font-size: .8rem;
+  color: rgba(255,255,255,.72);
+  line-height: 1.5;
+}
+
+.profil-a-preview-section {
+  padding: 5rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.profil-a-mockup-frame {
+  background: #f8f9fb;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.profil-a-desktop-screen {
+  width: 100%;
+  max-width: 1000px;
+  border-radius: 8px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.12);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 4rem;
+}
+.profil-a-mobile-screen {
+  width: 280px;
+  border-radius: 36px;
+  border: 8px solid #0d1117;
+  box-shadow: 0 20px 40px rgba(0,0,0,.2);
+}
+
+.profil-a-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  padding: 5rem 0;
+  align-items: center;
+}
+.profil-a-info-text h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-style: italic;
+  margin-bottom: 1.5rem;
+  color: #0d1117;
+  line-height: 1.25;
+}
+.profil-a-info-text p {
+  color: #64748b;
+  font-size: .95rem;
+  line-height: 1.8;
+}
+.profil-a-arg-item {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.profil-a-arg-item:last-child { margin-bottom: 0; }
+.profil-a-arg-num {
+  width: 36px;
+  height: 36px;
+  background: #e9c46a;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .9rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.profil-a-arg-content h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: .5rem;
+  color: #0d1117;
+}
+.profil-a-arg-content p {
+  color: #64748b;
+  font-size: .92rem;
+  line-height: 1.7;
+}
+
+.profil-a-cta-box {
+  background: #f8f9fb;
+  padding: 6rem 2rem;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+}
+.profil-a-cta-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-style: italic;
+  font-weight: 400;
+  margin-bottom: 1rem;
+  color: #0d1117;
+}
+.profil-a-cta-sub {
+  color: #64748b;
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.8;
+  font-size: .95rem;
+}
+.profil-a-btn {
+  display: inline-block;
+  background: #e9c46a;
+  color: #fff;
+  padding: 1.25rem 3rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .82rem;
+  transition: all .3s ease;
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
+}
+.profil-a-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.24);
+  filter: brightness(1.08);
+}
+
+.profil-a-footer {
+  background: #0d1117;
+  color: rgba(255,255,255,.3);
+  text-align: center;
+  padding: 2.5rem;
+  font-size: .875rem;
+}
+.profil-a-footer a {
+  color: rgba(255,255,255,.55);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color .2s;
+}
+.profil-a-footer a:hover { color: #e9c46a; }
+
+@media(max-width: 768px) {
+  .profil-a-header { padding: 1rem 1.5rem; }
+  .profil-a-header-date { display: none; }
+  .profil-a-preview-section { padding: 3rem 1.25rem; }
+  .profil-a-info-grid { grid-template-columns: 1fr; gap: 2rem; padding: 3rem 0; }
+  .profil-a-cta-box { padding: 4rem 1.25rem; }
+  .profil-a-btn { width: 100%; text-align: center; }
+}
+
+</style>
+<style>html,body{width:100%!important;height:auto!important;min-height:100%!important;margin:0;padding:0;overflow-x:hidden;}body{display:flex;flex-direction:column;min-height:100vh;}*,*::before,*::after{box-sizing:border-box;}.hero{width:100%!important;max-width:100%!important;display:grid!important;grid-template-columns:1fr!important;height:auto!important;min-height:100vh!important;}.hero-left,.hero-right{width:100%!important;max-width:100%!important;min-width:0!important;}.hero-right{display:none!important;}.hero-left{padding:2rem 1.25rem!important;}.hero-body{padding:1.75rem 0!important;justify-content:flex-start!important;}.nav-links{flex-wrap:wrap;gap:1rem!important;}.hero-title{font-size:clamp(2rem,6vw,3.8rem)!important;}.hero-desc{max-width:100%!important;}.hero-ctas{flex-direction:column;align-items:flex-start;gap:0.75rem!important;}.page-preview{min-height:50vh!important;padding:2rem 1rem!important;}.preview-over{padding:0 1rem!important;}img{max-width:100%!important;height:auto!important;display:block!important;}.nav-logo-img{max-height:60px;width:auto;display:block!important;}.nav-logo-text{display:none!important;}@media (min-width:768px){.hero-right{display:block!important;}.hero{grid-template-columns:1fr 1fr!important;}}</style></head>
+<body>
+
+<section class="hero">
+  <!-- Gauche — contenu -->
+  <div class="hero-left">
+    <nav>
+      <div style="display:flex;align-items:center;gap:.875rem">
+        
+          <a href="#" class="nav-logo-text">L'Arlequin - Restaurant<span>.</span></a>
+        
+      </div>
+      <ul class="nav-links">
+        <li><a href="#">Chambres</a></li>
+        <li><a href="#">Services</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </nav>
+
+    <div class="hero-body">
+      <div class="hero-chip">✦ paris · Hôtel</div>
+      <h1 class="hero-title">
+        Bienvenue<br>
+        chez vous,
+        <em>à paris.</em>
+      </h1>
+      <p class="hero-desc">
+        L'Arlequin - Restaurant repense l'hospitalité moderne.
+        Design soigné, service attentionné, emplacement idéal —
+        tout pour que vous vous sentiez chez vous.
+      </p>
+      <div class="hero-ctas">
+        <a href="#" class="btn-main">Réserver maintenant</a>
+        <a href="tel:+33 1 40 18 45 53" class="btn-ghost">📞 +33 1 40 18 45 53</a>
+      </div>
+      <div class="hero-rating">
+        <span class="rating-stars">★★★★★</span>
+        <span class="rating-text"><strong>9160 hôtes</strong> recommandent · 4.9/5</span>
+      </div>
+    </div>
+
+    <div class="hero-footer">
+      <div class="hf-item">
+        <span class="hf-strong">33 Rue du Faubourg Saint-Martin, 75010 Paris, France</span>
+        <span class="hf-small">paris</span>
+      </div>
+      <div class="hf-item">
+        <span class="hf-strong">+33 1 40 18 45 53</span>
+        <span class="hf-small">Réservation directe</span>
+      </div>
+      <div class="hf-item">
+        <span class="hf-strong">Check-in 14h</span>
+        <span class="hf-small">Check-out 12h</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Droite — image -->
+  <div class="hero-right">
+    <div class="hero-img"></div>
+    <div class="hero-img-overlay"></div>
+    <div class="img-stats">
+      <div class="img-stat">
+        <span class="is-num">--</span>
+        <span class="is-label">Chambres</span>
+      </div>
+      <div class="img-stat">
+        <span class="is-num">4.9★</span>
+        <span class="is-label">Google</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     PROFIL A — Sections rapport Incidenx (inject_profil_a.py v2)
+     ===================================================================== -->
+
+<!-- Header sticky Incidenx -->
+<header class="profil-a-header">
+  <div style="display:flex;align-items:center;gap:1.25rem">
+    <a href="https://incidenx.com" class="profil-a-brand">Incidenx<span>.</span></a>
+    
+  </div>
+  <div class="profil-a-header-date">Proposition — L'Arlequin - Restaurant</div>
+</header>
+<section class="profil-a-sneak-section">
+  <div class="profil-a-sneak-card">
+    <div class="sneak-label">Aperçu rapide</div>
+    <div class="sneak-window">
+      <div class="sneak-preview">
+        <span class="rating-stars">★★★★★</span>
+        <strong>9160 hôtes</strong>
+        <span>4.9/5</span>
+      </div>
+    </div>
+    <p class="sneak-copy">Un aperçu discret pour relier le header à la section des arguments, avec un dégradé flou sur le côté.</p>
+  </div>
+</section>
+
+<!-- Section arguments -->
+<section class="profil-a-preview-section">
+  <div class="profil-a-info-grid">
+    <div class="profil-a-info-text">
+      <h2>Pourquoi votre entreprise mérite cette présence.</h2>
+      <p>Aujourd'hui, 82% des clients à paris effectuent une recherche Google avant de choisir un professionnel. Être invisible, c'est laisser le champ libre à vos concurrents.</p>
+    </div>
+    <div class="profil-a-info-args">
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">1</div>
+        <div class="profil-a-arg-content">
+          <h3>Crédibilité immédiate</h3>
+          <p>Une présence web soignée transforme un prospect hésitant en client convaincu.</p>
+        </div>
+      </div>
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">2</div>
+        <div class="profil-a-arg-content">
+          <h3>Capture mobile 24/7</h3>
+          <p>Votre futur site est optimisé pour transformer chaque clic sur smartphone en appel direct.</p>
+        </div>
+      </div>
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">3</div>
+        <div class="profil-a-arg-content">
+          <h3>Expansion locale</h3>
+          <p>Attirez des clients au-delà de votre quartier grâce à un référencement Google Maps maîtrisé.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="profil-a-cta-box">
+  <div class="profil-a-cta-title">Ce site peut être en ligne dans 3 semaines.</div>
+  <p class="profil-a-cta-sub">
+    Nous avons déjà préparé toute la structure technique. Il ne manque plus que votre feu vert pour finaliser les contenus.
+  </p>
+  <a href="https://calendly.com/jmedansi/15min" class="profil-a-btn">
+    Prendre 15 min avec Jean-Marc
+  </a>
+</section>
+
+<!-- Footer Incidenx -->
+<footer class="profil-a-footer">
+  Confidentiel &middot; Proposition réalisée par
+  <a href="https://incidenx.com">Jean-Marc DANSI &middot; Incidenx</a> &middot; 2026
+</footer>
+
+</body>
+</html>

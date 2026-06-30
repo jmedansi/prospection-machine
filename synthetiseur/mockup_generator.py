@@ -70,11 +70,6 @@ SECTOR_CONFIG = {
         "color": "#e63946",
         "tagline": "Automobile & Transport",
     },
-    "numerique": {
-        "templates": ["numerique-hero-1-tech.html", "numerique-hero-2-creatif.html"],
-        "color": "#7c3aed",
-        "tagline": "Expertise Digitale",
-    },
     "comptable": {
         "templates": ["comptable-hero-1-institutionnel.html", "comptable-hero-2-moderne.html"],
         "color": "#1a5276",
@@ -94,6 +89,11 @@ SECTOR_CONFIG = {
         "templates": ["microfinance-hero-1-confiance.html", "microfinance-hero-2-moderne.html"],
         "color": "#1a5276",
         "tagline": "Microfinance & Services Financiers",
+    },
+    "ong": {
+        "templates": ["ong-hero-1-mission.html", "ong-hero-2-impact.html"],
+        "color": "#2ecc71",
+        "tagline": "ONG & Association",
     },
     "default": {
         "templates": ["default-hero-1-professionnel.html", "default-hero-2-chaleureux.html"],
@@ -126,8 +126,6 @@ _TEMPLATE_BASE_COLORS = {
     "sport-hero-2-coach.html":             "#e63946",
     "auto-hero-1-technique.html":          "#e63946",
     "auto-hero-2-moderne.html":            "#1a73e8",
-    "numerique-hero-1-tech.html":          "#7c3aed",
-    "numerique-hero-2-creatif.html":       "#0d9488",
     "comptable-hero-1-institutionnel.html":"#1a5276",
     "comptable-hero-2-moderne.html":       "#1a5276",
     "education-hero-1-savoir.html":        "#c0392b",
@@ -136,6 +134,8 @@ _TEMPLATE_BASE_COLORS = {
     "evenementiel-hero-2-creatif.html":    "#8b5cf6",
     "microfinance-hero-1-confiance.html":  "#1a5276",
     "microfinance-hero-2-moderne.html":    "#0891b2",
+    "ong-hero-1-mission.html":             "#2ecc71",
+    "ong-hero-2-impact.html":              "#27ae60",
     "default-hero-1-professionnel.html":   "#3d5a80",
     "default-hero-2-chaleureux.html":      "#457b9d",
 }
@@ -252,6 +252,11 @@ def detect_sector(category: str) -> str:
                                "créatif", "creatif", "studio", "agence créative"]):
         return "numerique"
 
+    # ONG / Association
+    if any(k in cat for k in ["ong", "association", "humanitaire", "asso", "fondation",
+                               "organisme à but non lucratif", "charité", "caritatif"]):
+        return "ong"
+
     # Commerce local (fallback après tous les spécifiques)
     if any(k in cat for k in ["magasin", "boutique", "commerce", "épicerie",
                                "librairie", "fleuriste", "opticien", "pharmacie",
@@ -299,25 +304,6 @@ def ensure_responsive(html: str) -> str:
     )
     if '</head>' in html:
         html = html.replace('</head>', responsive_css + '</head>', 1)
-    return html
-
-
-def replace_static_rating(html: str, rating: str) -> str:
-    if not rating:
-        return html
-
-    replacements = [
-        (r'Note\s+4\.8\s*/\s*5', f'Note {rating}/5'),
-        (r'Note\s+4\.8(?![0-9A-Za-z])', f'Note {rating}'),
-        (r'4\.8\s*/\s*5', f'{rating}/5'),
-        (r'4\.8\s*★', f'{rating}★'),
-        (r'(?<![0-9A-Za-z])4\.8(?![0-9A-Za-z])', f'{rating}'),
-        (r'>\s*4\.8\s*<', f'>{rating}<'),
-    ]
-
-    for pattern, replacement in replacements:
-        html = re.sub(pattern, replacement, html)
-
     return html
 
 
@@ -378,7 +364,6 @@ def generate_mockup(lead: dict) -> dict:
         jinja_env = jinja2.Environment(loader=jinja_loader, autoescape=False)
         template = jinja_env.from_string(template_text)
         html = template.render(jinja_context)
-        html = replace_static_rating(html, rating)
 
         # 4. Nettoyage des tags non remplacés (s'il en reste)
         html = re.sub(r'\{\{[A-Za-z0-9_]+\}\}', '--', html)

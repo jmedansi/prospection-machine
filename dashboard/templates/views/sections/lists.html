@@ -1,0 +1,826 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     dashboard/templates/views/sections/lists.html
+     Section Listes de Leads — gestion manuelle, actions groupées
+═══════════════════════════════════════════════════════════════════ -->
+
+<!-- ─── Overlay sidebar mobile ─────────────────────────────────── -->
+<div class="lists-sidebar-overlay" id="lists-sidebar-overlay" onclick="ListsModule.closeMobileSidebar()"></div>
+
+<div class="lists-layout">
+
+  <!-- ─── Panneau gauche : liste des listes ─────────────────────────── -->
+  <aside class="lists-sidebar" id="lists-sidebar">
+    <div class="lists-sidebar-header">
+      <span class="lists-sidebar-title">Mes listes</span>
+      <button class="lists-btn-new" id="btn-new-list" onclick="ListsModule.openCreateModal()" title="Créer une liste">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+    <div class="lists-sidebar-controls">
+      <button class="leads-btn sm" onclick="ListsModule.resetAllLists()" title="Supprime toutes les listes et recrée la liste par défaut">Réinitialiser</button>
+      <button class="leads-btn sm" onclick="ListsModule.refreshDefaultList()" title="Met à jour la liste par défaut des leads sans liste">Liste par défaut</button>
+      <button class="leads-btn sm" onclick="ListsModule.createSectorLists()" title="Créer des listes sectorielles de 25 leads">Listes secteur</button>
+    </div>
+    <div class="lists-sidebar-filter">
+      <label class="lists-archive-toggle">
+        <input type="checkbox" id="list-cb-archives" onchange="ListsModule.toggleArchives(this.checked)">
+        Afficher les archives
+      </label>
+    </div>
+    <div id="lists-sidebar-items" class="lists-sidebar-items">
+      <div class="lists-empty-state">
+        <div class="lists-empty-icon">📋</div>
+        <div class="lists-empty-title">Aucune liste</div>
+        <div class="lists-empty-desc">Crée ta première liste<br>pour organiser tes leads</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Panneau principal : leads de la liste sélectionnée ────────── -->
+  <main class="lists-main">
+
+    <!-- Header mobile (affiché uniquement sur mobile) -->
+    <div class="lists-mobile-header">
+      <button class="lists-hamburger" onclick="ListsModule.toggleMobileSidebar()" title="Ouvrir la liste des listes">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <span class="lists-mobile-title" id="lists-mobile-title">Mes listes</span>
+      <button class="lists-hamburger" onclick="ListsModule.openCreateModal()" title="Créer une liste">
+        <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
+          <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- État initial : aucune liste sélectionnée -->
+    <div id="lists-placeholder" class="lists-placeholder">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="1.5">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+      <h3>Sélectionne une liste</h3>
+      <p>ou crée-en une nouvelle pour organiser et traiter tes leads par lot.</p>
+    </div>
+
+    <!-- Vue active d'une liste -->
+    <div id="lists-view" style="display:none">
+
+      <!-- En-tête de la liste active -->
+      <div class="lists-view-header">
+
+        <!-- Ligne 1 : Titre + Note -->
+        <div class="lists-header-top">
+          <div class="lists-view-title-row">
+            <span id="list-active-icone" class="lists-title-icone">📋</span>
+            <h2 id="list-active-nom" class="lists-view-nom">—</h2>
+            <span id="list-active-count" class="lists-count-badge">0 lead</span>
+            <span id="list-active-campaign-badge" class="lists-campaign-badge">🎯 Campagne</span>
+          </div>
+          <textarea id="list-active-note" class="lists-note-input" placeholder="Note sur cette liste..." rows="1"></textarea>
+        </div>
+
+        <!-- Ligne 2 : Contactée + Relances + Archiver -->
+        <div class="lists-view-relances">
+          <button class="leads-btn sm" id="list-btn-contactee" onclick="ListsModule.confirmContactee()">
+            📞 Marquer contactée
+          </button>
+          <div class="lists-sep"></div>
+          <button class="leads-btn sm lists-relance-btn" id="list-btn-relance-j3" onclick="ListsModule.confirmRelance('j3')" style="display:none">
+            ✉️ Relance J+3
+          </button>
+          <button class="leads-btn sm lists-relance-btn" id="list-btn-relance-j7" onclick="ListsModule.confirmRelance('j7')" style="display:none">
+            ✉️ Relance J+7
+          </button>
+          <button class="leads-btn sm lists-relance-btn" id="list-btn-relance-j14" onclick="ListsModule.confirmRelance('j14')" style="display:none">
+            ✉️ Relance J+14
+          </button>
+          <div class="lists-spacer"></div>
+          <button class="leads-btn danger sm" id="list-btn-archive" onclick="ListsModule.archiveList()">
+            📦 Archiver
+          </button>
+        </div>
+
+        <!-- Ligne 3 : Toolbar actions -->
+        <div class="lists-toolbar">
+          <div class="lists-toolbar-main">
+            <button class="leads-btn sm" onclick="ListsModule.dispatchAction('audit')" title="Auditer tous les leads de cette liste">
+              🔬 Auditer
+            </button>
+            <button class="leads-btn sm" onclick="ListsModule.dispatchAction('find_emails')" title="Trouver les emails manquants">
+              🔍 Emails
+            </button>
+            <button class="leads-btn sm" onclick="ListsModule.dispatchAction('generate_emails')" title="Générer les emails de prospection">
+              ✉️ Générer
+            </button>
+            <button class="leads-btn sm" onclick="ListsModule.dispatchAction('send_emails')" title="Envoyer les emails approuvés">
+              🚀 Envoyer
+            </button>
+          </div>
+          <button class="lists-toolbar-toggle" id="lists-toolbar-toggle" onclick="ListsModule.toggleToolbar()" title="Plus d'actions">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="lists-toolbar-extra" id="lists-toolbar-extra" style="display:none">
+            <div class="lists-sep"></div>
+            <button class="leads-btn sm" onclick="ListsModule.dispatchAction('export_csv')" title="Exporter en CSV">
+              📥 CSV
+            </button>
+            <button class="leads-btn sm" onclick="ListsModule.openAddLeadsModal()" title="Ajouter des leads à cette liste">
+              ➕ Leads
+            </button>
+            <button class="leads-btn danger sm" onclick="ListsModule.deleteActiveList()" title="Supprimer cette liste">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M2 3.5h10M5.5 3.5V2h3v1.5M3.5 3.5l.7 8h5.6l.7-8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barre de recherche et sélection -->
+      <div class="lists-search-bar">
+        <input id="list-search" type="search" placeholder="Rechercher dans la liste…" class="leads-search">
+        <button class="leads-btn danger sm" onclick="ListsModule.removeSelectedLeads()" id="btn-list-remove-selected" style="display:none">
+          Retirer la sélection
+        </button>
+      </div>
+
+      <!-- Table des leads -->
+      <div class="leads-table-wrap">
+        <table class="leads-table">
+          <colgroup>
+            <col class="col-check">
+            <col class="col-prospect">
+            <col class="col-source">
+            <col class="col-contact">
+            <col class="col-score">
+            <col class="col-statut">
+            <col class="col-actions">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col-check">
+                <input type="checkbox" id="list-cb-all" onchange="ListsModule.toggleAll(this)">
+              </th>
+              <th class="col-prospect">Prospect</th>
+              <th class="col-source">Ville</th>
+              <th class="col-contact">Contact</th>
+              <th class="col-score">Score</th>
+              <th class="col-statut">Statut</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="list-tbody">
+            <tr>
+              <td colspan="7" class="lists-table-empty">
+                Sélectionne une liste pour voir ses leads.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="leads-pagination">
+        <button id="list-prev" class="leads-page-btn" onclick="ListsModule.changePage(-1)" disabled>← Précédent</button>
+        <span id="list-page-info" class="leads-page-info">page 1 / 1</span>
+        <button id="list-next" class="leads-page-btn" onclick="ListsModule.changePage(1)" disabled>Suivant →</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ─── Modal : Créer / renommer une liste ────────────────────────────── -->
+<div id="modal-list-create" class="modal-overlay">
+  <div class="modal-content" style="width:440px">
+    <div class="mh">
+      <div class="mh-t" id="modal-list-create-title">Nouvelle liste</div>
+      <button class="btn bg0" onclick="closeModal('modal-list-create')">✕</button>
+    </div>
+    <div class="mb">
+      <input type="hidden" id="list-edit-id">
+      <div class="form-grp">
+        <label>Nom de la liste <span style="color:var(--red)">*</span></label>
+        <input type="text" id="list-create-nom" class="inp" placeholder="ex : À auditer aujourd'hui" maxlength="80"
+          onkeydown="if(event.key==='Enter') ListsModule.saveList()">
+      </div>
+      <div class="form-grp">
+        <label>Description (optionnel)</label>
+        <input type="text" id="list-create-desc" class="inp" placeholder="ex : Leads prioritaires du 4 juin" maxlength="200">
+      </div>
+      <div class="lists-modal-row">
+        <div class="form-grp lists-modal-col">
+          <label>Icône</label>
+          <div class="list-emoji-grid" id="list-emoji-grid"></div>
+          <input type="hidden" id="list-create-icone" value="📋">
+        </div>
+        <div class="form-grp lists-modal-col">
+          <label>Couleur</label>
+          <div class="list-color-grid" id="list-color-grid"></div>
+          <input type="hidden" id="list-create-couleur" value="#6366f1">
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn bg1 sm" onclick="closeModal('modal-list-create')">Annuler</button>
+      <button class="btn bp1 sm" onclick="ListsModule.saveList()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Modal : Ajouter des leads à la liste ──────────────────────────── -->
+<div id="modal-list-add-leads" class="modal-overlay">
+  <div class="modal-content" style="width:620px;max-height:80vh">
+    <div class="mh">
+      <div class="mh-t">Ajouter des leads à la liste</div>
+      <button class="btn bg0" onclick="closeModal('modal-list-add-leads')">✕</button>
+    </div>
+    <div class="mb" style="overflow-y:auto;max-height:60vh">
+      <div style="margin-bottom:12px">
+        <input type="search" id="modal-lead-search" class="inp" placeholder="Rechercher un lead par nom ou site…"
+          oninput="ListsModule.searchLeadsForAdd()">
+      </div>
+      <div class="lists-modal-info" id="modal-lead-count-info">
+        Saisissez un nom pour rechercher des leads existants.
+      </div>
+      <div class="leads-table-wrap" style="max-height:340px;overflow-y:auto">
+        <table class="leads-table" style="font-size:12px">
+          <thead>
+            <tr>
+              <th style="width:30px">
+                <input type="checkbox" id="modal-cb-all-leads" onchange="ListsModule.toggleAllAddLeads(this)">
+              </th>
+              <th>Prospect</th>
+              <th>Ville</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody id="modal-lead-search-tbody">
+            <tr>
+              <td colspan="4" class="lists-table-empty">
+                Recherchez des leads ci-dessus.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="mf">
+      <span id="modal-add-selected-count" class="lists-modal-info">0 lead sélectionné</span>
+      <div class="lists-modal-actions">
+        <button class="btn bg1 sm" onclick="closeModal('modal-list-add-leads')">Annuler</button>
+        <button class="btn bp1 sm" onclick="ListsModule.confirmAddLeads()">Ajouter à la liste</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Modal confirmation relance/contactée ────────────────────── -->
+<div id="modal-list-confirm" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-list-confirm')">
+  <div class="modal-content" style="max-width:380px">
+    <div class="mh">
+      <div class="mh-t" id="modal-confirm-title" style="font-size:15px">Confirmer</div>
+    </div>
+    <div class="mb">
+      <p id="modal-confirm-msg" class="lists-confirm-msg"></p>
+    </div>
+    <div class="mf">
+      <button class="btn bg1 sm" onclick="closeModal('modal-list-confirm')">Annuler</button>
+      <button class="btn bp1 sm" id="modal-confirm-btn">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ─── Layout Listes ──────────────────────────────────────────── */
+  .lists-layout {
+    display: flex;
+    height: calc(100vh - 60px);
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* ─── Sidebar ────────────────────────────────────────────────── */
+  .lists-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .lists-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .lists-sidebar-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink3);
+  }
+
+  .lists-btn-new {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, color .15s;
+  }
+
+  .lists-btn-new:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .lists-sidebar-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lists-sidebar-controls .leads-btn {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .lists-sidebar-filter {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .lists-archive-toggle {
+    font-size: 11px;
+    color: var(--muted, var(--ink3));
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .lists-sidebar-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 6px;
+  }
+
+  .lists-empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--ink3);
+  }
+  .lists-empty-icon { font-size: 32px; margin-bottom: 8px; }
+  .lists-empty-title { font-size: 12px; }
+  .lists-empty-desc { font-size: 11px; margin-top: 4px; }
+
+  .list-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .12s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+
+  .list-sidebar-item:hover {
+    background: var(--surface2);
+  }
+
+  .list-sidebar-item.active {
+    background: var(--accent-s, rgba(99, 102, 241, 0.1));
+    border-color: var(--accent);
+  }
+
+  .list-sidebar-icone {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .list-sidebar-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .list-sidebar-nom {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .list-sidebar-meta {
+    font-size: 10px;
+    color: var(--ink3);
+    margin-top: 1px;
+  }
+
+  /* ─── Panneau principal ──────────────────────────────────────── */
+  .lists-main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .lists-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--ink3);
+    padding: 48px;
+    text-align: center;
+  }
+  .lists-placeholder h3 { font-size: 15px; font-weight: 600; color: var(--ink2); margin: 0; }
+  .lists-placeholder p { font-size: 12px; margin: 0; max-width: 260px; }
+
+  /* ─── Header mobile ──────────────────────────────────────────── */
+  .lists-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .lists-mobile-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink1);
+  }
+
+  .lists-hamburger {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+  }
+  .lists-hamburger:hover { background: var(--surface2); }
+
+  .lists-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 1000;
+  }
+  .lists-sidebar-overlay.open { display: block; }
+
+  /* ─── En-tête liste active ───────────────────────────────────── */
+  .lists-view-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .lists-header-top {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .lists-view-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .lists-title-icone {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .lists-view-nom {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink1);
+    margin: 0;
+  }
+
+  .lists-count-badge {
+    background: var(--surface2);
+    color: var(--ink3);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .lists-campaign-badge {
+    display: none;
+    font-size: 10px;
+    background: var(--accent-s, rgba(99,102,241,0.1));
+    color: var(--accent, #6366f1);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* Note inline */
+  .lists-note-input {
+    width: 100%;
+    min-height: 28px;
+    max-height: 80px;
+    font-size: 12px;
+    font-family: inherit;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    resize: none;
+    overflow-y: auto;
+    transition: border-color .15s;
+    line-height: 1.4;
+  }
+  .lists-note-input:focus {
+    outline: none;
+    border-color: var(--accent, #6366f1);
+  }
+
+  /* Relances */
+  .lists-view-relances {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .lists-sep {
+    width: 1px;
+    height: 14px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .lists-spacer {
+    flex: 1;
+  }
+
+  /* Toolbar */
+  .lists-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .lists-toolbar-main {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .lists-toolbar-toggle {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, transform .2s;
+    flex-shrink: 0;
+  }
+  .lists-toolbar-toggle:hover { background: var(--surface2); }
+  .lists-toolbar-toggle.open { transform: rotate(90deg); }
+
+  .lists-toolbar-extra {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Search bar */
+  .lists-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px 6px;
+    flex-shrink: 0;
+  }
+
+  .lists-table-empty {
+    text-align: center;
+    padding: 32px;
+    color: var(--ink3);
+  }
+
+  /* ─── Modals helpers ─────────────────────────────────────────── */
+  .lists-modal-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .lists-modal-col { flex: 1; }
+  .lists-modal-info { font-size: 12px; color: var(--ink3); }
+  .lists-modal-actions { display: flex; gap: 8px; }
+  .lists-confirm-msg { margin: 0; font-size: 13px; color: var(--ink2); line-height: 1.5; }
+
+  /* ─── Picker emoji / couleur ─────────────────────────────────── */
+  .list-emoji-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 0;
+  }
+
+  .list-emoji-opt {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .12s, background .12s;
+  }
+
+  .list-emoji-opt.active,
+  .list-emoji-opt:hover {
+    border-color: var(--accent);
+    background: var(--accent-s, rgba(99, 102, 241, 0.12));
+  }
+
+  .list-color-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 0;
+  }
+
+  .list-color-opt {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color .12s, transform .1s;
+  }
+
+  .list-color-opt.active,
+  .list-color-opt:hover {
+    border-color: var(--ink1);
+    transform: scale(1.15);
+  }
+
+  /* ─── Boutons relance/contactée states ────────────────────── */
+  .btn-done {
+    background: #10b981 !important;
+    color: white !important;
+    border-color: #10b981 !important;
+    cursor: default !important;
+    opacity: 0.85;
+  }
+  .btn-done:hover {
+    background: #10b981 !important;
+  }
+
+  /* ─── Responsive ─────────────────────────────────────────────── */
+  /* Desktop : cache le header mobile */
+  @media (min-width: 769px) {
+    .lists-mobile-header {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .lists-layout {
+      flex-direction: column;
+      height: calc(100vh - 60px);
+    }
+
+    .lists-sidebar {
+      position: fixed !important;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 280px;
+      max-width: 80vw;
+      z-index: 1001;
+      transform: translateX(-100%);
+      transition: transform .25s ease;
+      border-right: 1px solid var(--border);
+      box-shadow: 4px 0 20px rgba(0,0,0,.15);
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .lists-sidebar.mobile-open {
+      transform: translateX(0);
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .lists-sidebar-items {
+      max-height: none;
+    }
+
+    .lists-view-header {
+      padding: 10px 14px 8px;
+    }
+
+    .lists-view-nom {
+      font-size: 14px;
+    }
+
+    .lists-toolbar-main {
+      gap: 4px;
+    }
+
+    .lists-toolbar-main .leads-btn {
+      font-size: 10px;
+      padding: 4px 8px;
+    }
+
+    .lists-search-bar {
+      padding: 8px 14px 4px;
+    }
+
+    .lists-search-bar .leads-search {
+      width: 100%;
+    }
+
+    .leads-table-wrap {
+      margin: 0 14px;
+    }
+
+    .leads-pagination {
+      margin: 0 14px;
+    }
+
+    .lists-view-relances {
+      gap: 6px;
+    }
+
+    .lists-view-relances .leads-btn {
+      font-size: 12px;
+      padding: 6px 12px;
+      min-height: 36px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .lists-toolbar-main .leads-btn span {
+      display: none;
+    }
+    .lists-view-relances .leads-btn {
+      font-size: 12px;
+      padding: 8px 14px;
+      min-height: 40px;
+    }
+  }
+</style>
