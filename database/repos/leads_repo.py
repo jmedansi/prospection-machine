@@ -494,7 +494,7 @@ class LeadsRepo:
         
         mapping = {
             "en_attente":   {"label": "À traiter",    "color": "#64748b"},
-            "contacte":     {"label": "Contacté",     "color": "#92400e"},
+            "contacte":     {"label": "Contacté",     "color": "#60a5fa"},
             "audite":       {"label": "Audité",       "color": "#8b5cf6"},
             "email_genere": {"label": "Email prêt",    "color": "#10b981"},
             "envoye":       {"label": "Envoyé",       "color": "#3b82f6"},

@@ -28,7 +28,7 @@
                 // Mettre à jour le badge statut_prospection dans le header
                 const prospBadge = document.querySelector('.prosp-badge');
                 if (prospBadge && data.statut_prospection) {
-                    const cfg = {'a_contacter':['#64748b','À contacter'],"contacte":['#92400e','Contacté']};
+                    const cfg = {'a_contacter':['#64748b','À contacter'],"contacte":['#60a5fa','Contacté']};
                     const [c,l] = cfg[data.statut_prospection] || ['#94a3b8', data.statut_prospection];
                     prospBadge.style.background = c + '15';
                     prospBadge.style.color = c;
@@ -760,7 +760,7 @@
         function _prospBadge(s) {
             const cfg = {
                 a_contacter:      ['#64748b','À contacter'],
-                "contacte":       ['#92400e','Contacté'],
+                "contacte":       ['#60a5fa','Contacté'],
                 email_genere:     ['#6366f1','Email prêt'],
                 step1_envoye:     ['#3b82f6','Step 1 ✓'],
                 repondu:          ['#f59e0b','Répondu'],
