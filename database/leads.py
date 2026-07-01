@@ -6,6 +6,7 @@ from .connection import get_conn, logger
 VALID_TRANSITIONS = {
     'scrape':       ['en_attente', 'audite'],
     'en_attente':   ['audite', 'archive'],
+    'audit_echoue': ['en_attente', 'audite', 'archive'],
     'audite':       ['email_genere', 'archive'],
     'email_genere': ['scheduled', 'archive'],
     'scheduled':    ['envoye', 'archive'],
@@ -153,7 +154,7 @@ def get_leads_pending(verify_smtp: bool = False) -> list:
         with get_conn() as conn:
             rows = conn.execute("""
                 SELECT * FROM leads_bruts
-                WHERE statut = 'en_attente'
+                WHERE (statut = 'en_attente' OR statut = 'audit_echoue')
                   AND (email_valide = 'Valide' OR email IS NULL OR email = '')
                   AND (source IS NULL OR source = 'maps' OR source = '')
                 ORDER BY id DESC

@@ -10,8 +10,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from core.browser import cdp_tab
-
 logger = logging.getLogger(__name__)
 
 SECTOR_CONFIG = {
@@ -309,7 +307,8 @@ def ensure_responsive(html: str) -> str:
 
 def generate_mockup(lead: dict) -> dict:
     """
-    Génère 2 screenshots (desktop + mobile) du hero personnalisé.
+    Génère le HTML du hero personnalisé à partir des templates secteur.
+    Pas de screenshots Playwright — HTML uniquement pour rapport GitHub Pages.
     """
     try:
         # 1. Détecter le secteur (priorité : secteur saisi > catégorie GMB)
@@ -382,66 +381,30 @@ def generate_mockup(lead: dict) -> dict:
         if base_color and target_color and base_color != target_color:
             html = html.replace(base_color, target_color)
 
-        # 7. Sauvegarde temporaire pour Playwright
+        # 7. Slug et dossier de sortie
         nom_raw = lead.get("nom", "p")
         nom_slug = re.sub(r'[^a-zA-Z0-9\s]', '', nom_raw.lower())
         nom_slug = re.sub(r'\s+', '-', nom_slug.strip()).strip('-')[:50]
 
-        if lead.get("id"):
-            html_path = current_dir / f"tmp_lead_{lead['id']}.html"
-        else:
-            html_path = current_dir / f"tmp_{nom_slug}.html"
-        # Rendre responsive avant d'écrire
+        # 8. Rendre responsive et sauvegarder dans reporter/reports/{slug}/
         html = ensure_responsive(html)
         html = html.replace(
             '</head>',
             '<script defer data-domain="audit.incidenx.com" src="https://plausible.io/js/script.js"></script>\n</head>'
         )
-        html_path.write_text(html, encoding="utf-8")
 
-        # 8. Dossier de sortie
-        output_dir = Path("mockups/screenshots")
-        output_dir.mkdir(parents=True, exist_ok=True)
-        if lead.get("id"):
-            desktop_path = output_dir / f"lead_{lead['id']}_desktop.png"
-            mobile_path  = output_dir / f"lead_{lead['id']}_mobile.png"
-        else:
-            desktop_path = output_dir / f"{nom_slug}_desktop.png"
-            mobile_path  = output_dir / f"{nom_slug}_mobile.png"
-
-        # 9. Capture via Chrome Gemini (CDP)
-        with cdp_tab(viewport={"width": 1280, "height": 800}) as page:
-            page.goto(f"file:///{html_path.absolute()}")
-            page.wait_for_timeout(1000)
-
-            page.screenshot(path=str(desktop_path), full_page=False)
-
-            page.set_viewport_size({"width": 390, "height": 844})
-            page.wait_for_timeout(500)
-            page.screenshot(path=str(mobile_path), full_page=False)
-
-        # 10. Copier le HTML + screenshots dans reporter/reports/{slug}/
-        import shutil
         rapport_dir = Path("reporter/reports") / nom_slug
         rapport_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(html_path, rapport_dir / "index.html")
-        if desktop_path.exists():
-            shutil.copy2(desktop_path, rapport_dir / desktop_path.name)
-        if mobile_path.exists():
-            shutil.copy2(mobile_path, rapport_dir / mobile_path.name)
-
-        # 11. Nettoyage du fichier temporaire
-        if html_path.exists():
-            html_path.unlink()
+        (rapport_dir / "index.html").write_text(html, encoding="utf-8")
 
         rapport_local = str(rapport_dir)
-        logger.info(f"✅ Mockup généré : {nom_slug} | Template : {template_filename} | Secteur : {sector_key}")
+        logger.info(f"✅ Rapport HTML généré : {nom_slug} | Template : {template_filename} | Secteur : {sector_key}")
         logger.info(f"   Rapport local : {rapport_local}")
 
         return {
             "success": True,
-            "screenshot_desktop": str(desktop_path),
-            "screenshot_mobile":  str(mobile_path),
+            "screenshot_desktop": "",
+            "screenshot_mobile":  "",
             "rapport_local":      rapport_local,
             "rapport_slug":       nom_slug,
             "template_used":      template_filename,
@@ -450,7 +413,7 @@ def generate_mockup(lead: dict) -> dict:
         }
 
     except Exception as e:
-        logger.error(f"❌ Erreur génération mockup : {e}")
+        logger.error(f"❌ Erreur génération rapport HTML : {e}")
         return {
             "success":            False,
             "screenshot_desktop": "",

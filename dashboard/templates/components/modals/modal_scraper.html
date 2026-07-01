@@ -105,10 +105,19 @@
                     <div class="fgr"><label class="fl">Ville</label><input type="text" id="modal-city" value="" placeholder="Paris, Lyon..."></div>
                     <div class="fgr"><label class="fl">Nombre de leads</label><input type="number" id="modal-limit" value="20" min="1" max="500"></div>
                     <div class="fgr"><label class="fl">Emails min. à trouver</label><input type="number" id="modal-min-emails" value="" placeholder="ex: 5" min="0"></div>
+                    <div class="fgr"><label class="fl">Avis Google min.</label><input type="number" id="modal-min-reviews" value="0" min="0" placeholder="0 = tous"></div>
+                    <div class="fgr"><label class="fl">Filtre site web</label>
+                        <select id="modal-site-filter" style="width:100%">
+                            <option value="all">Tous</option>
+                            <option value="without_site">Sans site web</option>
+                            <option value="with_site">Avec site web</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="cg" style="margin-top:10px">
                     <label class="ci"><input type="checkbox" id="modal-multi-zone" checked> Multi-zones</label>
                     <label class="ci"><input type="checkbox" id="modal-verify-email" checked> Vérifier emails</label>
+                    <label class="ci"><input type="checkbox" id="modal-require-contact"> Contact requis (tel ou email)</label>
                 </div>
             </div>
             <div class="mf">

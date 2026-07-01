@@ -229,12 +229,8 @@ function _ulActions(l) {
 
 // ─── Modal édition ──────────────────────────────────────────────────────────
 
-function unifiedLeadsOpenEdit(id, fallbackCache) {
-    let l = _ul.leads.find(x => x.id == id);
-    // Fallback: si la vue Leads n'a pas encore été chargée, on pioche dans le cache du panneau latéral
-    if (!l && fallbackCache) l = fallbackCache.find(x => x.id == id);
-    if (!l) { showToast?.('Lead non trouvé dans le cache, veuillez recharger.', 'error'); return false; }
-    _ul.editingId = id;
+function _ulPopulateEditForm(l) {
+    _ul.editingId = l.id;
     _ulSetVal('ul-edit-id', l.id);
     _ulSetVal('ul-edit-nom', l.nom);
     _ulSetVal('ul-edit-email', l.email);
@@ -256,8 +252,25 @@ function unifiedLeadsOpenEdit(id, fallbackCache) {
     if (m) {
         if (typeof openModal === 'function') openModal('modal-ul-edit');
         m.classList.add('active');
-        m.style.display = 'flex'; // Force override any inline 'none'
+        m.style.display = 'flex';
     }
+}
+
+async function unifiedLeadsOpenEdit(id, fallbackCache) {
+    let l = _ul.leads.find(x => x.id == id);
+    if (!l && fallbackCache) l = fallbackCache.find(x => x.id == id);
+    if (!l) {
+        // Fallback: fetch depuis l'API si le lead n'est pas en cache
+        try {
+            const r = await fetch(`/api/leads/${id}`, { cache: 'no-store' });
+            if (r.ok) {
+                const d = await r.json();
+                l = d.lead || d;
+            }
+        } catch (e) {}
+    }
+    if (!l || l.error) { showToast?.('Lead non trouvé.', 'error'); return false; }
+    _ulPopulateEditForm(l);
 }
 
 async function unifiedLeadsSave() {

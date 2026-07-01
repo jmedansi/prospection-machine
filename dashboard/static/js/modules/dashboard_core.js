@@ -6,6 +6,41 @@
         let _trackingBoardSelectedLeadId = null;
         let _trackingBoardSelectedLeadName = null;
         
+        // Contact pill toggle
+        async function toggleContactPill(leadId, method, el) {
+            const key = 'contact_' + method;
+            const current = el.textContent.trim().startsWith('✓') ? 1 : 0;
+            const newVal = current ? 0 : 1;
+            try {
+                const resp = await fetch('/api/leads/' + leadId + '/contact', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({['contact_' + method]: newVal})
+                });
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.error);
+                el.style.background = newVal ? '#10b981' : '#f1f5f9';
+                el.style.color = newVal ? '#fff' : '#475569';
+                el.textContent = (newVal ? '✓' : '○') + ' ' + el.textContent.slice(el.textContent.indexOf(' ') + 1);
+                // Mettre à jour le cache pour persister après re-render
+                const idx = _campaignData.findIndex(l => l.id == leadId || l.id === Number(leadId));
+                if (idx >= 0 && data.statut_prospection) _campaignData[idx].statut_prospection = data.statut_prospection;
+                // Mettre à jour le badge statut_prospection dans le header
+                const prospBadge = document.querySelector('.prosp-badge');
+                if (prospBadge && data.statut_prospection) {
+                    const cfg = {'a_contacter':['#64748b','À contacter'],"contacte":['#92400e','Contacté']};
+                    const [c,l] = cfg[data.statut_prospection] || ['#94a3b8', data.statut_prospection];
+                    prospBadge.style.background = c + '15';
+                    prospBadge.style.color = c;
+                    prospBadge.textContent = l;
+                }
+                showToast(newVal ? 'Canal activé' : 'Canal désactivé', 'success');
+            } catch (e) {
+                console.error('Contact toggle error:', e);
+                showToast('Erreur: ' + e.message, 'error');
+            }
+        }
+
         // Mobile sidebar toggle
         function toggleSidebar() {
             document.querySelector('.sb').classList.toggle('open');
@@ -576,6 +611,8 @@
         // Side Panel Functions
         function openLeadPanel(leadId, tab = 'audit') {
             _selectedLeadId = leadId;
+            // Synchroniser la référence globale pour audits.js et autres modules externes
+            window._selectedLeadId = leadId;
             
             // Skeleton immédiat pendant le chargement
             const content = document.getElementById('panel-content');
@@ -592,6 +629,9 @@
             loadPanelContent(leadId, tab);
         }
         
+        // Exposer loadPanelContent pour les modules externes (ex: audits.js)
+        window.loadPanelContent = loadPanelContent;
+        
         function closeSidePanel() {
             const _sp2 = document.getElementById('lead-details-panel') || document.getElementById('side-panel');
             if (_sp2) _sp2.classList.remove('open');
@@ -601,6 +641,7 @@
             if (overlay) overlay.style.display = 'none';
             // Réinitialiser l'état de sélection
             _selectedLeadId = null;
+            window._selectedLeadId = null;
             // Vider le contenu pour la prochaine ouverture
             const content = document.getElementById('panel-content');
             if (content) content.innerHTML = '';
@@ -719,6 +760,7 @@
         function _prospBadge(s) {
             const cfg = {
                 a_contacter:      ['#64748b','À contacter'],
+                "contacte":       ['#92400e','Contacté'],
                 email_genere:     ['#6366f1','Email prêt'],
                 step1_envoye:     ['#3b82f6','Step 1 ✓'],
                 repondu:          ['#f59e0b','Répondu'],
@@ -727,7 +769,7 @@
                 formulaire_envoye:['#6366f1','Formulaire'],
             };
             const [c,l] = cfg[s] || ['#94a3b8', s||'—'];
-            return `<span style="background:${c}15;color:${c};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600">${l}</span>`;
+            return `<span class="prosp-badge" style="background:${c}15;color:${c};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600">${l}</span>`;
         }
 
         function _row(label, content) {
@@ -736,6 +778,14 @@
                 <dt style="color:#64748b;font-size:12px;width:90px;flex-shrink:0;font-weight:500;margin:0;text-transform:uppercase;letter-spacing:0.05em">${label}</dt>
                 <dd style="color:#0f172a;font-size:13px;font-weight:500;margin:0;flex:1;word-break:break-word">${content}</dd>
             </div>`;
+        }
+
+        function _contactPill(lead, method, label) {
+            const key = 'contact_' + method;
+            const checked = lead[key] ? 1 : 0;
+            const bg = checked ? '#10b981' : '#f1f5f9';
+            const text = checked ? '#fff' : '#475569';
+            return `<div onclick="toggleContactPill(${lead.id},'${method}',this)" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;background:${bg};color:${text};border:none;transition:all .15s">${checked ? '✓' : '○'} ${label}</div>`;
         }
 
         function renderAuditPanel(lead) {
@@ -823,6 +873,18 @@
                             </dd>
                         </div>
                     </dl>
+                </div>
+            </div>
+
+            <div class="panel-section" style="margin-bottom:32px">
+                <h4 style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:12px">Moyens de contact</h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    ${_contactPill(lead, 'mail', 'Mail')}
+                    ${_contactPill(lead, 'appel', 'Appel')}
+                    ${_contactPill(lead, 'wp', 'WhatsApp')}
+                    ${_contactPill(lead, 'li', 'LinkedIn')}
+                    ${_contactPill(lead, 'fb', 'Facebook')}
+                    ${_contactPill(lead, 'autres', 'Autres')}
                 </div>
             </div>
 
@@ -1121,10 +1183,13 @@
             const limit   = parseInt(document.getElementById('modal-limit').value) || 20;
             const minEmails = document.getElementById('modal-min-emails').value
                 ? parseInt(document.getElementById('modal-min-emails').value) : null;
+            const minReviews = parseInt(document.getElementById('modal-min-reviews')?.value) || 0;
+            const siteFilter = document.getElementById('modal-site-filter')?.value || 'all';
             const multiZone = document.getElementById('modal-multi-zone')?.checked || false;
+            const requireContact = document.getElementById('modal-require-contact')?.checked || false;
 
             closeModal('modal-scraper');
-            launchScraper({ keyword, city, secteur: campagneSector, sector, limit, minEmails, multiZone });
+            launchScraper({ keyword, city, secteur: campagneSector, sector, limit, minEmails, minReviews, siteFilter, multiZone, requireContact });
         }
         
         function closeModal(id) {
@@ -1328,7 +1393,7 @@
         // Edit lead from panel - uses campaign data
         async function openEditLeadFromPanel(leadId) {
             if (typeof unifiedLeadsOpenEdit === 'function') {
-                const opened = unifiedLeadsOpenEdit(leadId, _campaignData);
+                const opened = await unifiedLeadsOpenEdit(leadId, _campaignData);
                 if (opened !== false) closeSidePanel();
                 return;
             }

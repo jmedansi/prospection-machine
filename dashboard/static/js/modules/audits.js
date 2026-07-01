@@ -182,9 +182,11 @@ async function pollAuditStatus(d = null) {
             if (typeof unifiedLeadsLoad === 'function') unifiedLeadsLoad();
             
             // Mettre à jour le panneau latéral s'il est ouvert pour afficher les nouveaux scores immédiatement
-            if (typeof _selectedLeadId !== 'undefined' && _selectedLeadId && typeof loadPanelContent === 'function') {
+            // Utilise window._selectedLeadId et window.loadPanelContent exposés par dashboard_core.js
+            const panelLeadId = window._selectedLeadId;
+            if (panelLeadId && typeof window.loadPanelContent === 'function') {
                 const activeTab = document.querySelector('.side-panel-tab.active');
-                loadPanelContent(_selectedLeadId, activeTab ? activeTab.dataset.tab : 'audit');
+                window.loadPanelContent(panelLeadId, activeTab ? activeTab.dataset.tab : 'audit');
             }
         } else {
             showAuditProgress(d.current, d.total, d.failed);

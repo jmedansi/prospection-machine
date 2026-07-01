@@ -35,6 +35,8 @@ class LeadsRepo:
                         la.copywriting_mode, la.is_catch_all, la.mx_host,
                         la.statut_prospection, la.telephone_sniper,
                         la.screenshot_desktop, la.screenshot_mobile, la.rapport_html,
+                        la.contact_mail, la.contact_wp, la.contact_li,
+                        la.contact_fb, la.contact_appel, la.contact_autres,
                         ee.date_envoi AS sent_at, ee.ouvert AS is_opened,
                         ee.date_ouverture AS opened_at, ee.clique AS is_clicked,
                         ee.repondu AS is_replied, ee.statut_envoi AS email_status
@@ -93,7 +95,9 @@ class LeadsRepo:
                         COALESCE(NULLIF(la.email_valide, ''), NULLIF(lb.email_valide, '')) AS email_valide,
                         la.audit_partial,
                         la.ceo_prenom, la.ceo_nom, la.ceo_source,
-                        la.screenshot_desktop, la.screenshot_mobile
+                        la.screenshot_desktop, la.screenshot_mobile,
+                        la.contact_mail, la.contact_wp, la.contact_li,
+                        la.contact_fb, la.contact_appel, la.contact_autres
                     FROM leads_bruts lb
                     LEFT JOIN leads_audites la ON la.lead_id = lb.id
                 """
@@ -182,29 +186,36 @@ class LeadsRepo:
 
     def update_fields(self, lead_id: int, fields: dict) -> bool:
         """Met à jour des champs spécifiques d'un lead."""
-        allowed = {"nom", "ville", "site_web", "adresse", "telephone", "email",
-                   "mot_cle", "category", "statut", "email_valide",
-                   "email_2", "telephone_2", "notes",
-                   "nom_gerant", "prenom_gerant", "ml_extracted"}   # champs manuels
-        data = {k: v for k, v in fields.items() if k in allowed}
-        if not data:
+        bruts_allowed = {"nom", "ville", "site_web", "adresse", "telephone", "email",
+                         "mot_cle", "category", "statut", "email_valide",
+                         "email_2", "telephone_2", "notes",
+                         "nom_gerant", "prenom_gerant", "ml_extracted"}   # champs manuels (leads_bruts)
+        audits_allowed = {"contact_mail", "contact_wp", "contact_li",
+                          "contact_fb", "contact_appel", "contact_autres",
+                          "email_valide", "ceo_prenom", "ceo_nom", "statut_prospection"}
+        bruts_data  = {k: v for k, v in fields.items() if k in bruts_allowed}
+        audits_data = {k: v for k, v in fields.items() if k in audits_allowed}
+        if not bruts_data and not audits_data:
             return False
         try:
             with get_conn() as conn:
                 # 1. Update leads_bruts
-                if data:
-                    sets = ", ".join(f"{k}=:{k}" for k in data)
-                    conn.execute(f"UPDATE leads_bruts SET {sets} WHERE id=:id", {**data, "id": lead_id})
+                if bruts_data:
+                    sets = ", ".join(f"{k}=:{k}" for k in bruts_data)
+                    conn.execute(f"UPDATE leads_bruts SET {sets} WHERE id=:id", {**bruts_data, "id": lead_id})
                 
-                # 2. Sync to leads_audites (if email_valide, ceo_prenom, ceo_nom changed)
-                sync_fields = ["email_valide", "ceo_prenom", "ceo_nom", "statut_prospection"]
-                sync_data = {k: v for k, v in fields.items() if k in sync_fields}
-                if sync_data:
-                    # Check if audit exists
+                # 2. Update leads_audites
+                if audits_data:
                     audit = conn.execute("SELECT id FROM leads_audites WHERE lead_id=? ORDER BY id DESC LIMIT 1", (lead_id,)).fetchone()
                     if audit:
-                        sets = ", ".join(f"{k}=:{k}" for k in sync_data)
-                        conn.execute(f"UPDATE leads_audites SET {sets} WHERE id=:aid", {**sync_data, "aid": audit['id']})
+                        sets = ", ".join(f"{k}=:{k}" for k in audits_data)
+                        conn.execute(f"UPDATE leads_audites SET {sets} WHERE id=:aid", {**audits_data, "aid": audit['id']})
+                    else:
+                        conn.execute("INSERT INTO leads_audites (lead_id) VALUES (?)", (lead_id,))
+                        audit_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                        if audits_data:
+                            sets = ", ".join(f"{k}=:{k}" for k in audits_data)
+                            conn.execute(f"UPDATE leads_audites SET {sets} WHERE id=:aid", {**audits_data, "aid": audit_id})
                 
                 conn.commit()
             return True
@@ -288,8 +299,8 @@ class LeadsRepo:
 
         if statut != "tous":
             # Mapping des statuts selon le cycle de vie du prospect (STRICT)
-            # Un audit est valide s'il n'a pas d'erreur, et soit il a un score de perf, soit c'est une maquette/réputation, soit le statut brut est 'audite'
-            is_audit_valid = "(la.id IS NOT NULL AND la.audit_error IS NULL AND (la.score_performance > 0 OR la.template_used IN ('maquette', 'reputation') OR lb.statut IN ('audite', 'email_genere', 'envoye', 'repondu')))"
+            # Un audit est valide s'il n'a pas d'erreur, et soit il a un score de perf, soit c'est une maquette/réputation/sans_site, soit le statut brut est 'audite'
+            is_audit_valid = "(la.id IS NOT NULL AND la.audit_error IS NULL AND (la.score_performance > 0 OR la.template_used IN ('maquette', 'reputation', 'sans_site') OR lb.statut IN ('audite', 'email_genere', 'envoye', 'repondu')))"
             is_email_valid = f"({is_audit_valid} AND la.email_objet IS NOT NULL AND la.email_objet != '' AND la.email_corps IS NOT NULL AND la.email_corps != '')"
             
             statut_mapping = {
@@ -423,6 +434,13 @@ class LeadsRepo:
             "screenshot_desktop": d.get("screenshot_desktop"),
             "screenshot_mobile":  d.get("screenshot_mobile"),
             "rapport_html":       d.get("rapport_html"),
+            # Contact tracking
+            "contact_mail":   int(d.get("contact_mail") or 0),
+            "contact_wp":     int(d.get("contact_wp") or 0),
+            "contact_li":     int(d.get("contact_li") or 0),
+            "contact_fb":     int(d.get("contact_fb") or 0),
+            "contact_appel":  int(d.get("contact_appel") or 0),
+            "contact_autres": int(d.get("contact_autres") or 0),
         }
 
     def _normalize_v5(self, d: dict) -> dict:
@@ -442,28 +460,32 @@ class LeadsRepo:
         if sp == "repondu" or sb == "repondu":
             return "repondu"
         
-        # 2. Déjà contacté
+        # 2. Contacté (canal de contact coché)
+        if sp == "contacte":
+            return "contacte"
+        
+        # 3. Déjà contacté
         sent_statuts = {"envoye", "step1_envoye", "email_sent", "lien_envoye", "linkedin_envoye", "formulaire_envoye", "whatsapp_envoye"}
         if sp in sent_statuts or sb in sent_statuts:
             return "envoye"
             
-        # Intégrité de l'audit
+        # 4. Intégrité de l'audit
         score_valide = (d.get("score_mobile") or 0) > 0
         template_special = d.get("template_used") in ("maquette", "reputation")
         statut_force = sb in ("audite", "email_genere", "envoye", "repondu")
         
         has_valid_audit = d.get("audit_id") and not d.get("audit_error") and (score_valide or template_special or statut_force)
             
-        # 3. Email prêt (Seulement si l'audit est valide et l'email complet)
+        # 5. Email prêt (Seulement si l'audit est valide et l'email complet)
         has_email = (d.get("email_objet") and d.get("email_objet").strip()) and (d.get("email_corps") and d.get("email_corps").strip())
         if has_valid_audit and has_email:
             return "email_genere"
             
-        # 4. Audité (Succès uniquement)
+        # 6. Audité (Succès uniquement)
         if has_valid_audit:
             return "audite"
             
-        # 5. Par défaut : À traiter (Inclut les audits échoués)
+        # 7. Par défaut : À traiter (Inclut les audits échoués)
         return "en_attente"
 
     def _get_statut_display(self, d: dict) -> dict:
@@ -472,6 +494,7 @@ class LeadsRepo:
         
         mapping = {
             "en_attente":   {"label": "À traiter",    "color": "#64748b"},
+            "contacte":     {"label": "Contacté",     "color": "#92400e"},
             "audite":       {"label": "Audité",       "color": "#8b5cf6"},
             "email_genere": {"label": "Email prêt",    "color": "#10b981"},
             "envoye":       {"label": "Envoyé",       "color": "#3b82f6"},

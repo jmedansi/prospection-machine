@@ -120,11 +120,23 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
     if limit:
         leads = leads[:limit]
 
-    # Ne traiter que les leads sans site web.
-    leads = [
-        lead for lead in leads
-        if not (lead.get('site_web') or '').strip().lower().startswith(('http://', 'https://'))
-    ]
+    # Domaines qui ne sont PAS de vrais sites d'entreprise
+    _FAKE_SITE_DOMAINS = (
+        'wa.me', 'wa.link', 'whatsapp.com',
+        'facebook.com', 'fb.com', 'instagram.com',
+        'twitter.com', 'x.com', 't.me', 'linkedin.com',
+        'tiktok.com', 'youtube.com', 'google.com/maps',
+    )
+
+    def _is_real_website(site_web: str) -> bool:
+        """Retourne True seulement si c'est un vrai site d'entreprise."""
+        s = (site_web or '').strip().lower()
+        if not s.startswith(('http://', 'https://')):
+            return False
+        return not any(domain in s for domain in _FAKE_SITE_DOMAINS)
+
+    # Ne traiter que les leads sans vrai site web.
+    leads = [lead for lead in leads if not _is_real_website(lead.get('site_web', ''))]
     if not leads:
         print("   [!] Aucun lead sans site web à auditer.")
         return
@@ -160,8 +172,8 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
 
             # 1. Audit no-site uniquement
             audit_success = False
-            if site_url and site_url.strip().lower().startswith(('http://', 'https://')):
-                print(f"   [SKIP] Lead avec site web détecté : {site_url} - traitement no-site uniquement.")
+            if _is_real_website(site_url):
+                print(f"   [SKIP] Lead avec vrai site web détecté : {site_url} - traitement no-site uniquement.")
                 audit_result['audit_failed'] = True
                 audit_result['lien_rapport'] = None
                 audit_result['template_used'] = 'ignored'
@@ -171,35 +183,29 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
                 audit_result['score_seo'] = 0
                 audit_result['score_urgence'] = 8.0
                 audit_success = True
-            
-            # Déterminer le profil de l'entreprise
-            # Priorité: audit_result (GMB extractor) > lead (scraper)
-            rating = audit_result.get('rating') or lead.get('rating', 0) or 0
-            reviews = audit_result.get('nb_avis') or lead.get('nb_avis', 0) or 0
 
-            # Verifier si l'audit a echoue
-            if audit_result.get('audit_failed', False):
-                print(f"   [ERREUR] Audit échoué - pas de rapport généré")
-                audit_result['lien_rapport'] = None
-                audit_result['template_used'] = 'failed'
+                # Déterminer le profil de l'entreprise
+                # Priorité: audit_result (GMB extractor) > lead (scraper)
+                rating = audit_result.get('rating') or lead.get('rating', 0) or 0
+                reviews = audit_result.get('nb_avis') or lead.get('nb_avis', 0) or 0
 
-            elif not site_url or not site_url.strip():
-                # ===== PROFIL A (pas de site) =====
-                print(f"   [Agent Reporter] Création du rapport HTML Profil A (maquette)...")
+                # Génération du rapport HTML via templates secteur
                 mockup_result = generate_mockup(lead)
                 audit_result.update(mockup_result)
                 audit_result['template_used'] = 'maquette'
+
+                # Rapport HTML et publication GitHub Pages
                 lien_rapport = None
                 try:
                     from reporter.main import generate_and_publish_report
                     lien_rapport = safe_run_async(generate_and_publish_report(audit_result))
                     audit_result['lien_rapport'] = lien_rapport
-                    print(f"   [OK] Rapport Profil A (HTML) généré: {lien_rapport}")
+                    print(f"   [OK] Rapport HTML généré: {lien_rapport}")
                 except Exception as e:
-                    logger.error(f"Erreur HTML pour {nom}: {e}")
-                    print(f"   [ERREUR] HTML: {e}")
+                    logger.error(f"Erreur rapport HTML pour {nom}: {e}")
+                    print(f"   [ERREUR] Rapport HTML: {e}")
 
-                # ── Publication automatique sur GitHub Pages ──
+                # Publication GitHub Pages
                 if lien_rapport and lien_rapport.startswith("local://"):
                     slug = lien_rapport.replace("local://", "").strip("/")
                     try:
@@ -214,11 +220,6 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
                         logger.error(f"Erreur publication GitHub pour {slug}: {e}")
                         print(f"   [ERROR] Publication GitHub : {e}")
 
-            else:
-                print(f"   [SKIP] Lead avec site web ignoré par le module no-site.")
-                audit_result['lien_rapport'] = None
-                audit_result['template_used'] = 'ignored'
-            
             # 3. Persistance dans SQLite
             try:
                 print(f"   [SQLite] Sauvegarde de l'audit ID {lead_id}...")

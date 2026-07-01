@@ -21,6 +21,7 @@ def api_scraper_launch():
         secteur = data.get('secteur', '').strip() or sector  # campagne sector > niche
         limit = int(data.get('limit', 50))
         min_emails = int(data.get('min_emails', 10))
+        min_reviews = int(data.get('min_reviews', 0))
         campaign_name = data.get('campaign_name', f"{secteur or keyword} {city}")
         country = data.get('country', 'fr')
         require_contact = data.get('require_contact', False)
@@ -36,6 +37,7 @@ def api_scraper_launch():
             sector=secteur,
             limit=limit,
             min_emails=min_emails,
+            min_reviews=min_reviews,
             campaign_name=campaign_name,
             country=country,
             require_contact=require_contact,

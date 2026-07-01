@@ -326,6 +326,37 @@ def api_lead_by_id(lead_id):
     return jsonify({"lead": lead})
 
 
+@leads_bp.route("/api/leads/<int:lead_id>/contact", methods=["PUT"])
+def api_lead_update_contact(lead_id):
+    """Met à jour les moyens de contact (mail, wp, li, fb, appel, autres)."""
+    try:
+        data = request.get_json() or {}
+        if not data:
+            return jsonify({"error": "body requis"}), 400
+        contact_map = {}
+        for method in ("mail", "wp", "li", "fb", "appel", "autres"):
+            key = f"contact_{method}"
+            if key in data:
+                contact_map[key] = 1 if data[key] else 0
+        if not contact_map:
+            return jsonify({"error": "Aucun champ contact_* valide"}), 400
+        ok = leads_repo.update_fields(lead_id, contact_map)
+        if not ok:
+            return jsonify({"error": "Échec mise à jour"}), 500
+        # Lire l'état réel en DB pour déterminer le statut
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT contact_mail, contact_wp, contact_li, contact_fb, contact_appel, contact_autres FROM leads_audites WHERE lead_id=?",
+                (lead_id,)
+            ).fetchone()
+        any_checked = row and any(v == 1 for v in row)
+        new_statut = "contacte" if any_checked else "a_contacter"
+        leads_repo.update_fields(lead_id, {"statut_prospection": new_statut})
+        return jsonify({"success": True, **contact_map, "statut_prospection": new_statut})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @leads_bp.route("/api/lead/update", methods=["PUT"])
 def api_lead_update():
     """Met à jour des champs d'un lead."""

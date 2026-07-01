@@ -116,6 +116,24 @@ def migrate_db():
                     except Exception:
                         pass
 
+            # Colonnes de contact (prospection tracking)
+            # NB: contact_mail/wp/li/fb/autres existent déjà dans certaines DB, on ne migre que ce qui manque
+            contact_cols = [
+                ("contact_mail",    "INTEGER DEFAULT 0"),
+                ("contact_wp",      "INTEGER DEFAULT 0"),
+                ("contact_li",      "INTEGER DEFAULT 0"),
+                ("contact_fb",      "INTEGER DEFAULT 0"),
+                ("contact_appel",   "INTEGER DEFAULT 0"),
+                ("contact_autres",  "INTEGER DEFAULT 0"),
+            ]
+            for col_name, col_def in contact_cols:
+                if col_name not in cols:
+                    try:
+                        conn.execute(f"ALTER TABLE leads_audites ADD COLUMN {col_name} {col_def}")
+                        print(f"  [MIGRATION] Colonne ajoutée: leads_audites.{col_name}")
+                    except Exception:
+                        pass
+
         if 'campagnes' in table_names:
             cols = [r[1] for r in conn.execute("PRAGMA table_info(campagnes)").fetchall()]
             if 'nb_demande' not in cols:

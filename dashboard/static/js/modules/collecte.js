@@ -9,10 +9,10 @@ let _scraperPollId    = null;
 
 /**
  * Lance un scraping.
- * @param {object} params  { keyword, city, limit, minEmails, multiZone }
+ * @param {object} params  { keyword, city, limit, minEmails, minReviews, siteFilter, multiZone, requireContact }
  */
 async function launchScraper(params) {
-    const { keyword, city, sector = '', limit = 20, minEmails = null, multiZone = false } = params || {};
+    const { keyword, city, sector = '', limit = 20, minEmails = null, minReviews = 0, siteFilter = 'all', multiZone = false, requireContact = false } = params || {};
 
     // Validation
     if (!keyword || !city) { showToast('Saisir mot-clé et ville', 'warning'); return; }
@@ -32,6 +32,9 @@ async function launchScraper(params) {
     const payload = { keyword, city, sector, limit, campaign_name: campaignName, multi_zone: multiZone };
     if (params.secteur) payload.secteur = params.secteur;
     if (minEmails) payload.min_emails = minEmails;
+    if (minReviews) payload.min_reviews = minReviews;
+    if (siteFilter && siteFilter !== 'all') payload.site_filter = siteFilter;
+    if (requireContact) payload.require_contact = true;
 
     let response;
     try {
