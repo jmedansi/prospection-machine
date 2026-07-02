@@ -460,6 +460,11 @@ class LeadsRepo:
         if sp == "repondu" or sb == "repondu":
             return "repondu"
         
+        # 1.5 Contacté via un canal (indépendamment du statut_prospection)
+        contact_fields = ["contact_mail", "contact_wp", "contact_li", "contact_fb", "contact_appel", "contact_autres"]
+        if any(int(d.get(c) or 0) == 1 for c in contact_fields):
+            return "contacte"
+        
         # 2. Contacté (canal de contact coché)
         if sp == "contacte":
             return "contacte"
@@ -494,11 +499,12 @@ class LeadsRepo:
         
         mapping = {
             "en_attente":   {"label": "À traiter",    "color": "#64748b"},
-            "contacte":     {"label": "Contacté",     "color": "#60a5fa"},
+            "contacte":     {"label": "Contacté",     "color": "#3b82f6"},
             "audite":       {"label": "Audité",       "color": "#8b5cf6"},
             "email_genere": {"label": "Email prêt",    "color": "#10b981"},
-            "envoye":       {"label": "Envoyé",       "color": "#3b82f6"},
+            "envoye":       {"label": "Contacté",     "color": "#3b82f6"},
             "repondu":      {"label": "Répondu ✓",    "color": "#f59e0b"},
+            "archive":      {"label": "Archivé",      "color": "#6b7280"},
         }
         
         # Gestion des cas spécifiques (bounced, positif, etc.)
@@ -508,15 +514,16 @@ class LeadsRepo:
         if sp == "bounced":
             return {"label": "Bounced", "color": "#ef4444"}
             
-        # Cas d'erreur d'audit (si on n'a ni score mobile valide, ni un template spécial, ni un statut forcé)
-        score_valide = (d.get("score_mobile") or 0) > 0
-        template_special = d.get("template_used") in ("maquette", "reputation")
-        statut_force = d.get("statut") in ("audite", "email_genere", "envoye", "repondu")
-        
-        if d.get("audit_id") and d.get("audit_error"):
-            return {"label": "Audit Échoué", "color": "#ef4444"}
-        elif d.get("audit_id") and not score_valide and not template_special and not statut_force:
-            return {"label": "Audit Échoué", "color": "#ef4444"}
+        # Audit échoué → seulement si le lead n'a PAS encore été contacté/envoyé
+        if s in ("en_attente", "audite"):
+            score_valide = (d.get("score_mobile") or 0) > 0
+            template_special = d.get("template_used") in ("maquette", "reputation")
+            statut_force = d.get("statut") in ("audite", "email_genere", "envoye", "repondu")
+            
+            if d.get("audit_id") and d.get("audit_error"):
+                return {"label": "Audit Échoué", "color": "#ef4444"}
+            elif d.get("audit_id") and not score_valide and not template_special and not statut_force:
+                return {"label": "Audit Échoué", "color": "#ef4444"}
             
         return mapping.get(s, {"label": s.replace('_', ' ').capitalize(), "color": "#64748b"})
 

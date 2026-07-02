@@ -74,7 +74,7 @@ planned_campaigns
 
 ## 4. Sujets des templates (exemples réels)
 
-- **Profil A** : `{NOM} n'a pas de site web — voici ce que ça coûte`
+- **Profil A** : `voici une ébauche gratuite de votre site web`
 - **Profil B** : `{NOM} met {LCP}s à charger sur mobile`
 - **Profil C** : `{NOM} · {RATING}/5 et {REVIEWS} avis — vos concurrents sont loin devant`
 - **Profil D** : `{NOM} est invisible sur Google`

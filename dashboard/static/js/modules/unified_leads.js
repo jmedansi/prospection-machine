@@ -386,6 +386,16 @@ function setLeadsView(view) {
     else unifiedLeadsLoad(_ul.page);
 }
 
+function ulToggleSection(section) {
+    const el = document.getElementById(`ul-section-${section}`);
+    const btn = event.currentTarget;
+    if (!el) return;
+    const isOpen = el.classList.toggle('open');
+    btn.classList.toggle('active', isOpen);
+    const arrow = btn.querySelector('.leads-collapse-arrow');
+    if (arrow) arrow.textContent = isOpen ? '▴' : '▾';
+}
+
 function renderKanban(leads) {
     const columns = ['en_attente', 'audite', 'email_genere', 'envoye', 'repondu'];
     const containers = {};

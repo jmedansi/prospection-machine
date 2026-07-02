@@ -138,6 +138,17 @@ window.ListsModule = (function () {
         const mobileTitle = document.getElementById('lists-mobile-title');
         if (mobileTitle) mobileTitle.textContent = lst?.nom || 'Mes listes';
 
+        // Mobile count badge
+        const mobileCount = document.getElementById('lists-mobile-count');
+        if (mobileCount) {
+            if (lst) {
+                mobileCount.textContent = lst.nb_leads || 0;
+                mobileCount.style.display = '';
+            } else {
+                mobileCount.style.display = 'none';
+            }
+        }
+
         // Fermer sidebar mobile si ouverte
         closeMobileSidebar();
 
@@ -150,6 +161,14 @@ window.ListsModule = (function () {
         loadListLeads(1);
     }
 
+    // ─── Recherche live ──────────────────────────────────────────────────
+
+    let _searchDebounce = null;
+    function onSearch() {
+        clearTimeout(_searchDebounce);
+        _searchDebounce = setTimeout(() => loadListLeads(1), 300);
+    }
+
     // ─── Leads d'une liste ─────────────────────────────────────────────────
 
     async function loadListLeads(page = 1) {
@@ -157,7 +176,7 @@ window.ListsModule = (function () {
         _state.page = page;
 
         const tbody = document.getElementById('list-tbody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink3)">Chargement…</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--ink3)">Chargement…</td></tr>`;
 
         const search = document.getElementById('list-search')?.value?.trim() || '';
         const params = new URLSearchParams({ page, limit: 50 });
@@ -177,6 +196,13 @@ window.ListsModule = (function () {
             const countEl = document.getElementById('list-active-count');
             if (countEl) countEl.textContent = `${d.total} lead${d.total !== 1 ? 's' : ''}`;
 
+            // Mise à jour du mobile count badge
+            const mobileCount = document.getElementById('lists-mobile-count');
+            if (mobileCount) {
+                mobileCount.textContent = d.total;
+                mobileCount.style.display = d.total > 0 ? '' : 'none';
+            }
+
             // Mise à jour du nb_leads dans le sidebar
             const lst = _state.lists.find(l => l.id === _state.activeListId);
             if (lst) lst.nb_leads = d.total;
@@ -187,7 +213,7 @@ window.ListsModule = (function () {
             if (tbody) {
                 tbody.innerHTML = _state.leads.length
                     ? _state.leads.map(_renderLeadRow).join('')
-                    : `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink3)">Aucun lead dans cette liste.</td></tr>`;
+                    : `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--ink3)">Aucun lead dans cette liste.</td></tr>`;
             }
 
             _updatePagination();
@@ -195,7 +221,7 @@ window.ListsModule = (function () {
 
         } catch (e) {
             console.error('[Lists] loadListLeads:', e);
-            if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="color:var(--red);text-align:center;padding:16px">${_esc(e.message)}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);text-align:center;padding:16px">${_esc(e.message)}</td></tr>`;
         }
     }
 
@@ -221,11 +247,11 @@ window.ListsModule = (function () {
             scoreHtml = `<span style="font-size:12px">${parseFloat(l.rating).toFixed(1)} ⭐</span>`;
         }
 
-        // Statut badge (simplifié)
-        const statut = l.statut_prospection || l.statut || '—';
-        const statutColors = { envoye:'#3b82f6',email_genere:'#10b981',audite:'#8b5cf6',repondu:'#f59e0b' };
-        const sc = statutColors[statut] || '#64748b';
-        const statutHtml = `<span style="background:${sc}20;color:${sc};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">${_esc(statut.replace(/_/g,' '))}</span>`;
+        // Statut badge (via API statut_display)
+        const sd = l.statut_display;
+        const statutHtml = sd
+            ? `<span style="background:${sd.color}20;color:${sd.color};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600">${_esc(sd.label)}</span>`
+            : '<span style="color:var(--ink3)">—</span>';
 
         // Contact
         const hasEmail = l.email_valide || l.email;
@@ -241,6 +267,7 @@ window.ListsModule = (function () {
                     <div class="lead-info">
                         ${nomCell}
                         <div class="lead-meta">${meta}</div>
+                        <div class="lead-statut-inline">${statutHtml}</div>
                     </div>
                 </div>
             </td>
@@ -249,7 +276,6 @@ window.ListsModule = (function () {
                 ${email ? `<span style="display:inline-flex;align-items:center;gap:4px"><a href="mailto:${_esc(email)}" style="color:var(--accent);text-decoration:none">${_esc(email)}</a><button class="btn-copy-email" onclick="event.stopPropagation();ListsModule.copyEmail('${_esc(email)}')" title="Copier l'email pour WhatsApp" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--ink3);font-size:11px;line-height:1" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--ink3)'">📋</button></span>` : '<span style="color:var(--ink3)">—</span>'}
             </td>
             <td class="col-score">${scoreHtml}</td>
-            <td class="col-statut">${statutHtml}</td>
             <td class="col-actions" style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()">
                 <button class="btn bg1 sm" style="font-size:11px;padding:3px 8px"
                     onclick="ListsModule.removeLead(${l.id})" title="Retirer de la liste">✕</button>
@@ -1117,6 +1143,25 @@ window.ListsModule = (function () {
         toggle.classList.toggle('open', !isOpen);
     }
 
+    // ─── Actions panel collapse ──────────────────────────────────────────
+
+    function toggleActions() {
+        const el = document.getElementById('lists-section-actions');
+        const btn = document.querySelector('.lists-view-header .leads-collapse-btn');
+        const arrow = document.getElementById('lists-actions-arrow');
+        if (!el || !btn) return;
+        const isOpen = el.classList.toggle('open');
+        btn.classList.toggle('active', isOpen);
+        if (arrow) arrow.textContent = isOpen ? '▴' : '▾';
+        // Fermer toolbar extra quand on collapse les actions
+        if (!isOpen) {
+            const extra = document.getElementById('lists-toolbar-extra');
+            const toggle = document.getElementById('lists-toolbar-toggle');
+            if (extra) extra.style.display = 'none';
+            if (toggle) toggle.classList.remove('open');
+        }
+    }
+
     // ─── Copier email ─────────────────────────────────────────────────────
 
     async function copyEmail(email) {
@@ -1180,6 +1225,8 @@ window.ListsModule = (function () {
         toggleMobileSidebar,
         closeMobileSidebar,
         toggleToolbar,
+        toggleActions,
+        onSearch,
         // exposes pour les event listeners inline HTML
         _pickEmoji,
         _pickColor,

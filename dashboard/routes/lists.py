@@ -11,6 +11,7 @@ import io
 from datetime import datetime
 from flask import Blueprint, jsonify, request, Response
 from database.connection import get_conn, logger
+from database.repos import leads_repo
 
 lists_bp = Blueprint("lists", __name__)
 
@@ -412,7 +413,7 @@ def api_list_leads(list_id):
 
         total_pages = max(1, (count + limit - 1) // limit)
         return jsonify({
-            "leads": [dict(r) for r in rows],
+            "leads": [leads_repo._normalize(dict(r)) for r in rows],
             "total": count,
             "page": page,
             "total_pages": total_pages,

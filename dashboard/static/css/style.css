@@ -3121,54 +3121,6 @@ textarea.inp {
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: var(--text-sm);
-    font-weight: 600;
-    transition: all var(--transition-fast);
-}
-
-.status-badge:hover {
-    transform: scale(1.05);
-}
-
-.status-badge.pending {
-    background: var(--surface2);
-    color: var(--ink3);
-}
-
-.status-badge.scraped {
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--blue);
-}
-
-.status-badge.audited {
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--green);
-}
-
-.status-badge.email-ready {
-    background: rgba(249, 115, 22, 0.15);
-    color: var(--orange);
-}
-
-.status-badge.sent {
-    background: rgba(139, 92, 246, 0.15);
-    color: var(--purple);
-}
-
-.status-badge.replied {
-    background: rgba(16, 185, 129, 0.25);
-    color: #059669;
-}
-
-.status-badge.failed {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--red);
-}
-
 .action-btn {
     padding: 10px 12px;
     font-size: 18px;
