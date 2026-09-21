@@ -1,0 +1,107 @@
+<!-- Section Tasks & Job Console (Task Engine SaaS Ultra) -->
+<div id="section-tasks" class="content-section" style="display: none;">
+    <div class="tasks-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+            <h2 style="font-size: 24px; font-weight: 700; color: #fff; margin: 0;">⚡ Console des Tâches & Workers</h2>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Surveillance en temps réel des scrapers, audits et générateurs de copies.</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <button class="btn btn-secondary" onclick="TaskConsole.refreshTasks()" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Actualiser
+            </button>
+            <button class="btn btn-primary" onclick="TaskConsole.openLaunchModal()" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Lancer une tâche
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Tasks Live Cards -->
+    <div id="active-tasks-container" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px;">
+        <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Task History Table -->
+    <div class="card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 600; color: #f8fafc; margin: 0;">Historique des Exécutions</h3>
+            <div style="display: flex; gap: 8px;">
+                <select id="task-filter-status" onchange="TaskConsole.filterTasks()" style="background: #1e293b; color: #cbd5e1; border: 1px solid #334155; border-radius: 6px; padding: 6px 12px; font-size: 13px;">
+                    <option value="">Tous les statuts</option>
+                    <option value="running">En cours</option>
+                    <option value="completed">Complétées</option>
+                    <option value="failed">Échouées</option>
+                    <option value="cancelled">Annulées</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8;">
+                        <th style="padding: 10px 12px;">ID</th>
+                        <th style="padding: 10px 12px;">Tâche</th>
+                        <th style="padding: 10px 12px;">Statut</th>
+                        <th style="padding: 10px 12px;">Progression</th>
+                        <th style="padding: 10px 12px;">Éléments</th>
+                        <th style="padding: 10px 12px;">Créée le</th>
+                        <th style="padding: 10px 12px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="task-history-tbody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 24px; color: #64748b;">Chargement des tâches...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Live Log Modal / Drawer -->
+    <div id="task-log-drawer" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; width: 800px; max-width: 95vw; height: 550px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="padding: 16px 20px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 id="drawer-task-title" style="font-size: 16px; font-weight: 600; color: #f8fafc; margin: 0;">Logs de la tâche</h3>
+                    <span id="drawer-task-subtitle" style="font-size: 12px; color: #94a3b8;">ID: -</span>
+                </div>
+                <button onclick="TaskConsole.closeLogDrawer()" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 20px;">✕</button>
+            </div>
+            <div id="drawer-log-content" style="flex: 1; padding: 16px; overflow-y: auto; font-family: monospace; font-size: 12px; line-height: 1.6; background: #090d16; color: #38bdf8;">
+                <!-- Logs injectés ici -->
+            </div>
+            <div style="padding: 12px 20px; border-top: 1px solid #1e293b; display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn btn-secondary" onclick="TaskConsole.closeLogDrawer()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Launcher Modal -->
+    <div id="task-launch-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; width: 500px; max-width: 90vw; padding: 24px;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-top: 0; margin-bottom: 16px;">⚡ Lancement Rapide de Tâche</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px;">Action</label>
+                    <select id="launch-task-action" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 6px; padding: 10px;">
+                        <option value="audit_batch">🔍 Audit Technique par lot (PageSpeed + SEO)</option>
+                        <option value="email_generation">✉️ Génération Copies Emails par lot</option>
+                        <option value="bodacc_scan">🏢 Scan BODACC (Nouvelles créations d'entreprises)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px;">Limite / Nombre d'éléments</label>
+                    <input type="number" id="launch-task-limit" value="25" min="1" max="200" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 6px; padding: 10px;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn btn-secondary" onclick="TaskConsole.closeLaunchModal()">Annuler</button>
+                <button class="btn btn-primary" onclick="TaskConsole.submitLaunch()">Démarrer la tâche</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -22,11 +22,36 @@ def api_audit_launch():
     lead_names = data.get("lead_names", [])
     limit = data.get("limit")
 
+    # the audit pipeline (auditeur) operate on legacy `leads_bruts`/`leads_audites`.
+    # Prospects v2 (table `prospects`) ne sont pas encore scrutés par ce pipeline :
+    # renvoyer un message clair au lieu d'un 500 / d'un enqueue muet.
+    if lead_ids:
+        try:
+            from database import get_conn
+            v2_ids = []
+            with get_conn() as conn:
+                for lid in lead_ids:
+                    row = conn.execute("SELECT id FROM prospects WHERE id = ?", (lid,)).fetchone()
+                    if row:
+                        v2_ids.append(lid)
+            if v2_ids:
+                return jsonify({
+                    'success': False,
+                    'error': 'Audit v2 non câblé pour les prospects (le pipeline auditeur traite encore les leads_bruts legacy)',
+                    'v2_ids': v2_ids,
+                }), 400
+        except Exception:
+            pass
+
     # Previously we prevented concurrent launches here. We now enqueue tasks
     # and let the audit worker handle concurrency, so do not reject requests.
 
-    # Enqueue the task for the audit worker
-    from audit_queue import enqueue_audit
+    # Enqueue the task for the audit worker (module: scripts/legacy_workers/)
+    try:
+        from audit_queue import enqueue_audit
+    except ImportError:
+        sys.path.insert(0, os.path.join(ROOT, 'scripts', 'legacy_workers'))
+        from audit_queue import enqueue_audit
 
     payload = {}
     total = 1

@@ -1,0 +1,81 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+8066,Garage Lamure,"
+36 Rue d'Ivry, 69004 Lyon, France",Lyon,concessionnaires_auto,,+33478301112,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8067,Immoprêt Paris Le Marais - République (ex Ace Crédit) - Courtier en prêt immobilier,,Paris,Agence immobilière,,,,0,Agence immobilière,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8068,"Rénovation SRD MOISE - Peintre Paris, carreleur Paris",,Paris,Peintre,,,,0,Peintre,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8069,MB DECO,,Paris,Peintre,,,,0,Peintre,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8070,Expert-comptable Paris - EXPERTYM,,Paris,expertise_comptable,,,,,expertise_comptable,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8071,PALOMA,"
+93 Rue Julien Lacroix, 75020 Paris, France",Paris,,,+33665968846,,,,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8072,Paris Nord Café,"
+17 Rue de Dunkerque, 75010 Paris, France",Paris,,,+33142852361,,,,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8073,Clinique Eiffel Paris - Chirurgie et médecine esthétique près du Trocadéro,,Paris,cliniques_esthetiques,,,,0,cliniques_esthetiques,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8074,Clinique des Champs Elysées Paris - Chirurgie et médecine esthétique,,Paris,cliniques_esthetiques,,,,0,cliniques_esthetiques,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8075,Clinique des Champs Elysées Paris 12ème Reuilly - Médecine esthétique,,Paris,cliniques_esthetiques,,,,0,cliniques_esthetiques,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8076,Clinique des Champs Elysées Paris 3ème Sébastopol - Médecine esthétique,,Paris,cliniques_esthetiques,,,,0,cliniques_esthetiques,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8077,Dr Vincent Nguyen - Chirurgien esthétique à Paris,,Paris,cliniques_esthetiques,,,,0,cliniques_esthetiques,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8078,CABINET D'AVOCATS MAHBOULI PARIS,,Paris,avocat,,,,,avocat,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8079,Nord Nord,"
+80 Rue Riquet, 75018 Paris, France",Paris,,,+33142411295,,,,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8080,Cabinet Céline Zocchetto Avocat Paris,,Paris,avocat,,,,,avocat,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8081,CENTRE DU CHAMP DE MARS - EIFFEL Médecine esthétique et laser,,Paris,cliniques_esthetiques,,,,0,cliniques_esthetiques,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8082,LG. PLOMBERIE Paris 13,"
+38 Rue Dunois, 75013 Paris, France",Paris,plomberie_chauffage,,+33140307890,,,plomberie_chauffage,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8083,VASILE Plombier Paris 15,"
+70 Rue Castagnary, 75015 Paris, France",Paris,plomberie_chauffage,,+33187588884,,,plomberie_chauffage,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8084,"Dr Maurice Dray, médecin esthétique, Clinique Dray","
+3 Av. Montaigne, 75008 Paris, France",Paris,cliniques_esthetiques,,+33144178020,,0,cliniques_esthetiques,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8085,Human Immobilier Lyon - Gestion Locative,,Lyon,,,,,,,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8086,L'Agence Bac Saint Germain Immo Paris 7eme,"
+7 Bd Raspail, 75007 Paris, France",Paris,Agence,,+33142223030,,0,Agence,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8087,Paris Luxury Automobiles,,Paris,concessionnaires_auto,,,,0,concessionnaires_auto,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8088,SPOTICAR STELLANTIS &YOU PARIS PORTE DE VERSAILLES,,Paris,concessionnaires_auto,,,,0,concessionnaires_auto,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8089,Audace Immobilier,,Lyon,,,,,,,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8090,Stéphane Plaza Immobilier - Villeurbanne,"
+86 Cr Émile-Zola, 69100 Villeurbanne, France",Lyon,,,+33478603676,,,,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8091,Garage Republique,"
+133 Rue Amelot, 75011 Paris, France",Paris,concessionnaires_auto,,+33984482716,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8092,Garage Des Roses,"
+23 Rue des Roses, 75018 Paris, France",Paris,concessionnaires_auto,,+33146071117,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8093,Station Meca Voltaire,"
+42 Bd Voltaire, 75011 Paris, France",Paris,concessionnaires_auto,,+33147006165,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8094,Garage Paris Shweyangyan,"
+85 Rue Hoche, 94200 Ivry-sur-Seine, France",Paris,concessionnaires_auto,,+33156200805,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8095,Leroy plombier Paris 16,,Paris,plomberie_chauffage,,,,,plomberie_chauffage,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8096,[P] Parking Halles Garage - Parking - Station service,"
+10 Rue Bailleul, 75001 Paris, France",Paris,concessionnaires_auto,,+33142603624,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8097,YF Auto Paris,"
+38 Rue Dunois, 75013 Paris, France",Paris,concessionnaires_auto,,+33751108093,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8098,Garage Claude Porte Doree.,"
+4 Rue de l'Essai, 75005 Paris, France",Paris,concessionnaires_auto,,+33780993294,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8099,Prudenzia Immobilier S.a.r.l.,"
+229 Rue Solférino, 59000 Lille, France",Lyon,,,,,,,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8100,Garage Paris 12ème,"
+159 Rue de Picpus, 75012 Paris, France",Paris,concessionnaires_auto,,+33143460544,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8101,Hôtel du Centre - hôtel Paris Amore,"
+63 Rue du Faubourg du Temple, 75010 Paris, France",Paris,,,+33142080658,,,,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8102,Garage municipal,"
+41 Rue Bataille, 69008 Lyon, France",Lyon,concessionnaires_auto,,,,0,concessionnaires_auto,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8103,Garage Mondon,"
+31 Av. Barthélémy Buyer, 69005 Lyon, France",Lyon,concessionnaires_auto,,+33478252918,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8104,Garage Gorge de Loup,"
+1 Rue de la Fraternelle, 69009 Lyon, France",Lyon,concessionnaires_auto,,+33981752599,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8105,GARAGE CARROSSERIE RLE,"
+3 Imp. du Lutin, 69003 Lyon, France",Lyon,concessionnaires_auto,,+33487615068,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8106,Crêperie Arty Caffé - Restaurant à Paris,"
+176 Rue de Rivoli, 75001 Paris, France",Paris,,,+33982607733,,,,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8107,Centre Dentaire Paris 10 Gare du Nord : Dentiste et Cabinet d'orthodontie Paris - Dentego,,Paris,sante,,,,,sante,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8108,Italien de Paris 24,"
+Cotonou",Paris,,,96000207,,,,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8109,Dentimad - Centre dentaire Chatelet Rivoli Paris 1er,,Paris,sante,,,,,sante,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8110,Garage St Gilbert,"
+19 Rue Léo et Maurice Trouilhet, 69008 Lyon, France",Lyon,concessionnaires_auto,,+33478013858,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8111,Dentimad centre dentaire Paris 8,,Paris,sante,,,,,sante,web,2,,"Pas de site, pas de téléphone — à vérifier",a_verifier,,
+8112,Garage Minasi,"
+18 Rue Jean Chevailler, 69008 Lyon, France",Lyon,concessionnaires_auto,,+33478759833,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8113,Tout Autos Lyon 8 carrosserie / pneumatique / mécanique,"
+106 Rue Pierre Delore, 69008 Lyon, France",Lyon,concessionnaires_auto,,+33437378557,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8114,Garage automobile JURCO,"
+131 Rue Joliot Curie, 69005 Lyon, France",Lyon,concessionnaires_auto,,+33478251885,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8115,Garage Jarrier,"
+6 Pl. Puvis de Chavannes, 69006 Lyon, France",Lyon,concessionnaires_auto,,+33478932194,,0,concessionnaires_auto,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,

@@ -1,0 +1,516 @@
+<!-- Leads Unified Header -->
+<div class="leads-header">
+    <div class="leads-header-left">
+        <h2 class="leads-title">Leads</h2>
+        <span class="leads-count-badge" id="ul-count">—</span>
+        <div class="leads-view-toggle">
+            <button class="view-btn active" id="view-list" onclick="setLeadsView('list')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </button>
+            <button class="view-btn" id="view-kanban" onclick="setLeadsView('kanban')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3h18v18H3zM9 3v18M15 3v18"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="leads-header-tools">
+        <div class="leads-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4" />
+                <path d="M9.5 9.5L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <input id="ul-search" type="search" placeholder="Rechercher…" oninput="unifiedLeadsLoad(1)"
+                class="leads-search">
+        </div>
+        <button class="leads-collapse-btn" onclick="ulToggleSection('actions')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            Actions
+            <span class="leads-collapse-arrow">▾</span>
+        </button>
+        <button class="leads-collapse-btn" onclick="ulToggleSection('filters')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            Filtres
+            <span class="leads-collapse-arrow">▾</span>
+        </button>
+    </div>
+</div>
+
+<!-- Barre Objectif (v2 : sélection dans la barre du haut — ici, résumé + actions de l'objectif actif) -->
+<div class="leads-objbar" id="ul-objbar">
+    <span class="objbar-label" id="obj-label-current">Objectif : —</span>
+    <button class="leads-btn" onclick="ObjectifsModule.openCreate()" title="Créer un nouvel objectif (les futurs leads y seront rattachés)">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style="vertical-align:-1px;margin-right:4px">
+            <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Nouvel objectif
+    </button>
+    <span id="obj-stats" class="objbar-stats" style="display:none"></span>
+    <span id="obj-actions" style="display:none">
+        <button class="leads-btn" onclick="ObjectifsModule.sendNow()" title="Déclencher l'envoi initial maintenant (fonctionne même si l'auto-envoi est coupé)">▶ Envoyer</button>
+        <button class="leads-btn" onclick="ObjectifsModule.openSequence()" title="Gérer les templates de la séquence (initial + relances, délais)">Séquence</button>
+        <button class="leads-btn" onclick="ObjectifsModule.openManage()" title="Renommer / archiver / supprimer l'objectif">✏️</button>
+    </span>
+</div>
+
+<!-- Panneau Actions (caché par défaut) -->
+<div id="ul-section-actions" class="leads-section-collapse">
+    <div class="leads-actions">
+        <button class="leads-btn-primary" onclick="nav('sources', document.querySelector('[data-nav=sources]'))"
+            title="Ouvrir la page Sources pour lancer un scraping">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Nouveau scraping
+        </button>
+        <button class="leads-btn" onclick="ulOpenImportDialog()" title="Importer des leads depuis un fichier CSV (choix objectif + liste de destination)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v3h16v-3"/>
+            </svg>
+            Importer CSV
+        </button>
+        <button class="leads-btn" onclick="launchSelectedAudits()">Auditer</button>
+        <button class="leads-btn" onclick="window.ActionsModule.launchSelectedEmailSearch()">Trouver emails</button>
+        <button class="leads-btn" onclick="window.ActionsModule.generateSelectedEmailsImpl()">Générer emails</button>
+        <button class="leads-btn" onclick="window.ActionsModule.sendApprovedEmailsImpl()">Envoyer</button>
+        <button class="leads-btn danger" onclick="window.ActionsModule.cancelSend()" title="Annuler l'envoi en cours">Annuler</button>
+        <div class="leads-divider"></div>
+        <button class="leads-btn" onclick="checkSniperResponses()" title="Vérifier les réponses par email (IMAP)">Vérifier réponses</button>
+        <button class="leads-btn bp1" onclick="sendSniperStep1()" title="Envoyer le premier contact Sniper">Envoyer Step 1</button>
+        <div class="leads-divider"></div>
+        <!-- Actions IA ⇄ Dashboard (sélection) -->
+        <button class="leads-btn ai" title="IA : prépare la qualification des leads cochés (Opportunite/Score/Signaux)" onclick="IaActions.qualifySelected()">✦ Qualifier</button>
+        <button class="leads-btn ai" title="IA : prépare les maquettes (index.html/capture.png) des leads cochés 'web'" onclick="IaActions.maquetteSelected()">✦ Maquette</button>
+        <button class="leads-btn ai" title="IA : prépare la rédaction d'emails des leads cochés (EmailObjet/EmailCorps)" onclick="IaActions.redactSelected()">✦ Rédiger mail</button>
+        <button class="leads-btn ai bp1" title="IA : relit le CSV complété et réintègre (qualification + emails, jamais l'envoi)" onclick="IaActions.scanSelected()">⟳ Actualiser IA</button>
+        <div class="leads-divider"></div>
+        <button class="leads-btn" onclick="retryFailedAudits()">Relancer</button>
+        <button class="leads-btn" onclick="exportFilteredLeads()">CSV</button>
+        <!-- Classement / flag bulk -->
+        <div class="leads-divider"></div>
+        <button class="leads-btn" onclick="ulToggleAllObjectif()" title="Bascule l'objectif de la sélection (Web ↔ Général)">Web ⇄ Général</button>
+        <button class="leads-btn" onclick="ulEcarterSelection()" title="Écarter la sélection des flux d'envoi">🚫 Écarter sélection</button>
+        <button class="leads-btn" onclick="ulDesinscrireSelection()" title="Marquer la sélection comme désinscrite">✋ Désinscrire sélection</button>
+        <!-- Bouton Ajouter à une liste -->
+        <div class="lists-add-dropdown" id="lists-add-dropdown" style="position:relative">
+            <button class="leads-btn" onclick="ListsModule.toggleAddDropdown()" title="Ajouter la sélection à une liste">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="margin-right:4px;vertical-align:-1px">
+                    <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+                    <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+                    <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+                    <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+                </svg>
+                + Liste ▾
+            </button>
+            <div id="lists-add-dropdown-menu" class="lists-dropdown-menu" style="display:none">
+                <div class="lists-dropdown-header">Ajouter à une liste</div>
+                <div id="lists-dropdown-items">
+                    <div style="padding:12px;text-align:center;color:var(--ink3);font-size:11px">Chargement…</div>
+                </div>
+                <div class="lists-dropdown-footer">
+                    <button onclick="ListsModule.openCreateAndAdd()" class="btn bg1 sm" style="width:100%">
+                        + Créer une nouvelle liste
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="leads-btn danger" title="Supprimer" onclick="ulDeleteSelected()">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M2 3.5h10M5.5 3.5V2h3v1.5M3.5 3.5l.7 8h5.6l.7-8" stroke="currentColor" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- Panneau Filtres (caché par défaut) -->
+<div id="ul-section-filters" class="leads-section-collapse">
+    <div class="leads-filters">
+        <select id="ul-filter-list" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Toutes listes</option>
+        </select>
+        <select id="ul-filter-source" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Toutes sources</option>
+            <option value="maps">Maps</option>
+            <option value="sniper">Sniper</option>
+            <option value="ads">Google Ads</option>
+            <option value="fb_ads">Facebook Ads</option>
+            <option value="tech">Tech / E-com</option>
+            <option value="jobs">Jobs</option>
+            <option value="bodacc">BODACC</option>
+        </select>
+        <select id="ul-filter-statut" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Tous les stades</option>
+            <option value="en_attente">1. À traiter (Nouveau)</option>
+            <option value="audite">2. Audité</option>
+            <option value="non_audite">   ↳ Non audité</option>
+            <option value="email_pret">3. Email prêt</option>
+            <option value="email_non_genere">   ↳ Email non généré</option>
+            <option value="envoye">4. Envoyé (Contacté)</option>
+            <option value="non_envoye">   ↳ Prêt mais non envoyé</option>
+            <option value="repondu">5. Répondu</option>
+            <option value="non_repondu">   ↳ Envoyé sans réponse</option>
+        </select>
+        <select id="ul-filter-tag" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Tous tags</option>
+            <option value="perf">Perf</option>
+            <option value="securite">Sécu</option>
+            <option value="creation">Création</option>
+        </select>
+        <select id="ul-filter-sector" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Tous secteurs</option>
+            <option value="immobilier">Immobilier</option>
+            <option value="courtage">Courtage</option>
+            <option value="concessionnaires_auto">Concessionnaires Auto</option>
+            <option value="cliniques_esthetiques">Cliniques Esthétiques</option>
+            <option value="ecoles_formation">Écoles / Formation</option>
+            <option value="plomberie_chauffage">Plomberie / Chauffage</option>
+            <option value="sante">Santé</option>
+            <option value="informatique_web">Informatique / Web</option>
+            <option value="batiment">Bâtiment</option>
+            <option value="conseil_gestion">Conseil / Gestion</option>
+            <option value="expertise_comptable">Expertise Comptable</option>
+            <option value="communication">Communication</option>
+            <option value="commerce_detail">Commerce de Détail</option>
+            <option value="avocat">Avocat</option>
+            <option value="publicite">Publicité</option>
+            <option value="sport_fitness">Sport / Fitness</option>
+            <option value="hotellerie_restauration">Hôtellerie / Restauration</option>
+            <option value="esthetique_bienetre">Esthétique / Bien-être</option>
+            <option value="fournitures_services">Fournitures / Services</option>
+            <option value="demenagement_stockage">Déménagement / Stockage</option>
+            <option value="assurance">Assurance</option>
+            <option value="bijouterie_horlogerie">Bijouterie / Horlogerie</option>
+            <option value="transport_mobilite">Transport / Mobilité</option>
+            <option value="photographie">Photographie</option>
+            <option value="divers_services">Divers Services</option>
+            <option value="autres">Autres</option>
+        </select>
+        <select id="ul-filter-site" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Site web</option>
+            <option value="with">Avec site</option>
+            <option value="without">Sans site</option>
+        </select>
+        <select id="ul-filter-objectif" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="tous">Objectif: Tous</option>
+            <option value="web">Sites Web</option>
+            <option value="general">Général</option>
+        </select>
+        <select id="ul-filter-flagged" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="false">Masquer écartés/désin.</option>
+            <option value="true">Afficher écartés/désin.</option>
+        </select>
+        <select id="ul-filter-email" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Email</option>
+            <option value="with">Avec email</option>
+            <option value="without">Sans email</option>
+        </select>
+        <select id="ul-filter-notes" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Notes ML</option>
+            <option value="responsables">Avec responsables</option>
+            <option value="infos">Avec données (SIRET / adresse)</option>
+            <option value="partiel">Données partielles</option>
+            <option value="sans">Sans notes</option>
+        </select>
+        <select id="ul-filter-score" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="">Tous les scores</option>
+            <option value="bad">Lents (&lt; 70)</option>
+            <option value="good">Rapides (≥ 70)</option>
+            <option value="unscored">Non évalués</option>
+        </select>
+        <select id="ul-filter-limit" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="50">50 par page</option>
+            <option value="100">100 par page</option>
+            <option value="500">500 par page</option>
+            <option value="10000">Tous (pas de pages)</option>
+        </select>
+    </div>
+</div>
+
+<!-- Table View -->
+<div id="leads-list-view">
+    <div class="leads-table-wrap">
+        <table class="leads-table">
+            <colgroup>
+                <col class="col-check">
+                <col class="col-prospect">
+                <col class="col-source">
+                <col class="col-contact">
+                <col class="col-objectif">
+                <col class="col-score">
+                <col class="col-statut">
+                <col class="col-actions">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="col-check"><input type="checkbox" id="ul-cb-all" onchange="ulToggleAll(this)"></th>
+                    <th class="col-prospect">Prospect</th>
+                    <th class="col-source">Ville</th>
+                    <th class="col-contact">Contact</th>
+                    <th class="col-objectif">Objectif</th>
+                    <th class="col-score">Score</th>
+                    <th class="col-statut">Statut</th>
+                    <th class="col-actions"></th>
+                </tr>
+            </thead>
+            <tbody id="ul-tbody">
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:32px;color:var(--ink3);font-size:13px">Chargement…
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="leads-pagination">
+        <button id="ul-prev" class="leads-page-btn" onclick="ulChangePage(-1)" disabled>← Précédent</button>
+        <span id="ul-page-info" class="leads-page-info">page 1 / 1</span>
+        <button id="ul-next" class="leads-page-btn" onclick="ulChangePage(1)" disabled>Suivant →</button>
+    </div>
+</div>
+
+<!-- Kanban View (Phase 4.1) -->
+<div id="leads-kanban-view" style="display:none">
+    <div class="kanban-board">
+        <div class="kanban-col" data-status="en_attente">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">À traiter</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-en_attente"></div>
+        </div>
+        <div class="kanban-col" data-status="audite">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Audité</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-audite"></div>
+        </div>
+        <div class="kanban-col" data-status="email_genere">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Email prêt</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-email_genere"></div>
+        </div>
+        <div class="kanban-col" data-status="envoye">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Envoyé</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-envoye"></div>
+        </div>
+        <div class="kanban-col" data-status="repondu">
+            <div class="kanban-col-header">
+                <span class="kanban-col-title">Répondu</span>
+                <span class="kanban-col-count">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-repondu"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal FB Ads supprimé — centralisé dans Sources (sources.js) -->
+
+<!-- Modal édition lead -->
+<div id="modal-ul-edit" class="modal-overlay">
+    <div class="modal-content" style="width:520px">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Modifier le lead</div>
+                <div id="ul-edit-pipeline-label" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-ul-edit')">✕</button>
+        </div>
+        <div class="mb">
+            <input type="hidden" id="ul-edit-id">
+            <div class="g2">
+                <div class="form-grp"><label>Nom</label><input type="text" id="ul-edit-nom" class="inp"></div>
+                <div class="form-grp"><label>Ville</label><input type="text" id="ul-edit-ville" class="inp"></div>
+            </div>
+            <div class="form-grp"><label>Site web</label><input type="url" id="ul-edit-site" class="inp"></div>
+            <div class="g2">
+                <div class="form-grp"><label>Email</label><input type="email" id="ul-edit-email" class="inp"></div>
+                <div class="form-grp"><label>Téléphone</label><input type="tel" id="ul-edit-tel" class="inp"></div>
+            </div>
+            <div class="g2">
+                <div class="form-grp"><label>Email 2</label><input type="email" id="ul-edit-email-2" class="inp"
+                        placeholder="Optionnel"></div>
+                <div class="form-grp"><label>Téléphone 2</label><input type="tel" id="ul-edit-tel-2" class="inp"
+                        placeholder="Optionnel"></div>
+            </div>
+            <div class="form-grp"><label>Secteur</label><input type="text" id="ul-edit-category" class="inp"></div>
+            <div class="form-grp"><label>Notes</label><textarea id="ul-edit-notes" class="inp"
+                    style="resize:vertical;height:60px" placeholder="Notes particulières..."></textarea></div>
+            <div id="ul-edit-ceo-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;margin-bottom:8px;letter-spacing:.04em">
+                    DÉCIDEUR</div>
+                <div class="g2">
+                    <div class="form-grp"><label>Prénom</label><input type="text" id="ul-edit-ceo-prenom" class="inp"
+                            placeholder="Jean"></div>
+                    <div class="form-grp"><label>Nom</label><input type="text" id="ul-edit-ceo-nom" class="inp"
+                            placeholder="DUPONT"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mf">
+            <button class="btn bd sm" onclick="unifiedLeadsDelete()">Supprimer</button>
+            <div style="display:flex;gap:8px">
+                <button class="btn bg1 sm" onclick="closeModal('modal-ul-edit')">Annuler</button>
+                <button class="btn bp1 sm" onclick="unifiedLeadsSave()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal création d'objectif -->
+<div id="modal-obj-create" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="width:460px">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Nouvel objectif</div>
+                <div style="font-size:11px;color:var(--ink3)">Les leads importés ci-après appartiendront à cet objectif.</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-obj-create')">✕</button>
+        </div>
+        <div class="mb">
+            <div class="form-grp"><label>Nom de l'objectif</label>
+                <input type="text" id="obj-create-nom" class="inp" placeholder="Ex. « Refonte site web », « Application scolaire »"></div>
+            <div class="form-grp"><label>Description (optionnel)</label>
+                <textarea id="obj-create-desc" class="inp" style="resize:vertical;height:64px"
+                    placeholder="Contexte : à quel type de prospects vise-t-on ?"></textarea></div>
+        </div>
+        <div class="mf">
+            <button class="btn bg1 sm" onclick="closeModal('modal-obj-create')">Annuler</button>
+            <button class="btn bp1 sm" onclick="ObjectifsModule.create()">Créer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal gestion d'objectif (renommer / archiver / supprimer) -->
+<div id="modal-obj-manage" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="width:460px">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Gérer l'objectif</div>
+                <div id="obj-manage-name" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-obj-manage')">✕</button>
+        </div>
+        <div class="mb">
+            <div class="form-grp"><label>Nom</label>
+                <input type="text" id="obj-manage-nom" class="inp"></div>
+            <div class="form-grp"><label>Description</label>
+                <textarea id="obj-manage-desc" class="inp" style="resize:vertical;height:64px"></textarea></div>
+            <div class="form-grp" style="margin-top:8px">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
+                    <input type="checkbox" id="obj-manage-envoi-auto" style="cursor:pointer">
+                    Envoi automatique (scheduler)
+                </label>
+                <div style="font-size:11px;color:var(--ink3);margin-top:2px">Coché = le scheduler envoie seul les nouveaux leads. Décoché = déclenchement manuel via « ▶ Envoyer » (validez vos aspects avant).</div>
+            </div>
+            <div class="g2" style="margin-top:10px">
+                <button class="btn bd sm" onclick="ObjectifsModule.deleteCurrent()" title="Supprime l'objectif ET ses leads (action irréversible)">
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:4px">
+                        <path d="M2 3.5h10M5.5 3.5V2h3v1.5M3.5 3.5l.7 8h5.6l.7-8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Supprimer l'objectif
+                </button>
+            </div>
+        </div>
+        <div class="mf">
+            <button class="btn bg1 sm" onclick="closeModal('modal-obj-manage')">Annuler</button>
+            <button class="btn bp1 sm" onclick="ObjectifsModule.saveManage()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Séquence & relances : templates position 0..3 (objet, corps, délai, actif) -->
+<div id="modal-obj-sequence" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="width:780px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Séquence &amp; relances</div>
+                <div id="obj-seq-name" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-obj-sequence')">✕</button>
+        </div>
+        <div class="mb" style="overflow:auto">
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;line-height:1.5">
+                Position <b>0</b> = email initial · <b>1 → 3</b> = relances.
+                <b>Délai</b> = jours après la touche précédente avant relance.
+                Variables : <code>{{prenom}}</code> <code>{{entreprise}}</code> <code>{{secteur}}</code>
+                <code>{{site_web}}</code> <code>{{ville}}</code> <code>{{offre}}</code>.
+                Un modèle « générique (défaut) » sert de secours s'il n'existe pas d'étape dédiée à ce même objectif.
+            </div>
+            <div id="obj-sequence-list" style="display:flex;flex-direction:column;gap:8px"></div>
+            <div style="border-top:1px solid var(--border);margin:14px 0 0;padding-top:12px">
+                <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--ink)">Ajouter une étape dédiée</div>
+                <div class="g2">
+                    <div class="form-grp"><label>Position</label>
+                        <select id="seq-add-pos" class="inp">
+                            <option value="1">1 — relance 1</option>
+                            <option value="2">2 — relance 2</option>
+                            <option value="3">3 — relance 3</option>
+                        </select></div>
+                    <div class="form-grp"><label>Délai (jours)</label>
+                        <input type="number" id="seq-add-delai" class="inp" value="3" min="0" step="1"></div>
+                </div>
+                <div class="form-grp"><label>Objet</label>
+                    <input type="text" id="seq-add-objet" class="inp" placeholder="Re : {{prenom}} — un dernier point 😊"></div>
+                <div class="form-grp"><label>Corps</label>
+                    <textarea id="seq-add-corps" class="inp" style="resize:vertical;height:74px" placeholder="Bonjour {{prenom}}, j'espère que mon précédent message vous est bien parvenu. ..."></textarea></div>
+                <div style="margin-top:8px;text-align:right">
+                    <button class="btn bp1 sm" onclick="ObjectifsModule.seqAdd()">Ajouter l'étape</button>
+                </div>
+            </div>
+        </div>
+        <div class="mf">
+            <button class="btn bg1 sm" onclick="closeModal('modal-obj-sequence')">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal détail prospect (file humaine) : snippet réponse + historique + actions rapides -->
+<div id="modal-ul-detail" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="width:720px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mh">
+            <div>
+                <div class="mh-t" id="ul-detail-title">Prospect</div>
+                <div id="ul-detail-sub" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-ul-detail')">✕</button>
+        </div>
+        <div class="mb" style="overflow:auto">
+            <div id="ul-detail-reply" style="display:none">
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em;margin-bottom:6px">DERNIÈRE RÉPONSE</div>
+                <div style="background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+                    <div id="ul-detail-reply-head" class="inl"></div>
+                    <div id="ul-detail-reply-body" style="font-size:12.5px;line-height:1.55;color:var(--ink2);white-space:pre-wrap"></div>
+                </div>
+            </div>
+            <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em;margin-bottom:6px">HISTORIQUE</div>
+            <div id="ul-detail-timeline" class="tbl"></div>
+        </div>
+        <div class="mf" style="flex-wrap:wrap;gap:6px">
+            <button class="btn bp1 sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'rdv_obtenu');closeModal('modal-ul-detail')"
+                    title="Clôture : le prospect devient un RDV">✅ RDV obtenu</button>
+            <button class="btn bg1 sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'pas_interesse');closeModal('modal-ul-detail')">✖ Pas intéressé</button>
+            <button class="btn bg1 sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'a_relancer_plus_tard');closeModal('modal-ul-detail')">⏳ À relancer + tard</button>
+            <button class="btn bd sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'ne_plus_contacter');closeModal('modal-ul-detail')"
+                    title="Liste de suppression globale">🚫 Ne plus contacter</button>
+            <div style="flex:1"></div>
+            <button class="btn bg0 sm" onclick="closeModal('modal-ul-detail')">Fermer</button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Diagnostic de Visibilité - {{ company_name }}</title>
+    <style>
+        :root {
+            --primary: #065f46;
+            --secondary: #5f6368;
+            --danger: #d93025;
+            --warning: #f9ab00;
+            --success: #188038;
+            --bg: #ffffff;
+            --text: #202124;
+            --border: #dadce0;
+        }
+
+        body {
+            font-family: 'Inter', 'Arial', 'Helvetica', sans-serif;
+            color: var(--text);
+            margin: 0;
+            padding: 40px;
+            line-height: 1.4;
+            background-color: var(--bg);
+            font-size: 13px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #f1f3f4;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .company-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .date {
+            font-size: 12px;
+            color: var(--secondary);
+            text-align: right;
+        }
+
+        .summary-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 20px;
+            font-style: italic;
+            font-size: 14px;
+            color: #3c4043;
+        }
+
+        .screenshot-container {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            background-color: #f1f3f4;
+        }
+
+        .screenshot-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-weight: bold;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .section-content {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+        }
+
+        .metrics {
+            border-right: 1px solid var(--border);
+            padding-right: 20px;
+        }
+
+        .metric-item {
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--secondary);
+            display: block;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .analysis-block {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .analysis-item {
+            margin-bottom: 5px;
+        }
+
+        .analysis-label {
+            font-weight: bold;
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--secondary);
+            margin-bottom: 2px;
+        }
+
+        .analysis-text {
+            display: block;
+            color: #3c4043;
+        }
+
+        .diagnostic-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .diag-card {
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .diag-card.diagnostic { background-color: #fffaf0; border: 1px solid #ffeeba; }
+        .diag-card.opportunity { background-color: #e8f0fe; border: 1px solid #c2e7ff; }
+
+        .diag-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--primary);
+        }
+
+        .opp-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--secondary);
+            border-top: 1px solid #f1f3f4;
+            padding-top: 10px;
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+        }
+        .badge.good { background-color: var(--success); }
+        .badge.med { background-color: var(--warning); }
+        .badge.bad { background-color: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>Diagnostic de Présence en Ligne</h1>
+            <div class="company-name">{{ company_name }}</div>
+        </div>
+        <div class="date">
+            Audit confidentiel<br>
+            {{ date }}
+        </div>
+    </div>
+
+    <div class="summary-box">
+        {{ phrase_synthese }}
+    </div>
+
+    <div class="screenshot-container">
+        {% if screenshot_path %}
+        <img src="{{ screenshot_path }}" alt="Capture du site">
+        {% else %}
+        <div style="display:flex; justify-content:center; align-items:center; height:100%; color:#999;">Aperçu visuel indisponible</div>
+        {% endif %}
+    </div>
+
+    <!-- PERFORMANCE MOBILE -->
+    <div class="section">
+        <div class="section-header">
+            <span class="section-title">1. Performance Mobile</span>
+            <span class="badge {{ mobile_class }}">Score : {{ mobile_score }}/100</span>
+        </div>
+        <div class="section-content">
+            <div class="metrics">
+                <div class="metric-item">
+                    <span class="metric-label">Temps de chargement (LCP)</span>
+                    <span class="metric-value">{{ lcp_s }}s</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Sécurité HTTPS</span>
+                    <span class="metric-value">{{ has_https }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Scripts bloquants</span>
+                    <span class="metric-value">{{ render_blocking }}</span>
+                </div>
+            </div>
+            <div class="analysis-block">
+                <div class="analysis-item">
+                    <span class="analysis-label">Observation</span>
+                    <span class="analysis-text">{{ obs_mobile }}</span>
+                </div>
+                <div class="analysis-item">
+                    <span class="analysis-label">Impact business</span>
+                    <span class="analysis-text" style="color:var(--danger); font-weight:500;">{{ impact_mobile }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REFERENCEMENT SEO -->
+    <div class="section">
+        <div class="section-header">
+            <span class="section-title">2. Référencement Google (SEO)</span>
+            <span class="badge {{ seo_class }}">{{ seo_status }}</span>
+        </div>
+        <div class="section-content">
+            <div class="metrics">
+                <div class="metric-item">
+                    <span class="metric-label">Meta Description</span>
+                    <span class="metric-value">{{ meta_desc }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Structure (Balises H1)</span>
+                    <span class="metric-value">{{ h1_count }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Optimisation Images</span>
+                    <span class="metric-value">{{ alt_images }}</span>
+                </div>
+            </div>
+            <div class="analysis-block">
+                <div class="analysis-item">
+                    <span class="analysis-label">Observation</span>
+                    <span class="analysis-text">{{ obs_seo }}</span>
+                </div>
+                <div class="analysis-item">
+                    <span class="analysis-label">Impact business</span>
+                    <span class="analysis-text" style="color:var(--danger); font-weight:500;">{{ impact_seo }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPUTATION LOCALE (GMB) -->
+    <div class="section">
+        <div class="section-header">
+            <span class="section-title">3. Fiche Google Business</span>
+            <span class="badge {{ gmb_class }}">Note : {{ gmb_score }}/5</span>
+        </div>
+        <div class="section-content">
+            <div class="metrics">
+                <div class="metric-item">
+                    <span class="metric-label">Nombre d'avis</span>
+                    <span class="metric-value">{{ gmb_reviews }}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Note globale</span>
+                    <span class="metric-value">{{ gmb_score }} / 5</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Photos publiées</span>
+                    <span class="metric-value">{{ gmb_photos }}</span>
+                </div>
+            </div>
+            <div class="analysis-block">
+                <div class="analysis-item">
+                    <span class="analysis-label">Observation</span>
+                    <span class="analysis-text">{{ obs_gmb }}</span>
+                </div>
+                <div class="analysis-item">
+                    <span class="analysis-label">Impact business</span>
+                    <span class="analysis-text" style="color:var(--danger); font-weight:500;">{{ impact_gmb }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="diagnostic-section">
+        <div class="diag-card diagnostic">
+            <div class="diag-title">🔍 Diagnostic Global</div>
+            <div style="font-size: 13px;">{{ diagnostic }}</div>
+        </div>
+        <div class="diag-card opportunity">
+            <div class="diag-title">🚀 Opportunités Business</div>
+            <ul class="opp-list">
+                {% for opp in opportunite %}
+                <li>{{ opp }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        Jean-Marc DANSI · jmedansi@incidenx.com · incidenx.com
+    </div>
+</body>
+</html>

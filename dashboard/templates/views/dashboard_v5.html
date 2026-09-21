@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Incidenx - Prospection Machine V5{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/components/dashboard.css') }}?v=12">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/dashboard.css') }}?v=13">
 {% endblock %}
 
 <!-- Mobile app experience is now unified within the main .app structure -->
@@ -85,12 +85,19 @@
 <div id="section-settings" class="v-section">
   <div class="section-tabs">
     <button class="section-tab active" onclick="switchSectionTab('settings_gen', this)">Configuration</button>
+    <button class="section-tab" onclick="switchSectionTab('tasks', this)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-1px"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+      Console Tâches
+    </button>
     <button class="section-tab" onclick="switchSectionTab('templates', this)">Templates e-mails</button>
     <button class="section-tab" onclick="switchSectionTab('health', this)">Santé système</button>
     <button class="section-tab" onclick="switchSectionTab('logs', this)">Logs</button>
   </div>
   <div id="subtab-settings_gen" class="subtab-content active">
     {% include "views/sections/settings.html" %}
+  </div>
+  <div id="subtab-tasks" class="subtab-content" style="display:none">
+    {% include "views/sections/tasks_console.html" %}
   </div>
   <div id="subtab-templates" class="subtab-content" style="display:none">
     {% include "views/sections/templates.html" %}
@@ -119,19 +126,21 @@
 <script type="module" src="{{ url_for('static', filename='js/core/api.js') }}?v=1"></script>
 <script type="module" src="{{ url_for('static', filename='js/core/ui.js') }}?v=1"></script>
 
-<script src="{{ url_for('static', filename='js/ui.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}?v=6"></script>
 <script src="{{ url_for('static', filename='js/api.js') }}?v=5"></script>
 <script src="{{ url_for('static', filename='js/modules/collecte.js') }}?v=5"></script>
 <script src="{{ url_for('static', filename='js/modules/audits.js') }}?v=7"></script>
 <script src="{{ url_for('static', filename='js/modules/rapports.js') }}?v=5"></script>
 <script src="{{ url_for('static', filename='js/modules/settings.js') }}?v=5"></script>
 <script src="{{ url_for('static', filename='js/modules/planificateur.js') }}?v=5"></script>
-<script src="{{ url_for('static', filename='js/modules/sniper.js') }}?v=14"></script>
-<script src="{{ url_for('static', filename='js/modules/leads.js') }}?v=6"></script>
-<script src="{{ url_for('static', filename='js/modules/unified_leads.js') }}?v=16"></script>
-<script src="{{ url_for('static', filename='js/modules/sources.js') }}?v=15"></script>
-<script src="{{ url_for('static', filename='js/modules/stats.js') }}?v=15"></script>
-<script src="{{ url_for('static', filename='js/modules/jobs.js') }}?v=15"></script>
+<script src="{{ url_for('static', filename='js/modules/sniper.js') }}?v=15"></script>
+<script src="{{ url_for('static', filename='js/modules/leads.js') }}?v=7"></script>
+<script src="{{ url_for('static', filename='js/modules/unified_leads.js') }}?v=32"></script>
+<script src="{{ url_for('static', filename='js/modules/objectifs.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/modules/sources.js') }}?v=21"></script>
+<script src="{{ url_for('static', filename='js/modules/stats.js') }}?v=17"></script>
+<script src="{{ url_for('static', filename='js/modules/jobs.js') }}?v=16"></script>
+<script src="{{ url_for('static', filename='js/modules/tasks_console.js') }}?v=1"></script>
 <script>window._debugActionsModule = null; console.log('Script actions.js loading...');</script>
 <script src="{{ url_for('static', filename='js/modules/actions.js') }}?v=11"></script>
 <script>
@@ -147,10 +156,11 @@
     }
   }, 250);
 </script>
-<script src="{{ url_for('static', filename='js/modules/lists.js') }}?v=1"></script>
-<script src="{{ url_for('static', filename='js/modules/dashboard_core.js') }}?v=16"></script>
+<script src="{{ url_for('static', filename='js/modules/lists.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/modules/dashboard_core.js') }}?v=21"></script>
 <script src="{{ url_for('static', filename='js/modules/templates.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/modules/relances.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/modules/ia_actions.js') }}?v=4"></script>
 <script>
   // Init RelancesModule quand la section devient visible
   document.addEventListener('DOMContentLoaded', function() {

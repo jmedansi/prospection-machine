@@ -1,0 +1,21 @@
+        <div class="side-panel-header">
+            <h3 id="panel-title" style="margin:0;font-size:16px">Détails</h3>
+            <button class="close-panel" onclick="closeSidePanel()">✕</button>
+        </div>
+        <div class="side-panel-tabs">
+            <div class="side-panel-tab active" onclick="switchPanelTab('audit', this)" data-tab="audit">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+                Audit
+            </div>
+            <div class="side-panel-tab" onclick="switchPanelTab('email', this)" data-tab="email">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email
+            </div>
+            <div class="side-panel-tab" onclick="switchPanelTab('suivi', this)" data-tab="suivi">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                Suivi
+            </div>
+        </div>
+        <div class="side-panel-content" id="panel-content">
+            <!-- Content loaded dynamically -->
+        </div>

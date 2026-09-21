@@ -19,16 +19,22 @@ logger = logging.getLogger(__name__)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign_name=None, min_reviews=0, multi_zone=False,
-                   country='fr', require_contact=False, keyword_variants=False, site_filter='all'):
+def launch_scraper(keyword, city, sector=None, limit=50, min_emails=0, campaign_name=None, min_reviews=0, multi_zone=False,
+                   country='fr', require_contact=False, keyword_variants=False, site_filter='all',
+                   objectif=None, list_id=None, v2_objectif=None, v2_liste=None):
     """
     Lance le scraper Maps en arrière-plan (in-process dans un thread daemon).
     Crée la campagne en DB AVANT le lancement, puis track la progression.
+    objectif ('web'/'general') et list_id (destination) sont mémorisés pour la
+    campagne ; appliqués à la terminaison (complete_campaign). list_id None →
+    auto-liste dédiée par campagne ; list_id int → reverser les leads dans cette
+    liste existante.
     """
     try:
         if not campaign_name:
             campaign_name = f"{sector or keyword} {city}"
-            
+        if not v2_objectif:
+            v2_objectif = campaign_name
         camp_id = create_campaign(campaign_name, secteur=sector or keyword, ville=city, source='maps', nb_demande=limit,
                                   pays=country)
         start_campaign(camp_id, phase='scraping')
@@ -46,6 +52,9 @@ def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign
             pass
 
         # ── Lancement in-process dans un thread daemon ───────────────────
+        from services.campaign_tracker import set_campaign_target
+        set_campaign_target(camp_id, objectif, list_id)
+
         def _run():
             try:
                 from scraper.main import main_async
@@ -54,12 +63,13 @@ def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign
                     '--keyword', keyword,
                     '--city', city,
                     '--limit', str(limit),
-                    '--min-emails', str(min_emails),
                     '--campaign-id', str(camp_id),
                     '--min-reviews', str(min_reviews),
                     '--secteur', str(sector or ''),
                     '--country', str(country),
                 ]
+                if min_emails and int(min_emails) > 0:
+                    argv.extend(['--min-emails', str(min_emails)])
                 if require_contact:
                     argv.append('--require-contact')
                 if keyword_variants:
@@ -70,6 +80,10 @@ def launch_scraper(keyword, city, sector=None, limit=50, min_emails=10, campaign
                     argv.extend(['--site-filter', site_filter])
                 if offset > 0:
                     argv.extend(['--offset', str(offset)])
+                if v2_objectif:
+                    argv.extend(['--objectif', str(v2_objectif)])
+                if v2_liste:
+                    argv.extend(['--liste', str(v2_liste)])
 
                 asyncio.run(main_async(argv))
                 complete_campaign(camp_id)

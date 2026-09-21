@@ -63,7 +63,9 @@ def create_app():
     from dashboard.routes import (
         leads_bp, audits_bp, emails_bp, campaigns_bp,
         stats_bp, review_bp, pages_bp, rapports_bp, health_bp,
-        sniper_bp, deploy_bp, templates_bp, webhooks_bp, lists_bp
+        sniper_bp, deploy_bp, templates_bp, webhooks_bp, lists_bp,
+        tasks_bp, ia_bp, objectifs_bp, campagnes_bp, listes_bp, replies_bp,
+        mailboxes_bp
     )
 
     app.register_blueprint(leads_bp)
@@ -80,6 +82,13 @@ def create_app():
     app.register_blueprint(templates_bp)
     app.register_blueprint(webhooks_bp)
     app.register_blueprint(lists_bp)
+    app.register_blueprint(tasks_bp)
+    app.register_blueprint(ia_bp)
+    app.register_blueprint(objectifs_bp)
+    app.register_blueprint(campagnes_bp)
+    app.register_blueprint(listes_bp)
+    app.register_blueprint(replies_bp)
+    app.register_blueprint(mailboxes_bp)
     
     # Discovery of child modules (Phase 4.2)
     def _discover_modules():
@@ -114,15 +123,6 @@ if __name__ == '__main__':
         print("  [Scheduler] Planificateur démarré")
     except Exception as e:
         print(f"  [Scheduler] Non démarré : {e}")
-
-    # Audit Worker background thread
-    try:
-        import threading
-        from audit_worker import run_loop
-        threading.Thread(target=run_loop, daemon=True, name="AuditWorker").start()
-        print("  [AuditWorker] Thread de traitement d'audit démarré")
-    except Exception as e:
-        print(f"  [AuditWorker] Non démarré : {e}")
 
     # Lancement Flask avec SocketIO (port 5001)
     socketio.run(app, host='127.0.0.1', port=5001, debug=False, allow_unsafe_werkzeug=True)

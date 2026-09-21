@@ -71,6 +71,80 @@ function sourcesInit() {
     sourcesCheckRunning();
     sourcesLoadAutoSettings();
     sourcesLoadCampaigns();
+    // Charge le bloc Sniper B2B (statuts, compteurs, log) hébergé dans cette vue
+    if (typeof sniperLoadStats === 'function') sniperLoadStats();
+    if (typeof sniperLoadStatus === 'function') sniperLoadStatus();
+    // Strie d'actions IA ⇄ Dashboard (liste + objectif)
+    iaStripLoadLists();
+    iaStripAutoScan();
+}
+
+// ─── Actions IA ⇄ Dashboard (Sources) ─────────────────────────────────────────
+
+let _iaStripLists = [];
+
+/** Rafraîchissement auto : relit les CSV IA complétés (scan) sans jamais envoyer. */
+async function iaStripAutoScan() {
+    try {
+        const r = await fetch('/api/ia/status');
+        const d = await r.json();
+        const withCsv = (d.liste || []).filter(l => l.csv_existe);
+        // Scan silencieux de chaque liste d'échange ayant un leads.csv, sauf si
+        // déjà en cours d'édition (pas de garde active : idempotent côté backend).
+        for (const l of withCsv.slice(0, 10)) {
+            fetch('/api/ia/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ liste: l.liste })
+            }).catch(() => {});
+        }
+    } catch (e) {
+        /* silencieux pour le rafraîchissement auto */
+    }
+}
+
+async function iaStripLoadLists() {
+    const sel = document.getElementById('ia-strip-liste');
+    if (!sel) return;
+    try {
+        const r = await fetch('/api/lists');
+        const d = await r.json();
+        _iaStripLists = (d.lists || d || []);
+        sel.innerHTML = '<option value="">⚠ Sélectionner une liste</option>' + _iaStripLists
+            .map(l => `<option value="${l.id}">${String(l.nom || ('Liste ' + l.id)).replace(/</g, '&lt;')}</option>`)
+            .join('');
+    } catch (e) {
+        console.error('[IA strip] loadLists:', e);
+    }
+}
+
+function _iaStripListe() {
+    const sel = document.getElementById('ia-strip-liste');
+    const id = sel ? parseInt(sel.value) : NaN;
+    const l = _iaStripLists.find(x => x.id === id);
+    return l ? { id: l.id, nom: l.nom || ('Liste ' + l.id) } : null;
+}
+
+function _iaStripObjectif() {
+    const sel = document.getElementById('ia-strip-objectif');
+    return sel ? sel.value : 'tous';
+}
+
+async function iaStripAction(operation) {
+    const msg = document.getElementById('ia-strip-msg');
+    const liste = _iaStripListe();
+    if (!liste) {
+        if (msg) msg.textContent = '⚠ Choisissez une liste à traiter.';
+        return;
+    }
+    const objectif = _iaStripObjectif();
+    if (msg) { msg.textContent = `Préparation « ${operation} » pour « ${liste.nom} »…`; msg.style.color = 'var(--ink3)'; }
+    try {
+        const d = await window.IaActions[operation]({ liste_id: liste.id, liste_nom: liste.nom, objectif });
+        if (msg) { msg.textContent = (d && d.message) || (d && d.error) || 'Terminé'; msg.style.color = (d && d.ok === false) ? '#ef4444' : '#10b981'; }
+    } catch (e) {
+        if (msg) { msg.textContent = 'Erreur IA: ' + e; msg.style.color = '#ef4444'; }
+    }
 }
 
 // ─── Automatisation ───────────────────────────────────────────────────────────
@@ -174,9 +248,43 @@ function sourcesOpenPanel(sourceKey) {
 
     content.innerHTML = _renderPanelForm(sourceKey);
 
+    if (sourceKey === 'maps') { _srcLoadMapsLists(); _srcLoadMapsObjectives(); }
+
     panel.style.transform = 'translateX(0)';
     const overlay = document.getElementById('sources-panel-overlay');
     if (overlay) { overlay.style.display = 'block'; }
+}
+
+async function _srcLoadMapsLists() {
+    try {
+        const r = await fetch('/api/lists');
+        const d = await r.json();
+        const lists = d.lists || d || [];
+        const sel = document.getElementById('sf-maps-list');
+        if (!sel) return;
+        sel.innerHTML = '<option value="auto">🆕 Nouvelle liste (auto)</option>' + lists
+            .filter(l => l && (l.id !== undefined))
+            .map(l => `<option value="${l.id}">#${l.id} · ${String(l.nom || ('Liste ' + l.id)).replace(/</g, '&lt;')}</option>`)
+            .join('');
+    } catch (e) {
+        console.error('[sources] _srcLoadMapsLists:', e);
+    }
+}
+
+async function _srcLoadMapsObjectives() {
+    try {
+        const r = await fetch('/api/v2/campagnes');
+        const d = await r.json();
+        const objs = (d && d.campagnes) || [];
+        const sel = document.getElementById('sf-maps-obj');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— Aucune campagne —</option>' + objs
+            .filter(o => o && o.statut !== 'archive' && o.nom)
+            .map(o => `<option value="${String(o.nom).replace(/"/g, '&quot;')}">${String(o.nom).replace(/</g, '&lt;')}</option>`)
+            .join('');
+    } catch (e) {
+        console.error('[sources] _srcLoadMapsObjectives:', e);
+    }
 }
 
 function sourcesClosePanel() {
@@ -344,6 +452,30 @@ function _formMaps() {
                 <option value="with_site">Avec site uniquement</option>
             </select>
         </div>
+        <div class="src-form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+                <label>Objectif</label>
+                <select id="sf-maps-objectif" class="inp">
+                    <option value="">Par défaut (général)</option>
+                    <option value="web">Web · maquette + email</option>
+                    <option value="general">Général</option>
+                </select>
+            </div>
+            <div>
+                <label>Liste de destination</label>
+                <select id="sf-maps-list" class="inp">
+                    <option value="auto">🆕 Nouvelle liste (auto)</option>
+                </select>
+            </div>
+        </div>
+        <div class="src-form-row">
+            <label>Objectif v2 (destination des leads)</label>
+            <select id="sf-maps-obj" class="inp">
+                <option value="">— Aucun (legacy, pas d'objectif) —</option>
+            </select>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">Les leads scrappés seront rangés en direct dans cet objectif (créé à la volée s'il n'existe pas).</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:6px">« Nouvelle liste » crée une liste dédiée (défaut) ; sinon le choix reverse les leads collectés dans la liste existante sélectionnée. L'ID des listes est visible dans l'onglet Listes.</div>
         <div id="sf-maps-log" class="src-log" style="display:none"></div>
         <div class="src-form-actions">
             <button class="btn accent" onclick="sourcesLaunch('maps')">Lancer Maps</button>
@@ -566,16 +698,21 @@ async function _launchMaps() {
     const keywordVariants = document.getElementById('sf-maps-variants')?.checked || false;
     const multiZone = document.getElementById('sf-maps-multi')?.checked || false;
     const siteFilter = document.getElementById('sf-maps-site-filter')?.value || 'all';
+    const objectif = document.getElementById('sf-maps-objectif')?.value || '';
+    const v2Objectif = document.getElementById('sf-maps-obj')?.value?.trim() || '';
+    const destVal  = document.getElementById('sf-maps-list')?.value || 'auto';
+    const listId   = destVal === 'auto' ? null : (parseInt(destVal) || null);
     if (!kw) { _srcLog('maps', '⚠ Mot-clé requis'); _setSourceRunning('maps', false); return; }
 
     const r = await fetch('/api/scraper/launch', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ keyword: kw, city, sector, limit, min_emails: minMails, country, require_contact: requireContact, keyword_variants: keywordVariants, multi_zone: multiZone, site_filter: siteFilter }),
+        body:    JSON.stringify({ keyword: kw, city, sector, limit, min_emails: minMails, country, require_contact: requireContact, keyword_variants: keywordVariants, multi_zone: multiZone, site_filter: siteFilter, objectif: objectif || undefined, list_id: listId, v2_objectif: v2Objectif || undefined }),
     });
     const d = await r.json();
     if (d.error) { _srcLog('maps', `✗ ${d.error}`); _setSourceRunning('maps', false); return; }
-    _srcLog('maps', `✓ Campagne #${d.campaign_id} lancée — ${kw} · ${city} · ${country === 'bj' ? 'Bénin' : 'France'}`);
+    const destTxt = listId ? ` → liste #${listId}` : ' 🆕 nouvelle liste';
+    _srcLog('maps', `✓ Campagne #${d.campaign_id} lancée — ${kw} · ${city} · ${country === 'bj' ? 'Bénin' : 'France'}${objectif ? ' · ' + (objectif === 'web' ? 'Web' : 'Général') : ''}${v2Objectif ? ' · 🎯 ' + v2Objectif : ''}${destTxt}`);
     _srcPollUntilDone('maps', '/api/scraper/status');
 }
 
@@ -713,27 +850,34 @@ async function _launchBodacc() {
 // ─── Polling statut ───────────────────────────────────────────────────────────
 
 function _srcPollUntilDone(key, statusApi) {
+    _setSourceRunning(key, true);
     if (_srcState.pollIntervals[key]) clearInterval(_srcState.pollIntervals[key]);
+    let lastLog = '';
     _srcState.pollIntervals[key] = setInterval(async () => {
         try {
             const r = await fetch(statusApi);
             const d = await r.json();
-            if (d.logs) {
-                const last3 = (d.logs || []).slice(-3).join('\n');
-                _srcLog(key, last3, false);
+            if (d.logs && d.logs.length > 0) {
+                const latest = d.logs[d.logs.length - 1];
+                if (latest && latest !== lastLog) {
+                    lastLog = latest;
+                    _srcLog(key, latest, true);
+                }
             }
             if (!d.running) {
                 clearInterval(_srcState.pollIntervals[key]);
                 delete _srcState.pollIntervals[key];
                 _setSourceRunning(key, false);
-                _srcLog(key, '✓ Terminé');
-                sourcesLoadStats();
+                const countMsg = (d.current !== undefined) ? ` — ${d.current} leads collectés (${d.with_email || 0} emails)` : '';
+                _srcLog(key, `✓ Terminé${countMsg}`, true);
+                if (typeof sourcesLoadStats === 'function') sourcesLoadStats();
+                if (typeof sourcesLoadCampaigns === 'function') sourcesLoadCampaigns();
             }
         } catch (e) {
             clearInterval(_srcState.pollIntervals[key]);
             _setSourceRunning(key, false);
         }
-    }, 3000);
+    }, 2000);
 }
 
 // ─── Helpers UI ───────────────────────────────────────────────────────────────

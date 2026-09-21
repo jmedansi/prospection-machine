@@ -21,10 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_conn() -> sqlite3.Connection:
-    """Retourne une connexion SQLite avec row_factory et WAL activé."""
-    conn = sqlite3.connect(str(DB_PATH))
+    """Retourne une connexion SQLite avec row_factory, WAL et busy_timeout."""
+    conn = sqlite3.connect(str(DB_PATH), timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")  # Lectures et écritures simultanées
+    conn.execute("PRAGMA busy_timeout=5000")  # Attendre 5s si la DB est verrouillée
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 

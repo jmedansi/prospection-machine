@@ -44,6 +44,10 @@ def api_sniper_leads():
 
         where, params = [], []
         source_list = ['ads', 'fb_ads', 'transparency', 'tech', 'jobs', 'bodacc']
+
+        # Toujours exclure les leads écartés / désinscrits de la vue d'envoi
+        where.append("COALESCE(lb.ecarte, 0) = 0")
+        where.append("COALESCE(lb.desinscrit, 0) = 0")
         
         if source:
             where.append("lb.source LIKE ?")
@@ -146,17 +150,22 @@ def api_sniper_stats():
             sources = dict(conn.execute(f"""
                 SELECT source, COUNT(*) FROM leads_bruts
                 WHERE source IN {_sniper_sources}
+                  AND COALESCE(ecarte, 0) = 0
+                  AND COALESCE(desinscrit, 0) = 0
                 GROUP BY source
             """).fetchall())
 
             total_leads = conn.execute(
                 f"SELECT COUNT(*) FROM leads_bruts WHERE source IN {_sniper_sources}"
+                " AND COALESCE(ecarte,0)=0 AND COALESCE(desinscrit,0)=0"
             ).fetchone()[0]
 
             emails_generes = conn.execute(f"""
                 SELECT COUNT(*) FROM leads_audites la
                 JOIN leads_bruts lb ON lb.id = la.lead_id
                 WHERE lb.source IN {_sniper_sources}
+                  AND COALESCE(lb.ecarte, 0) = 0
+                  AND COALESCE(lb.desinscrit, 0) = 0
                   AND la.email_corps IS NOT NULL AND la.email_corps != ''
             """).fetchone()[0]
 
@@ -164,6 +173,8 @@ def api_sniper_stats():
                 SELECT COUNT(*) FROM leads_audites la
                 JOIN leads_bruts lb ON lb.id = la.lead_id
                 WHERE lb.source IN {_sniper_sources}
+                  AND COALESCE(lb.ecarte, 0) = 0
+                  AND COALESCE(lb.desinscrit, 0) = 0
                   AND la.statut_prospection = 'step1_envoye'
             """).fetchone()[0]
 
@@ -171,6 +182,8 @@ def api_sniper_stats():
                 SELECT COUNT(*) FROM leads_audites la
                 JOIN leads_bruts lb ON lb.id = la.lead_id
                 WHERE lb.source IN {_sniper_sources}
+                  AND COALESCE(lb.ecarte, 0) = 0
+                  AND COALESCE(lb.desinscrit, 0) = 0
                   AND la.statut_prospection = 'repondu'
             """).fetchone()[0]
 
@@ -178,6 +191,8 @@ def api_sniper_stats():
                 SELECT COUNT(*) FROM leads_audites la
                 JOIN leads_bruts lb ON lb.id = la.lead_id
                 WHERE lb.source IN {_sniper_sources}
+                  AND COALESCE(lb.ecarte, 0) = 0
+                  AND COALESCE(lb.desinscrit, 0) = 0
                   AND la.statut_prospection = 'lien_envoye'
             """).fetchone()[0]
 
@@ -418,9 +433,9 @@ def api_sniper_poll_imap():
     try:
         data  = request.get_json() or {}
         hours = int(data.get("hours", 48))
-        from sniper.imap_poller import ImapPoller
-        result = ImapPoller().poll(hours_back=hours)
-        return jsonify(result)
+        # Décommissionnement : l'ancien imap_poller est remplacé par reply_poller (v2).
+        from envoi.reply_poller import run_poll
+        return jsonify({"ok": True, "reponses": run_poll(lookback_hours=hours)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

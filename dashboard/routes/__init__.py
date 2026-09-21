@@ -13,3 +13,11 @@ from .deploy    import deploy_bp
 from .templates import templates_bp
 from .webhooks  import webhooks_bp
 from .lists     import lists_bp
+from .tasks     import tasks_bp
+from .ia_echanges import ia_bp
+from .campagnes import campagnes_bp
+from .listes import listes_bp
+from .objectifs import objectifs_bp
+from .replies import replies_bp
+from .mailboxes import mailboxes_bp
+

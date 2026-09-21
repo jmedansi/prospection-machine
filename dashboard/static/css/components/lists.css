@@ -1,0 +1,851 @@
+/*
+    dashboard/static/css/components/lists.css
+    Onglet « Listes » V6 — interface sidebar (restaurée de l'ancienne vue) :
+    sidebar = toutes les listes (filtrées par campagne active), panneau droit =
+    prospects de la liste sélectionnée. Classes .lists-* / .list-sidebar-*.
+
+    Le reste du rendu des leads (table, avatar, pagination…) réutilise
+    saas-redesign.css (.leads-table, .lead-avatar, …) chargé globalement.
+*/
+.lists-layout {
+    display: flex;
+    height: calc(100vh - 60px);
+    gap: 0;
+    overflow: hidden;
+}
+
+/* ─── Sidebar ────────────────────────────────────────────── */
+.lists-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.lists-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.lists-sidebar-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink3);
+}
+
+.lists-btn-new {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, color .15s;
+}
+
+.lists-btn-new:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.lists-sidebar-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.lists-sidebar-filter .inp {
+    width: 100%;
+    font-size: 12px;
+    padding: 6px 8px;
+}
+
+.lists-sidebar-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 6px;
+}
+
+.lists-empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--ink3);
+}
+
+.lists-empty-icon { font-size: 32px; margin-bottom: 8px; }
+.lists-empty-title { font-size: 12px; }
+.lists-empty-desc { font-size: 11px; margin-top: 4px; }
+
+.list-sidebar-section {
+    padding: 10px 10px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ink3);
+}
+
+.list-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .12s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+}
+
+.list-sidebar-item:hover {
+    background: var(--surface2);
+}
+
+.list-sidebar-item.active {
+    background: var(--accent-s, rgba(99, 102, 241, 0.1));
+    border-color: var(--accent);
+}
+
+.list-sidebar-icone {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.list-sidebar-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.list-sidebar-nom {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.list-sidebar-meta {
+    font-size: 10px;
+    color: var(--ink3);
+    margin-top: 1px;
+}
+
+.list-sidebar-meta .archived { color: var(--ink3); opacity: .7; }
+
+.list-sidebar-edit {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--ink3);
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 12px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .12s, background .12s, color .12s;
+}
+
+.list-sidebar-item:hover .list-sidebar-edit { opacity: 1; }
+.list-sidebar-edit:hover { background: var(--surface2); color: var(--ink1); }
+
+/* ─── Panneau principal ─────────────────────────────────── */
+.lists-main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.lists-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--ink3);
+    padding: 48px;
+    text-align: center;
+}
+
+.lists-placeholder h3 { font-size: 15px; font-weight: 600; color: var(--ink2); margin: 0; }
+.lists-placeholder p { font-size: 12px; margin: 0; max-width: 260px; }
+
+/* ─── Header mobile ─────────────────────────────────────── */
+.lists-mobile-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+}
+
+.lists-mobile-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink1);
+}
+
+.lists-mobile-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink3);
+    background: var(--surface2);
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+}
+
+.lists-hamburger {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+}
+
+.lists-hamburger:hover { background: var(--surface2); }
+
+.lists-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 1000;
+}
+
+.lists-sidebar-overlay.open { display: block; }
+
+/* ─── En-tête liste active ──────────────────────────────── */
+.lists-view-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* ─── Panneau d'actions repliable (⚡) ─────────────── */
+.lists-header-collapse {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .25s ease;
+}
+
+.lists-header-collapse.open {
+    max-height: 220px;
+}
+
+.lists-actions-toggle {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink2);
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .2s, background .15s;
+    flex-shrink: 0;
+}
+
+.lists-actions-toggle:hover { background: var(--surface2); }
+
+.lists-actions-toggle.open {
+    transform: rotate(180deg);
+}
+
+/* ─── Boutons de panneau (Actions / Filtres) + basculeur de vue ─┐ */
+.lists-header-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 8px;
+    flex-wrap: wrap;
+}
+
+.lists-header-tools .lists-actions-toggle,
+.lists-header-tools .lists-filtres-toggle {
+    width: auto;
+    height: 30px;
+    padding: 0 10px;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.lists-filtres-toggle {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink2);
+    height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .2s, background .15s;
+    flex-shrink: 0;
+}
+
+.lists-filtres-toggle:hover { background: var(--surface2); }
+
+.lists-filtres-toggle.open .leads-collapse-arrow {
+    transform: rotate(180deg);
+}
+
+.lists-header-tools .leads-collapse-arrow {
+    font-size: 9px;
+    transition: transform .2s;
+}
+
+.lists-header-tools .lists-actions-toggle.open .leads-collapse-arrow {
+    transform: rotate(180deg);
+}
+
+.lists-header-tools .leads-collapse-btn,
+.lists-actions-row .leads-btn,
+.lists-toolbar .leads-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    height: 30px;
+}
+
+/* Boutons « Actions ▾ / Filtres ▾ » : primaires colorés (pas de gris) */
+#liste-actions-btn,
+#liste-filtres-btn {
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    border: 1px solid #047857;
+    box-shadow: 0 1px 2px rgba(16, 185, 129, .2), inset 0 1px 0 rgba(255, 255, 255, .18);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .1);
+}
+
+#liste-actions-btn:hover,
+#liste-filtres-btn:hover {
+    background: linear-gradient(180deg, #059669 0%, #047857 100%);
+    color: #fff;
+    border-color: #046c4e;
+}
+
+#liste-actions-btn.active,
+#liste-filtres-btn.active {
+    background: linear-gradient(180deg, #047857 0%, #065f46 100%);
+    color: #fff;
+    border-color: #065f46;
+}
+
+#liste-actions-btn.active .leads-collapse-arrow,
+#liste-filtres-btn.active .leads-collapse-arrow {
+    transform: rotate(180deg);
+}
+
+.lists-header-tools .leads-view-toggle {
+    margin-left: auto;
+}
+
+/* ─── Boutons d'action teintés (toolbar dépliée + lignes) : plus de gris ── */
+.ld-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+    height: auto;
+}
+
+.ld-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+}
+
+.ld-btn:disabled,
+.ld-btn.disabled {
+    opacity: .45;
+    pointer-events: none;
+    transform: none;
+    filter: grayscale(.4);
+}
+
+.ld-indigo  { background: rgba(99, 102, 241, .12);  color: #4f46e5; border-color: rgba(99, 102, 241, .32); }
+.ld-indigo:hover { background: rgba(99, 102, 241, .2); }
+.ld-sky     { background: rgba(14, 165, 233, .12);  color: #0284c7; border-color: rgba(14, 165, 233, .32); }
+.ld-sky:hover { background: rgba(14, 165, 233, .2); }
+.ld-green   { background: rgba(16, 185, 129, .12);  color: #059669; border-color: rgba(16, 185, 129, .32); }
+.ld-green:hover { background: rgba(16, 185, 129, .2); }
+.ld-amber   { background: rgba(245, 158, 11, .12);  color: #d97706; border-color: rgba(245, 158, 11, .32); }
+.ld-amber:hover { background: rgba(245, 158, 11, .2); }
+.ld-red     { background: rgba(239, 68, 68, .12);   color: #dc2626; border-color: rgba(239, 68, 68, .32); }
+.ld-red:hover { background: rgba(239, 68, 68, .2); }
+.ld-ghost   { background: transparent; color: var(--ink2); border-color: var(--border); }
+.ld-ghost:hover { background: var(--surface2); color: var(--ink); }
+
+.lists-actions-row .ld-btn,
+.lists-toolbar .ld-btn {
+    height: 30px;
+}
+
+#lists-section-filtres .lists-actions-row {
+    gap: 8px;
+}
+
+#lists-section-filtres .inp {
+    padding: 4px 8px;
+    font-size: 12px;
+    height: 30px;
+}
+
+/* ─── Vue Kanban de liste ───────────────────────────── */
+#liste-kanban-view {
+    padding-top: 12px;
+}
+
+#liste-kanban-view .kanban-board {
+    min-height: 60vh;
+}
+
+/* ─── Toolbar : plus d'actions (▸) ────────────────── */
+.lists-toolbar-toggle {
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: transform .2s, background .15s;
+}
+
+.lists-toolbar-toggle.open {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    transform: rotate(90deg);
+}
+
+.lists-toolbar-extra {
+    display: none;
+    align-items: center;
+    gap: 6px;
+}
+
+.lists-toolbar-extra.open {
+    display: inline-flex;
+}
+
+.liste-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.liste-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.liste-active-icone {
+    font-size: 22px;
+    line-height: 1;
+    font-style: normal;
+}
+
+.lists-view-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.lists-title-icone { font-size: 20px; line-height: 1; }
+.lists-view-nom { font-size: 16px; font-weight: 700; color: var(--ink1); margin: 0; }
+
+.lists-objectif-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.lists-count-badge {
+    background: var(--surface2);
+    color: var(--ink3);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.lists-campaign-badge {
+    display: inline-block;
+    font-size: 10px;
+    background: var(--accent-s, rgba(99, 102, 241, 0.1));
+    color: var(--accent, #6366f1);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.lists-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 0;
+    margin-top: 8px;
+}
+
+.lists-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.lists-search-wrap svg { flex-shrink: 0; color: var(--ink3); }
+
+.lists-search-wrap .leads-search,
+.lists-search-wrap [type="search"] {
+    border: none;
+    background: transparent;
+    padding: 0;
+    min-width: 0;
+    flex: 1;
+    font-size: 13px;
+    color: var(--ink);
+}
+
+.lists-search-wrap .leads-search:focus,
+.lists-search-wrap [type="search"]:focus {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+/* ─── Table + pagination ────────────────────────────────── */
+.lists-main .leads-table-wrap {
+    padding: 0 20px;
+}
+
+.lists-main .leads-table td,
+.lists-main .leads-table th {
+    padding: 10px 12px;
+}
+
+.lists-table-empty {
+    text-align: center;
+    padding: 32px;
+    color: var(--ink3);
+}
+
+.leads-table .lists-th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ink3);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Table « prospects de la liste » : layout auto + largeurs propres.
+   En table-layout: fixed, les colonnes <col width:auto> peuvent s'effondrer
+   (colonne Avis / case à cocher invisibles) — l'auto layout garantit que les
+   ̃9 colonnes s'affichent et s'ajustent au contenu. */
+.lists-main .leads-table {
+    table-layout: auto;
+    min-width: 860px;
+}
+
+.lists-main .leads-table .col-check { width: 40px; text-align: center; }
+.lists-main .leads-table .col-id { width: 52px; text-align: center; }
+.lists-main .leads-table .col-prospect { min-width: 210px; }
+.lists-main .leads-table .col-source { width: 100px; }
+.lists-main .leads-table .col-contact { min-width: 180px; }
+.lists-main .leads-table .col-score { width: 82px; text-align: center; }
+.lists-main .leads-table .col-avis { width: 76px; text-align: center; }
+.lists-main .leads-table .col-statut { min-width: 122px; }
+.lists-main .leads-table .col-actions { min-width: 150px; text-align: right; white-space: nowrap; }
+
+.lists-main .leads-table td,
+.lists-main .leads-table th {
+    padding: 9px 10px;
+}
+
+.lead-cell-flex { display: flex; align-items: center; gap: 8px; }
+
+.btn-copy {
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--ink2);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-copy:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ─── Picker icône / couleur / objectif (modal) ─────── */
+.list-emoji-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.list-emoji-opt {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    background: var(--surface2);
+    transition: transform .1s, border-color .1s;
+}
+
+.list-emoji-opt:hover { transform: scale(1.12); }
+.list-emoji-opt.selected { border-color: var(--accent); background: var(--accent-s, rgba(99, 102, 241, .12)); }
+
+.list-color-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.list-color-opt {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform .1s, border-color .1s, box-shadow .1s;
+}
+
+.list-color-opt:hover { transform: scale(1.12); }
+.list-color-opt.selected {
+    border-color: var(--ink1);
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+.objectif-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.objectif-opt {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    cursor: pointer;
+    text-align: center;
+    background: var(--surface2);
+    color: var(--ink1);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    transition: border-color .12s, background .12s;
+}
+
+.objectif-opt small {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--ink3);
+    margin-top: 2px;
+}
+
+.objectif-opt.active {
+    border-color: var(--accent);
+    background: var(--accent-s, rgba(99, 102, 241, .12));
+}
+
+.lists-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px 20px;
+    flex-shrink: 0;
+}
+
+.lists-page-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink2);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.lists-page-btn:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.lists-page-info {
+    font-size: 11px;
+    color: var(--ink3);
+}
+
+/* ─── Responsive ────────────────────────────────────────── */
+@media (min-width: 769px) {
+    .lists-mobile-header { display: none !important; }
+}
+
+@media (max-width: 768px) {
+    .lists-layout {
+        flex-direction: column;
+        height: calc(100vh - 60px);
+    }
+
+    .lists-mobile-header { display: flex; }
+
+    .lists-sidebar {
+        position: fixed !important;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        max-width: 80vw;
+        z-index: 1001;
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+        border-right: 1px solid var(--border);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, .15);
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .lists-sidebar.mobile-open {
+        transform: translateX(0);
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .lists-view-header { padding: 8px 12px 6px; }
+    .lists-view-nom { font-size: 14px; }
+    .lists-actions-row { margin-top: 6px; gap: 6px; }
+    .lists-main .leads-table-wrap { padding: 0 12px; }
+    .lists-pagination { padding: 12px; }
+}
+
+@media (max-width: 480px) {
+    .lists-view-header { padding: 6px 10px 4px; }
+    .lists-search-wrap { padding: 5px 8px; }
+    .lists-search-wrap .leads-search { font-size: 12px; }
+}
+
+/* ─── Barre d'outils IA / Envoi / Import + note de liste ──────────── */
+.lists-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0 0;
+}
+
+.lists-toolbar .btn { padding: 4px 10px; font-size: 11px; }
+
+.lists-toolbar-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink3);
+    margin-right: 2px;
+}
+
+.lists-toolbar-sep {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+.lists-note {
+    margin: 10px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lists-note-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink3);
+}
+
+.lists-note-input {
+    width: 100%;
+    min-height: 40px;
+    resize: none;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-family: var(--font-main);
+    color: var(--ink2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    transition: border-color .15s;
+}
+
+.lists-note-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+    .lists-header-collapse.open { max-height: 320px; }
+    .lists-toolbar .btn { font-size: 10px; }
+}

@@ -1,0 +1,31 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+7369,Invefi Lyon,"
+78 - 80 Rue Boileau, 69006 Lyon, France",Lyon,courtage,http://www.invefilyon.com/,+33661238737,,0,courtage,general,55,35,copyright_2020(+25); pas_favicon(+5); img_non_webp(+5),a_verifier,,
+7370,CreditLight,"
+236 Rue Garibaldi, 69003 Lyon, France",Lyon,courtage,http://www.creditlight.com/,+33478271532,,0,courtage,general,70,45,stack_obsolete(+20); pas_https(+15); pas_og(+5); img_non_webp(+5),a_contacter,,
+7371,MAXIMILIEN,"
+127 Av. Thiers, 69006 Lyon, France",Lyon,courtage,https://www.rci69.fr/,+33472720369,info@rci69.fr,0,courtage,general,55,25,stack_obsolete(+20); img_non_webp(+5),a_verifier,,
+7372,Oradéa Vie,"
+17 bis Pl. des Reflets, 92400 Courbevoie, France",Paris,courtage,https://www.oradeavie.fr/fr/nous-contacter/,+33238796700,,0,courtage,general,35,5,img_non_webp(+5),,,
+7373,Crédit Immobilier de France Developpement,"
+91 Cr Charlemagne, 69002 Lyon, France",Lyon,courtage,https://www.credit-immobilier-de-france.fr/,+33969393251,,0,courtage,general,55,100,URL grand compte CIF — pas le site du commerce scrapé (à vérifier),a_verifier,,
+7374,acheteraucol.com,73 RUE DE LAMOULY 64600 ANGLET,Bordeaux,courtage,https://acheteraucol.com,0559525661,commercial@le-col.com,50,courtage,general,35,10,pas_og(+5); img_non_webp(+5),,,
+7375,logement.bnpparibas.fr,,Bordeaux,courtage,https://logement.bnpparibas.fr,,,50,courtage,general,35,5,pas_og(+5),a_verifier,,
+7376,BRANCH,,Bordeaux,courtage,https://credirama.fr,,contact@bluepixelcie.com,50,courtage,general,35,0,aucun signal détecté,,,
+7377,bnpparibas.fr,,Bordeaux,courtage,https://bnpparibas.fr,0217804630,,50,courtage,general,55,100,URL grand compte BNP — pas le site du commerce scrapé (à vérifier),a_verifier,,
+7378,OTTAVIANI,4 place de Budapest CS 92459,Lyon,courtage,https://jerenegocie.com,0491548368,,50,courtage,general,55,20,stack_obsolete(+20),a_verifier,,
+7379,malakoffhumanis.com,21 rue Laffitte - 75009 Paris - Tél,Paris,courtage,https://malakoffhumanis.com,0156033456,,50,courtage,general,35,0,aucun signal détecté,,,
+7380,DEMURGER,200 avenue Salvador Allende - CS 90000 -,Paris,courtage,https://maif.fr,0549737475,assurance@maif.fr,50,courtage,general,35,0,aucun signal détecté,,,
+7381,caassure.com,,Paris,courtage,https://caassure.com,0969371320,,50,courtage,general,35,0,aucun signal détecté,,,
+7382,BRUNEAU,,Paris,courtage,https://assuranceemprunteur.malakoffhumanis.com,0184802557,,50,courtage,general,35,5,pas_og(+5),,,
+7383,banque-et-credit.com,,Bordeaux,courtage,https://banque-et-credit.com,,,50,courtage,general,35,10,pas_og(+5); img_non_webp(+5),a_verifier,,
+7384,CONTACTEZ,,Bordeaux,courtage,https://conciliapret.fr,0428295160,info@conciliapret.fr,50,courtage,general,35,0,aucun signal détecté,,,
+7385,lescourtiersbordelais.com,,Bordeaux,courtage,https://lescourtiersbordelais.com,,,50,courtage,general,35,0,aucun signal détecté,a_verifier,,
+7386,senior.skarlett.fr,,Lyon,courtage,https://senior.skarlett.fr,,,50,courtage,general,35,5,img_non_webp(+5),a_verifier,,
+7387,skarlett.fr,99 AVENUE ACHILLE PERETTI 92200 NEUILLY-SUR-SEINE,Lyon,courtage,https://skarlett.fr,0176341139,contact@skarlett.fr,50,courtage,general,35,5,img_non_webp(+5),,,
+7388,courtier.pretto.fr,,Bordeaux,courtage,https://courtier.pretto.fr,,,50,courtage,general,35,5,pas_og(+5),a_verifier,,
+7389,MARIE-AUDE,2 Rue de Colmar 94300 Vincennes Tél,Bordeaux,courtage,https://pret-immobilier.immog2c.fr,0298000672,contact@immog2c.com,50,courtage,general,35,5,pas_og(+5),,,
+7390,immog2c.fr,,Bordeaux,courtage,https://immog2c.fr,,,50,courtage,general,85,100,"site_casse(HTTP 404) — site réel injoignable par scraper (anti-bot/404), à confirmer",a_verifier,,
+7391,MONIQUE,,Paris,courtage,https://helixassurance.fr,0184805080,contact@helixassurance.fr,50,courtage,general,35,0,aucun signal détecté,,,
+7392,FINANCES,4 Place de Budapest - CS 92459 -,Paris,courtage,https://partners-finances.fr,0383909006,,50,courtage,general,35,10,pas_og(+5); img_non_webp(+5),,,
+7393,perfectaux.fr,,Lyon,courtage,https://perfectaux.fr,0458003150,,50,courtage,general,35,5,img_non_webp(+5),,,

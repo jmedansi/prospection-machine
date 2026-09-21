@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Incidenx - Prospection Machine{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/dashboard.css') }}?v=13">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/lists.css') }}?v=2">
+<style>
+    /* La Console Tâches (class .content-section) vit comme section autonome en V6 :
+       masquée par défaut, visible uniquement quand active. */
+    #section-tasks { display: none; }
+    #section-tasks.active { display: block; }
+</style>
+{% endblock %}
+
+<!-- Mobile app experience is now unified within the main .app structure -->
+{% block mobile_app %}
+{% endblock %}
+
+{% block sidebar %}
+{% include "components/sidebar_v6.html" %}
+{% endblock %}
+
+{% block topbar %}
+{% include "components/header_v6.html" %}
+{% endblock %}
+
+{% block content %}
+<div id="toast-container"></div>
+
+<!-- Section Cockpit (v2 : stats campagne-aware via /api/stats?objectif_id=) -->
+<div id="section-cockpit" class="v-section active">
+  {% include "views/sections/cockpit.html" %}
+</div>
+
+<!-- Section Prospection (Leads v2 + Listes + Sources) -->
+<div id="section-campagne" class="v-section">
+  <div class="section-tabs">
+    <button class="section-tab active" onclick="switchSectionTab('leads', this)">Leads Station</button>
+    <button class="section-tab" onclick="switchSectionTab('listes', this)">Listes</button>
+    <button class="section-tab" onclick="switchSectionTab('sources', this)">Sources</button>
+  </div>
+  <div id="subtab-leads" class="subtab-content active">
+    {% include "views/sections/leads_unified.html" %}
+  </div>
+  <div id="subtab-listes" class="subtab-content" style="display:none">
+    {% include "views/sections/listes_v6.html" %}
+  </div>
+  <div id="subtab-sources" class="subtab-content" style="display:none">
+    {% include "views/sections/sources.html" %}
+  </div>
+</div>
+
+<!-- Section Suivi (v2 : stats campagne + historique des échanges prospect_events) -->
+<div id="section-suivi" class="v-section">
+  {% include "views/sections/suivi_v6.html" %}
+</div>
+
+<!-- Section Planning (le wrapper #section-planificateur vit dans l'include) -->
+{% include "views/sections/planificateur.html" %}
+
+<!-- Section Console Tâches (indépendante) -->
+{% include "views/sections/tasks_console.html" %}
+
+<!-- Section Paramètres (Configuration / Santé / Logs — sans Templates legacy) -->
+<div id="section-settings" class="v-section">
+  <div class="section-tabs">
+    <button class="section-tab active" onclick="switchSectionTab('settings_gen', this)">Configuration</button>
+    <button class="section-tab" onclick="switchSectionTab('health', this)">Santé système</button>
+    <button class="section-tab" onclick="switchSectionTab('logs', this)">Logs</button>
+  </div>
+  <div id="subtab-settings_gen" class="subtab-content active">
+    {% include "views/sections/settings.html" %}
+  </div>
+  <div id="subtab-health" class="subtab-content" style="display:none">
+    {% include "views/sections/health.html" %}
+  </div>
+  <div id="subtab-logs" class="subtab-content" style="display:none">
+    {% include "views/sections/logs.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+{% include "components/modals/modal_scraper.html" %}
+<div id="lead-details-panel" class="side-panel">
+    {% include "components/modals/side_panel.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Core API & UI (V5/V6 shared modules) -->
+<script type="module" src="{{ url_for('static', filename='js/core/api.js') }}?v=2"></script>
+<script type="module" src="{{ url_for('static', filename='js/core/ui.js') }}?v=1"></script>
+
+<script src="{{ url_for('static', filename='js/ui.js') }}?v=6"></script>
+
+<script src="{{ url_for('static', filename='js/api.js') }}?v=6"></script>
+
+<script src="{{ url_for('static', filename='js/modules/settings.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/modules/planificateur.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/modules/sniper.js') }}?v=15"></script>
+<script src="{{ url_for('static', filename='js/modules/unified_leads.js') }}?v=34"></script>
+<script src="{{ url_for('static', filename='js/modules/campagnes.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/modules/listes.js') }}?v=7"></script>
+<script src="{{ url_for('static', filename='js/modules/suivi.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/modules/objectifs.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/modules/sources.js') }}?v=21"></script>
+<script src="{{ url_for('static', filename='js/modules/stats.js') }}?v=17"></script>
+<script src="{{ url_for('static', filename='js/modules/actions.js') }}?v=11"></script>
+<script src="{{ url_for('static', filename='js/modules/ia_actions.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/modules/v6_restore.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/modules/tasks_console.js') }}?v=1"></script>
+
+<!-- V6 shell : navigation + inits v2 (chargé en dernier) -->
+<script src="{{ url_for('static', filename='js/modules/v6_shell.js') }}?v=2"></script>
+{% endblock %}

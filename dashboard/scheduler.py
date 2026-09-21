@@ -111,20 +111,13 @@ def run_planned_scrapings():
     except Exception as e: logger.error(f"[SCHEDULER] planned_scrapings: {e}")
 
 def run_fill_check():
-    """Vérification des batches (Phase 4 Logic)."""
-    try:
-        from dashboard.pipeline import maintain_batch_slots, notify_new_audits, auto_approve_after_timeout
-        maintain_batch_slots()
-        notify_new_audits()
-        auto_approve_after_timeout()
-    except Exception as e: logger.error(f"[SCHEDULER] fill_check: {e}")
+    """Vérification des batches (Phase 4 Logic). Décommissionné : tables legacy purgées."""
+    pass
+
 
 def run_sequence_relances():
-    """Exécute le worker de relances."""
-    try:
-        from workers.sequence_worker import run_sequence_worker
-        run_sequence_worker()
-    except Exception as e: logger.error(f"[SCHEDULER] sequence_relances: {e}")
+    """Exécute le worker de relances. Décommissionné : relances gérées par le v2 (v2_send_relances)."""
+    pass
 
 def cruise_control_manager():
     """Auto-Pilot (Phase 3.1): lance une campagne si le quota n'est pas atteint."""
@@ -153,9 +146,7 @@ def cruise_control_manager():
         logger.error(f"[CRUISE CONTROL] erreur: {e}")
 
 def run_startup_catchup():
-    now = datetime.now()
-    # Le planned scraping est désactivé. Conserver uniquement le contrôle de remplissage.
-    run_fill_check()
+    pass
 
 def init_scheduler(_app=None):
     global _scheduler
@@ -163,123 +154,104 @@ def init_scheduler(_app=None):
 
     _scheduler = BackgroundScheduler(timezone='Europe/Paris')
 
-    # Core Jobs
-    # _scheduler.add_job(run_planned_scrapings, CronTrigger(hour=6, minute=0), id='planned_scrapings')
-    _scheduler.add_job(run_fill_check, CronTrigger(minute='*/15'), id='fill_check')
-    _scheduler.add_job(run_sequence_relances, CronTrigger(hour=10, minute=30), id='sequence_relances')
-    # _scheduler.add_job(cruise_control_manager, CronTrigger(hour='9-18', minute=0), id='cruise_control')
+    # Core Jobs (le legacy fill_check/sequence_relances est décommissionné : tables purgées)
 
-    # Sniper — IMAP polling (détection réponses step 1 toutes les 15 min)
-    def _run_imap_poll():
+    # v2 — Réponses entrantes (IMAP) : mêmes réponses → a_traiter_humain, toutes les 15 min
+    def _run_v2_reply_poll():
         try:
-            from sniper.imap_poller import run_poll
-            run_poll(lookback_hours=48)
+            from envoi.reply_poller import run_poll
+            res = run_poll(lookback_hours=48)
+            if res.get('total_reponses'):
+                logger.info("[scheduler] v2_reply_poll: %s réponse(s) détectée(s)", res['total_reponses'])
         except Exception as e:
-            logger.error(f"[scheduler] imap_poller erreur : {e}")
+            logger.error(f"[scheduler] v2_reply_poll erreur : {e}")
 
-    _scheduler.add_job(_run_imap_poll, CronTrigger(minute='*/15'), id='sniper_imap_poll')
+    _scheduler.add_job(_run_v2_reply_poll, CronTrigger(minute='*/15'), id='v2_reply_poll')
 
-    # Sniper — Relier la validation Telegram "OK" vers l'envoi Step 2
-    def _check_telegram_step2():
+    # v2 — Relier la validation Telegram "OK" (objectifs.validation_telegram) vers l'envoi initial
+    def _check_v2_approvals():
         try:
             import sqlite3
-            import traceback
-            db_file = os.path.join("D:\\", "hub_telegram", "pending.db")
-            if not os.path.exists(db_file): return
-            
-            conn = sqlite3.connect(db_file)
-            rows = conn.execute("SELECT callback_id FROM pending WHERE status='ok' AND callback_id LIKE 'sniper_step2_%'").fetchall()
-            
-            if rows:
-                from sniper.imap_poller import send_step2
-                for row in rows:
-                    cb_id = row[0]
-                    # callback_id format : "sniper_step2_42"
-                    try:
-                        audit_id = int(cb_id.split('_')[-1])
-                        # L'envoi gère déjà l'idempotence (si déjà envoyé, retourne False)
-                        send_step2(audit_id)
-                        # On marque comme complété dans hub_telegram pour ne plus le traiter
-                        conn.execute("UPDATE pending SET status='completed' WHERE callback_id=?", (cb_id,))
-                    except Exception as loop_e:
-                        logger.error(f"[scheduler] _check_telegram_step2 parsing info {cb_id}: {loop_e}")
-                conn.commit()
-            conn.close()
-        except Exception as e:
-            logger.error(f"[scheduler] _check_telegram_step2 erreur : {e}\n{traceback.format_exc()}")
-
-    # Vérification toutes les 2 minutes pour la réactivité
-    _scheduler.add_job(_check_telegram_step2, IntervalTrigger(minutes=2), id='telegram_step2_poll')
-
-    # Sniper / Maps — Poller validation Telegram pour les relances
-    def _check_relance_approvals():
-        try:
-            import sqlite3
-            db_file = os.path.join("D:\\", "hub_telegram", "pending.db")
+            from core.config import HUB_TELEGRAM
+            db_file = os.path.join(HUB_TELEGRAM, "pending.db")
             if not os.path.exists(db_file): return
 
             conn = sqlite3.connect(db_file)
             rows = conn.execute(
-                "SELECT callback_id FROM pending WHERE status='ok' AND callback_id LIKE 'relance_approve_%'"
+                "SELECT callback_id FROM pending WHERE status='ok' AND callback_id LIKE 'v2_approve_%'"
             ).fetchall()
 
             if rows:
-                from services.email_sequence_service import EmailSequenceService
-                seq_service = EmailSequenceService()
+                from envoi import sequence_engine
                 for row in rows:
                     cb_id = row[0]
                     try:
-                        # ── APPROBATION GROUPÉE ────────────────────────────────────────
-                        if cb_id == "relance_approve_all":
-                            count = seq_service.approve_all_pending()
-                            logger.info(f"[scheduler] Approval groupée : {count} relances envoyées")
-                            conn.execute("UPDATE pending SET status='completed' WHERE callback_id=?", (cb_id,))
-                        # ── APPROBATION INDIVIDUELLE (fallback) ────────────────────────
-                        else:
-                            sequence_id = int(cb_id.split('_')[-1])
-                            ok = seq_service.approve_and_send(sequence_id)
-                            status = 'completed' if ok else 'failed'
-                            conn.execute("UPDATE pending SET status=? WHERE callback_id=?", (status, cb_id,))
+                        prospect_id = int(cb_id.split('_')[-1])
+                        res = sequence_engine.approve_and_send_initial(prospect_id)
+                        status = 'failed'
+                        if res.get('success'):
+                            status = 'completed'
+                        elif res.get('status') in ('absent', 'sans_demande', 'validation_refusee', 'deja_envoye', 'deja_en_flux'):
+                            status = 'failed'
+                        conn.execute("UPDATE pending SET status=? WHERE callback_id=?", (status, cb_id))
+                        if status == 'failed':
+                            logger.info(f"[v2-poll] {cb_id} → {res.get('status')} (« {res.get('message')} »)")
                     except Exception as loop_e:
-                        logger.error(f"[scheduler] _check_relance_approvals parsing {cb_id}: {loop_e}")
+                        logger.error(f"[v2-poll] parsing {cb_id}: {loop_e}")
                 conn.commit()
             conn.close()
         except Exception as e:
-            logger.error(f"[scheduler] _check_relance_approvals erreur : {e}")
+            logger.error(f"[v2-poll] erreur : {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
-    _scheduler.add_job(_check_relance_approvals, IntervalTrigger(minutes=2), id='relance_approval_poll')
+    _scheduler.add_job(_check_v2_approvals, IntervalTrigger(minutes=1), id='v2_approval_poll')
 
-    # Sniper — Génération des emails (leads en attente → leads_audites)
-    def _run_sniper_generate():
+    # v2 — Envoi automatique des initials (kill-switch global + envoi_auto par objectif)
+    def _run_v2_send_initial():
         try:
-            from database.db_manager import get_conn as _gc
-            with _gc() as c:
-                row = c.execute(
-                    "SELECT value FROM planning_settings WHERE key='sniper_auto_generate'"
-                ).fetchone()
-            if row and row["value"] == "1":
-                from sniper.email_generator import generate_sniper_emails_batch
-                generate_sniper_emails_batch(limit=100)
+            from core.orchestration import run_auto_send
+            res = run_auto_send()
+            if res.get('runs'):
+                logger.info(
+                    "[v2-auto-send] %s objectif(s), %s envoi(s) tenté(s) (quota global: %s)",
+                    len(res['runs']), res.get('total'), res.get('quoted', 'n/a'),
+                )
         except Exception as e:
-            logger.error(f"[scheduler] sniper_generate erreur : {e}")
+            logger.error(f"[v2-auto-send] erreur : {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
-    _scheduler.add_job(_run_sniper_generate, CronTrigger(hour=8, minute=0), id='sniper_generate')
+    _scheduler.add_job(_run_v2_send_initial, IntervalTrigger(minutes=5), id='v2_send_initial')
 
-    # Sniper — Envoi step 1 (leads approuvés → Resend, quota dédié)
-    def _run_sniper_send():
+    # v2 — Relances dues (positions > 0, delai_jours) — mêmes règles global/objectif
+    def _run_v2_send_relances():
         try:
-            from database.db_manager import get_conn as _gc
-            with _gc() as c:
-                row = c.execute(
-                    "SELECT value FROM planning_settings WHERE key='sniper_auto_send'"
-                ).fetchone()
-            if row and row["value"] == "1":
-                from services.sniper_sender_service import send_sniper_step1
-                send_sniper_step1()
+            from core.orchestration import run_relances
+            res = run_relances()
+            if res.get('runs'):
+                logger.info(
+                    "[v2-relances] %s objectif(s), %s relance(s) tentée(s) (mode: %s)",
+                    len(res['runs']), res.get('total'), res.get('quoted', 'run'),
+                )
         except Exception as e:
-            logger.error(f"[scheduler] sniper_send erreur : {e}")
+            logger.error(f"[v2-relances] erreur : {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
-    _scheduler.add_job(_run_sniper_send, CronTrigger(hour=8, minute=30), id='sniper_send')
+    _scheduler.add_job(_run_v2_send_relances, IntervalTrigger(minutes=10), id='v2_send_relances')
+
+    # v2 — Remise à zéro quotidienne des quotas boîtes (usage_jour), 00:05
+    def _reset_daily_quotas():
+        try:
+            from envoi.gateway import reset_daily_quotas
+            n = reset_daily_quotas()
+            if n:
+                logger.info("[scheduler] quotas boîtes remis à 0 (%s boîte(s))", n)
+        except Exception as e:
+            logger.error(f"[scheduler] reset quotas erreur : {e}")
+
+    _scheduler.add_job(_reset_daily_quotas, CronTrigger(hour=0, minute=5), id='reset_daily_quotas')
 
     # Sniper — Scraping Google Ads quotidien (9h00, VPN requis)
     def _run_sniper_ads_daily():
@@ -445,16 +417,6 @@ def init_scheduler(_app=None):
             logger.error(f"[SCHEDULER] check_list_followups: {e}")
 
     _scheduler.add_job(check_list_followups, IntervalTrigger(hours=1), id='list_followups')
-
-    # Enregistrement des pipelines via le Registry (Phase 4.3)
-    from dashboard.pipeline import maintain_batch_slots, notify_new_audits, auto_approve_after_timeout
-    registry.register("Batch Maintenance", maintain_batch_slots, interval_hours=1, description="Maintient les slots de batches Resend")
-    registry.register("Telegram Notifications", notify_new_audits, interval_hours=1, description="Notifie des nouveaux audits")
-    registry.register("Auto Approval", auto_approve_after_timeout, interval_hours=1, description="Approuve après 5h")
-    registry.register("Sequence Relances", run_sequence_relances, interval_hours=1, description="Envoie les relances automatiques")
-
-    for name, p in registry.get_all().items():
-        _scheduler.add_job(p['func'], IntervalTrigger(hours=p['interval']), id=f"pipeline_{name.lower().replace(' ', '_')}")
 
     _scheduler.start()
     

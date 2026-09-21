@@ -1,0 +1,51 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+7264,BMW Paris Beaugrenelle,"
+58 Rue de Lourmel, 75015 Paris, France",Paris,concessionnaires_auto,https://www.bmw-paris.fr/prendre-rendez-vous/,+33156770000,bmwparis@bmw.fr,0,concessionnaires_auto,web,35,,bmw-paris.fr = réseau marque — grand compte,a_verifier,,
+7265,VOLKSWAGEN BYmyCAR Lyon 3,"
+191-195, Av. Félix Faure, 69003 Lyon, France",Lyon,concessionnaires_auto,https://www.bymycar.fr/concessions/volkswagen-lyon-bymycar?utm_campaign=bouton&utm_medium=organic&utm_source=GMB,+33472131313,,0,concessionnaires_auto,web,35,,bymycar.fr = groupe BYmyCAR — grand compte,a_verifier,,
+7266,RENAULT,"
+97 Bd Lefebvre, 75015 Paris, France",Paris,concessionnaires_auto,https://www.retail-renault-group.fr/services-apres-vente/prenez-votre-rendez-vous-en-ligne?utm_source=google&utm_medium=gmb-organic&utm_campaign=google-gmb-organic-local-paris-rrg-renault-paris-lefebvre-apv&utm_content=gmb-booking&partner=google-gmb-organic-local-paris-rrg-renault-paris-lefebvre-apv-gmb-booking,+33144192100,,0,concessionnaires_auto,web,35,,retail-renault-group.fr = réseau Renault — grand compte,a_verifier,,
+7267,RENAULT,"
+55 Boulevard de Charonne, 75011 Paris, France",Paris,concessionnaires_auto,https://www.retail-renault-group.fr/services-apres-vente/prenez-votre-rendez-vous-en-ligne?utm_source=google&utm_medium=gmb-organic&utm_campaign=google-gmb-organic-local-paris-rrg-renault-paris-charonne-apv&utm_content=gmb-booking&partner=google-gmb-organic-local-paris-rrg-renault-paris-charonne-apv-gmb-booking,+33153276188,,0,concessionnaires_auto,web,35,,retail-renault-group.fr = réseau Renault — grand compte,a_verifier,,
+7268,Garage Mondon,"
+31 Av. Barthélémy Buyer, 69005 Lyon, France",Lyon,concessionnaires_auto,,+33478252918,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7269,Garage A.G.P Paris 15,"
+19 Rue Jean Maridor, 75015 Paris, France",Paris,concessionnaires_auto,https://www.idgarages.com/garage/paris/GA9659_sas-a-g-p-auto?rwg_token=AFd1xnFOVvilQl2vXweLQRc7zR5MtKw0PnwLuKRavcTwXIfR2xrXMr6rSqTr47tqRH-teKSZr2pee2_b3aNPaGYK7Djw5lcViw%3D%3D,+33145005181,,0,concessionnaires_auto,web,2,,idgarages.com = annuaire garages — pas de site propre,a_verifier,,
+7270,NOËL,"
+20 Bd de l'Hôpital, 75005 Paris, France",Paris,concessionnaires_auto,https://www.sanspermis75.fr/,+33186900328,,0,concessionnaires_auto,web,1,0,Site moderne,,,
+7271,DEGUILLIEN,"
+208 Gd Rue de la Guillotière, 69007 Lyon, France",Lyon,concessionnaires_auto,http://www.garage-deguillien.fr/,+33478692035,,0,concessionnaires_auto,web,3,65,non_responsive(+40); pas_https(+15); no_og(+5); no_webp(+5),a_contacter,,
+7272,Toyota Paris 5 - Groupe Autosphere,"
+58 Bd Saint-Marcel, 75005 Paris, France",Paris,concessionnaires_auto,https://www.mon-entretien.com/sivam/toyotasivambyautosphereparis5/,+33155435500,,0,concessionnaires_auto,web,35,,mon-entretien.com = groupe Autosphere — grand compte,a_verifier,,
+7273,VOLKSWAGEN BYmyCAR Lyon Vaise,"
+65 Rue du Souvenir, 69009 Lyon, France",Lyon,concessionnaires_auto,https://www.bymycar.fr/concessions/volkswagen-lyon-vaise-bymycar?utm_campaign=bouton&utm_medium=organic&utm_source=GMB,+33472854747,,0,concessionnaires_auto,web,35,,bymycar.fr = groupe BYmyCAR — grand compte,a_verifier,,
+7274,GARAGE PARIS 15 AUTO REPARATION MECANIQUE CARROSSERIE PEINTURE PARE BRISE VIDANGE REPARATION BOITE AUTOMATIQUE TOUTES MARQUES,"
+77 79 Rue de Lourmel, 75015 Paris, France",Paris,concessionnaires_auto,https://paris15auto.fr/,+33145797581,karimsah92@gmail.com,0,concessionnaires_auto,web,4,100,HTTP 503 persistant (site down),a_contacter,,
+7275,Genevois Lyon 9 Serenicar/Réparateur GPL,"
+ou, 45 Rue de Bourgogne, 11 Rue de la Gare, 69009 Lyon, France",Lyon,concessionnaires_auto,https://www.groupe-faubourg.com/,+33478837120,contact@groupe-faubourg.com,0,concessionnaires_auto,web,1,5,no_webp(+5),,,
+7276,Garage automobile JURCO,"
+131 Rue Joliot Curie, 69005 Lyon, France",Lyon,concessionnaires_auto,,+33478251885,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7277,Garage des Peupliers,"
+19 Rue de l'Interne Loeb, 75013 Paris, France",Paris,concessionnaires_auto,https://carrosserie.five-star.fr/carrosseries/1058-garage-des-peupliers/,+33145894500,,0,concessionnaires_auto,web,35,,carrosserie.five-star.fr = réseau Five Star — grand compte,a_verifier,,
+7278,Garage du Maine,"
+21 Av. du Maine, 75015 Paris, France",Paris,concessionnaires_auto,https://m.allopneus.com/montage-pneu/paris-75/paris-75015/garage-du-maine-916,+33145484352,,0,concessionnaires_auto,web,2,,allopneus.com = portail montage pneus — pas de site propre,a_verifier,,
+7279,Volkswagen Paris 13 - VGRF Grand Paris,"
+176-180, Av. d'Italie, 75013 Paris, France",Paris,concessionnaires_auto,https://rdv-atelier.sonauto.fr/bookingonce/services?country=FR&dealer=7030&locale=&tenant=standalonebookingonce,+33145884500,,0,concessionnaires_auto,web,35,,sonauto.fr = réseau VGRF/Sonauto — grand compte,a_verifier,,
+7280,SEAT BYmyCAR Lyon Vaise,"
+63 Rue du Souvenir, 69009 Lyon, France",Lyon,concessionnaires_auto,https://www.bymycar.fr/concessions/seat-lyon-vaise-bymycar?utm_campaign=bouton&utm_medium=organic&utm_source=GMB,+33472856685,,0,concessionnaires_auto,web,35,,bymycar.fr = groupe BYmyCAR — grand compte,a_verifier,,
+7281,CITROËN STELLANTIS &YOU PARIS PORTE DE VERSAILLES,"
+75 Bd Lefebvre, 75015 Paris, France",Paris,concessionnaires_auto,https://www.stellantisandyou.com/fr/nos-concessionnaires/paris/paris-porte-de-versailles/acheter-neuf?utm_campaign=presence_management_ac&utm_medium=SM_NPP&utm_source=presence_management_menu_link,+33144192060,,0,concessionnaires_auto,web,35,,stellantisandyou.com = réseau Stellantis — grand compte,a_verifier,,
+7282,Volkswagen Paris 20 - VGRF Grand Paris,"
+105 Cr de Vincennes, 75020 Paris, France",Paris,concessionnaires_auto,https://www.vw-paris20.fr/,+33146594444,volkswagen.parisidf@vgrf.fr,0,concessionnaires_auto,web,1,5,no_og(+5),,,
+7283,SKODA BYmyCAR Lyon Sud,"
+10 Rue des Frères Louis et Emile Bertrand, 69200 Vénissieux, France",Lyon,concessionnaires_auto,https://www.skoda.fr/services/prendre-rendez-vous,+33437235613,,0,concessionnaires_auto,web,35,,skoda.fr = réseau marque — grand compte,a_verifier,,
+7284,PEUGEOT STELLANTIS &YOU LYON VENISSIEUX,"
+26 Bd Irène Joliot Curie, 69200 Vénissieux, France",Lyon,concessionnaires_auto,https://www.stellantisandyou.com/fr/nos-concessionnaires/lyon/lyon-venissieux-etats-unis/acheter-neuf?utm_campaign=presence_management_ap&utm_medium=SM_NPP&utm_source=presence_management_menu_link,+33437901800,,0,concessionnaires_auto,web,35,,stellantisandyou.com = réseau Stellantis — grand compte,a_verifier,,
+7285,Midas LYON GARIBALDI,"
+382 Rue Garibaldi, 69007 Lyon, France",Lyon,concessionnaires_auto,https://www.midas.fr/centres-auto-midas/auvergne-rhone-alpes/rhone/lyon/lyon-garibaldi_1111,+33478725252,,0,concessionnaires_auto,web,35,,midas.fr = réseau Midas — grand compte,a_verifier,,
+7286,Mg Motor Paris,"
+32 Av. de la République, 75011 Paris, France",Paris,concessionnaires_auto,https://www.careastfrance.fr/contact-fr-fr.htm,+33148070705,,0,concessionnaires_auto,web,35,,careastfrance.fr = réseau importateur MG — grand compte,a_verifier,,
+7287,GARAGE PONIATOWSKI PARIS 12,"
+57 Bd Poniatowski, 75012 Paris, France",Paris,concessionnaires_auto,https://parclick.com/parking-paris/garage_poniatowski?rwg_token=AFd1xnE9C8g1AHD5LwnVZS0m40dzwyKS6pLNgWnIm-HhMUZL8nhUAepgK4L4rEZhwDqgkMoRhCZlm9pJChpRz-5RobuEHdn3ng%3D%3D,+33143443732,,0,concessionnaires_auto,web,2,,parclick.com = portail parking — pas de site propre,a_verifier,,
+7288,Garage Paris 12ème,"
+159 Rue de Picpus, 75012 Paris, France",Paris,concessionnaires_auto,,+33143460544,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,

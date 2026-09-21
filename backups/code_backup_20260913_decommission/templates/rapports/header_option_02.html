@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AURELIA — Header Option 02</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #070707;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        header {
+            position: fixed;
+            inset: 0 0 auto 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.4rem 3rem;
+            width: 100%;
+            z-index: 20;
+            background: rgba(7,7,7,0.35);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo { letter-spacing: 0.4em; font-weight: 700; text-transform: uppercase; }
+        nav { display: flex; gap: 1.8rem; }
+        nav a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.95rem; letter-spacing: 0.08em; }
+        nav a:hover { color: #d4a574; }
+        .button-group { display: flex; gap: 1rem; }
+        .btn-soft { border: 1px solid rgba(255,255,255,0.14); padding: 0.9rem 1.8rem; border-radius: 999px; background: rgba(255,255,255,0.05); cursor: pointer; color: rgba(255,255,255,0.92); }
+        .hero {
+            min-height: 100vh;
+            padding: 10rem 3rem 4rem;
+            position: relative;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(135deg, rgba(212,165,116,0.06), transparent 42%), linear-gradient(225deg, rgba(255,255,255,0.04), transparent 30%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background: url('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+            filter: brightness(0.45) saturate(1.1);
+            opacity: 0.96;
+            transform: scale(1.03);
+        }
+        .hero-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 18%), radial-gradient(circle at bottom left, rgba(212,165,116,0.18), transparent 22%);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            max-width: 900px;
+            text-align: center;
+            display: grid;
+            gap: 1.6rem;
+        }
+        .hero-content .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: #d4a574;
+            font-weight: 700;
+            font-size: 0.82rem;
+        }
+        .hero-content h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3.5rem, 6vw, 6rem);
+            line-height: 0.95;
+            letter-spacing: -0.06em;
+            max-width: 10ch;
+            margin: 0 auto;
+            animation: fadeInUp 1s ease forwards;
+        }
+        .hero-content p {
+            color: rgba(255,255,255,0.78);
+            font-size: 1.05rem;
+            line-height: 1.9;
+            max-width: 640px;
+            margin: 0 auto;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 1s ease forwards;
+            animation-delay: 0.25s;
+        }
+        .hero-grid {
+            margin-top: 2rem;
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            opacity: 0;
+            transform: translateY(24px);
+            animation: fadeInUp 1s ease forwards;
+            animation-delay: 0.4s;
+        }
+        .hero-pill {
+            padding: 1.35rem 1.5rem;
+            border-radius: 24px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(16px);
+            color: rgba(255,255,255,0.86);
+        }
+        .hero-pill strong { display: block; font-size: 1.25rem; margin-bottom: 0.35rem; }
+        .hero-pill span { font-size: 0.95rem; color: rgba(255,255,255,0.7); }
+        .slider-panel {
+            position: absolute;
+            right: 6%;
+            bottom: 24%;
+            width: 320px;
+            padding: 1.6rem;
+            border-radius: 32px;
+            background: rgba(5,5,5,0.58);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 36px 90px rgba(0,0,0,0.28);
+            animation: float 9s ease-in-out infinite;
+        }
+        .slider-panel h3 { font-size: 1.35rem; margin-bottom: 0.7rem; font-family: 'Playfair Display', serif; }
+        .slider-panel p { color: rgba(255,255,255,0.78); line-height: 1.85; margin-bottom: 1.2rem; }
+        .slider-actions { display: flex; justify-content: space-between; gap: 0.8rem; }
+        .slider-chip { padding: 0.85rem 1rem; border-radius: 999px; background: rgba(255,255,255,0.08); color: #fff; font-size: 0.9rem; }
+        .hero-focus {
+            position: absolute;
+            left: 10%;
+            bottom: 12%;
+            width: 240px;
+            padding: 1.4rem;
+            border-radius: 28px;
+            background: rgba(18,18,18,0.82);
+            border: 1px solid rgba(212,165,116,0.18);
+            box-shadow: 0 24px 56px rgba(0,0,0,0.28);
+        }
+        .hero-focus strong { display: block; margin-bottom: 0.5rem; font-size: 1rem; color: #d4a574; }
+        .hero-focus p { color: rgba(255,255,255,0.78); font-size: 0.95rem; line-height: 1.8; }
+        .glow-line {
+            position: absolute;
+            top: 52%;
+            left: 8%;
+            width: 120px;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(212,165,116,0), rgba(212,165,116,0.85), rgba(212,165,116,0));
+            filter: blur(1px);
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @media (max-width: 992px) {
+            .hero { padding-top: 9.5rem; }
+            .hero-grid { grid-template-columns: 1fr 1fr; }
+            .slider-panel { right: 4%; bottom: 14%; width: 280px; }
+        }
+        @media (max-width: 720px) {
+            header { padding: 1rem 1.5rem; }
+            nav { display: none; }
+            .hero { padding: 8rem 1.5rem 3rem; }
+            .hero-content h1 { font-size: 2.8rem; }
+            .hero-grid { grid-template-columns: 1fr; }
+            .slider-panel { display: none; }
+            .hero-focus { left: 6%; width: calc(100% - 12%); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">AURELIA</div>
+        <nav>
+            <a href="#">Destinations</a>
+            <a href="#">Offres</a>
+            <a href="#">Spa</a>
+            <a href="#">Contact</a>
+        </nav>
+        <div class="button-group">
+            <button class="btn-soft">Voir la carte</button>
+        </div>
+    </header>
+    <main class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+            <div class="eyebrow">Header Concept</div>
+            <h1>Révélez l’émotion d’un séjour inoubliable</h1>
+            <p>Un cadre photographique et une composition graphique qui mettent le voyage au premier plan et racontent l’essence de la marque.</p>
+            <div class="hero-grid">
+                <div class="hero-pill"><strong>Suite privée</strong><span>Vue panoramique & service sur mesure</span></div>
+                <div class="hero-pill"><strong>Table signature</strong><span>Cuisine créative et accords rares</span></div>
+                <div class="hero-pill"><strong>Spa nocturne</strong><span>Évasion totale sous un ciel étoilé</span></div>
+            </div>
+        </div>
+        <div class="glow-line"></div>
+        <div class="slider-panel">
+            <h3>Carte des expériences</h3>
+            <p>Espaces exclusifs, vue imprenable et soirées privées pour un séjour d’exception.</p>
+            <div class="slider-actions">
+                <span class="slider-chip">Gastronomie</span>
+                <span class="slider-chip">Bien-être</span>
+            </div>
+        </div>
+        <div class="hero-focus">
+            <strong>Ambiance signée</strong>
+            <p>Un design lumineux, des textures riches et un storytelling visuel qui séduisent instantanément.</p>
+        </div>
+    </main>
+</body>
+</html>

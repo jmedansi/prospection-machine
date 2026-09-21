@@ -29,7 +29,7 @@ class CampaignsRepo:
                         (SELECT COUNT(*) FROM emails_envoyes ee JOIN leads_bruts lb ON ee.lead_id=lb.id WHERE lb.campaign_id=c.id)  AS emails_envoyes,
                         (SELECT COUNT(*) FROM emails_envoyes ee JOIN leads_bruts lb ON ee.lead_id=lb.id WHERE lb.campaign_id=c.id AND ee.ouvert=1)  AS nb_ouverts,
                         (SELECT COUNT(*) FROM emails_envoyes ee JOIN leads_bruts lb ON ee.lead_id=lb.id WHERE lb.campaign_id=c.id AND ee.repondu=1) AS nb_reponses
-                    FROM campagnes c
+                    FROM campagnes_legacy c
                     {where}
                     ORDER BY c.date_creation DESC
                     LIMIT 100
@@ -43,7 +43,7 @@ class CampaignsRepo:
         try:
             with get_conn() as conn:
                 row = conn.execute(
-                    "SELECT * FROM campagnes WHERE id=?", (camp_id,)
+                    "SELECT * FROM campagnes_legacy WHERE id=?", (camp_id,)
                 ).fetchone()
                 return dict(row) if row else None
         except Exception as e:
@@ -55,7 +55,7 @@ class CampaignsRepo:
         try:
             with get_conn() as conn:
                 cur = conn.execute("""
-                    INSERT INTO campagnes (nom, secteur, ville, nb_demande)
+                    INSERT INTO campagnes_legacy (nom, secteur, ville, nb_demande)
                     VALUES (?, ?, ?, ?)
                 """, (nom, secteur, ville, nb_demande))
                 conn.commit()
@@ -67,7 +67,7 @@ class CampaignsRepo:
     def delete(self, camp_id: int) -> bool:
         try:
             with get_conn() as conn:
-                conn.execute("DELETE FROM campagnes WHERE id=?", (camp_id,))
+                conn.execute("DELETE FROM campagnes_legacy WHERE id=?", (camp_id,))
                 conn.commit()
             return True
         except Exception as e:

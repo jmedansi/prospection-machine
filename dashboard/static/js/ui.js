@@ -7,7 +7,7 @@ let _allLeads = [];
 let _currentIndex = 0;
 let _emailsData = [];
 let _leadsPagination = { page: 1, total_pages: 1, total: 0, per_page: 50 };
-let _activeCampaignId = null;
+var _activeCampaignId = null;
 let _activeSector = null;
 let _activeDateStart = null;
 let _activeDateEnd = null;
@@ -106,8 +106,8 @@ function tab(id, el) {
     if (tp) tp.classList.add('active');
 }
 
-function openModal(id) { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('active'); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('active'); }
 
 // --- Thème ---
 function toggleTheme() {

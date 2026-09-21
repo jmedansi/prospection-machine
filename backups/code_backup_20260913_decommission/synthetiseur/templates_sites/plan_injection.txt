@@ -1,0 +1,125 @@
+========================================================
+PLAN D'INJECTION - CONTENU SUITE DANS LES TEMPLATES HERO
+========================================================
+
+ERREURS À NE PAS REFAIRE
+=========================
+
+1. Modifier le texte de profil-a-preview-section → GARDER IDENTIQUE à suite_reconstitue
+2. Modifier le texte de profil-a-cta-box → GARDER IDENTIQUE à suite_reconstitue
+3. Modifier le texte de profil-a-footer → GARDER IDENTIQUE à suite_reconstitue
+4. Modifier le blur overlay dans section-suite-floue → GARDER IDENTIQUE ("La suite vous attend...")
+5. Utiliser de mauvais noms de classes → Respecter les classes de suite_reconstitue
+6. Modifier le hero existant → Ne rien toucher au hero
+
+
+SECTIONS À MODIFIER (uniquement section-suite-floue)
+=====================================================
+
+La section "section-suite-floue" est la SEULE dont le contenu change par secteur.
+On change :
+  - suite-subtitle (ex: "Révélez votre éclat")
+  - suite-title (ex: "Soins & bien-être")
+  - 3 × suite-card-img → URL image Unsplash adaptée au secteur
+  - 3 × suite-card-body h3 → titre impactant
+  - 3 × suite-card-body p → description impactante
+
+On ne change PAS :
+  - Le blur overlay (tag "La suite vous attend", titre, texte, bouton WhatsApp)
+
+
+SECTIONS À GARDER IDENTIQUES à suite_reconstitue (lignes 540-600)
+=================================================================
+
+1. profil-a-preview-section (lignes 540-571)
+   - Titre : "Pourquoi votre entreprise mérite cette présence."
+   - Texte : "Aujourd'hui, 82% des clients à Paris effectuent une recherche Google..."
+   - 3 arguments : Crédibilité immédiate, Capture mobile 24/7, Expansion locale
+   - Classe : profil-a-info-args (PAS profil-a-args)
+
+2. profil-a-cta-box (lignes 573-583)
+   - Titre : "Ce site peut être en ligne dans 3 semaines."
+   - Texte : "Nous avons déjà préparé toute la structure technique..."
+   - Bouton : classe suite-blur-btn (PAS profil-a-btn)
+   - Lien : wa.me/22943681453
+
+3. profil-a-footer (lignes 585-600)
+   - Titre : div.footer-services-title "Nos expertises & prestations"
+   - 5 services : Création de site internet, Optimisation Google Maps, E-réputation & Avis clients, Création d'application web, Visibilité locale & SEO
+   - Copyright : "Confidentiel · Proposition réalisée par l'équipe d'IncidenX · 2026"
+
+
+PAR TEMPLATE, 3 INJECTIONS
+============================
+
+1. CSS avant </style>
+   → Bloc complet de suite_reconstitue (lignes 36-486)
+
+2. SVG icon-whatsapp avant </svg>
+   → Ajouter symbol id="icon-whatsapp" dans le bloc SVG existant
+
+3. HTML des 4 sections entre </section> hero et <script> hamburger
+   → section-suite-floue (adaptée au secteur)
+   → profil-a-preview-section (identique)
+   → profil-a-cta-box (identique)
+   → profil-a-footer (identique)
+
+
+POINTS DE VIGILANCE STRUCTURELS
+================================
+
+26 fichiers : </section> → <script> direct
+  → Injection entre </section> et <script>
+
+8 fichiers avec </main> entre </section> et <script> :
+  evenementiel-hero-1-prestige.html
+  immobilier-hero-1-premium.html
+  immobilier-hero-2-moderne.html
+  microfinance-hero-1-confiance.html
+  microfinance-hero-2-moderne.html
+  restaurant-hero-1-moderne.html
+  sante-hero-1-confiance.html
+  sante-hero-2-lumineux.html
+  → Injection entre </section> et </main>
+
+
+LISTE DES 34 FICHIERS
+======================
+
+artisan/artisan-hero-1-robuste.html
+artisan/artisan-hero-2-expertise.html
+auto/auto-hero-1-technique.html
+auto/auto-hero-2-moderne.html
+beaute/beaute-hero-1-elegant.html
+beaute/beaute-hero-2-moderne.html
+bijouterie/bijouterie-hero-1-luxe.html
+bijouterie/bijouterie-hero-2-tendance.html
+commerce/commerce-hero-1-boutique.html
+commerce/commerce-hero-2-artisan.html
+comptable/comptable-hero-1-institutionnel.html
+comptable/comptable-hero-2-moderne.html
+default/default-hero-1-professionnel.html
+default/default-hero-2-chaleureux.html
+education/education-hero-1-savoir.html
+education/education-hero-2-avenir.html
+evenementiel/evenementiel-hero-1-prestige.html
+evenementiel/evenementiel-hero-2-creatif.html
+hotellerie/hotellerie-hero-1-luxe.html
+hotellerie/hotellerie-hero-2-urbain.html
+immobilier/immobilier-hero-1-premium.html
+immobilier/immobilier-hero-2-moderne.html
+juridique/juridique-hero-1-institutionnel.html
+juridique/juridique-hero-2-moderne.html
+microfinance/microfinance-hero-1-confiance.html
+microfinance/microfinance-hero-2-moderne.html
+numerique/numerique-hero-1-tech.html
+numerique/numerique-hero-2-creatif.html
+restaurant/restaurant-hero-1-moderne.html
+restaurant/restaurant-hero-2-chaleureux.html
+sante/sante-hero-1-confiance.html
+sante/sante-hero-2-lumineux.html
+sport/sport-hero-1-energie.html
+sport/sport-hero-2-coach.html
+
+
+NOMBRE TOTAL : 34 fichiers, 17 secteurs × 2 templates chacun

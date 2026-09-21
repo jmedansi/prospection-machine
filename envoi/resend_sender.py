@@ -11,6 +11,7 @@ import logging
 import requests
 import sqlite3
 from typing import Dict, Any, Optional
+from email.utils import make_msgid
 
 from core.config import ensure_env
 # Chargement du .env (dossier parent)
@@ -55,7 +56,11 @@ def send_prospecting_email(
     email_corps: str,
     lien_rapport: Optional[str] = None,
     dry_run: bool = False,
-    compte_id: Optional[str] = None
+    compte_id: Optional[str] = None,
+    message_id: Optional[str] = None,
+    in_reply_to: Optional[str] = None,
+    references: Optional[str] = None,
+    custom_headers: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Envoie un email de prospection via Resend.
@@ -68,6 +73,10 @@ def send_prospecting_email(
         lien_rapport    : Lien vers le rapport PDF (optionnel)
         dry_run         : Si True, simule l'envoi
         compte_id       : Pour compatibilité (non utilisé pour Resend pour l'instant)
+        message_id      : Message-ID imposé (sinon généré via make_msgid)
+        in_reply_to     : header RFC 2822 (Message-ID du message auquel on répond)
+        references      : header RFC 2822 (chaîne des Message-ID du fil)
+        custom_headers  : dict de headers supplémentaires (nom -> valeur)
 
     Returns:
         Dict avec clés : success (bool), statut (str), message_id (str|None), erreur (str|None)
@@ -127,12 +136,27 @@ def send_prospecting_email(
         html_content = email_corps.replace("\n", "<br>")
     
     to_emails = [e.strip() for e in prospect_email.split(',')] if ',' in prospect_email else [prospect_email]
-    
+
+    # Threading RFC 2822 : on impose notre Message-ID via les headers Resend
+    if not message_id or not str(message_id).strip():
+        domain = sender_email.split('@')[-1] if sender_email and '@' in sender_email else None
+        message_id = make_msgid(domain=domain)
+    resend_headers = [{"name": "Message-ID", "value": message_id}]
+    if in_reply_to:
+        resend_headers.append({"name": "In-Reply-To", "value": in_reply_to})
+    if references:
+        resend_headers.append({"name": "References", "value": references})
+    for hname, hval in (custom_headers or {}).items():
+        resend_headers.append({"name": hname, "value": hval})
+
     payload = {
         "from": f"{sender_name} <onboarding@resend.dev>" if "resend.dev" in sender_email else f"{sender_name} <{sender_email}>",
         "to": to_emails,
         "subject": email_objet,
-        "html": html_content
+        "html": html_content,
+        "headers": resend_headers,
+        "track_opens": True,
+        "track_clicks": True,
     }
 
     # Note: Si le domaine n'est pas vérifié sur Resend, il faut utiliser "onboarding@resend.dev"
@@ -145,7 +169,7 @@ def send_prospecting_email(
         response.raise_for_status()
 
         data = response.json()
-        message_id = data.get("id", "")
+        resend_id = data.get("id", "")
 
         if 'account_id' in locals():
             from database.db_manager import get_conn
@@ -157,6 +181,7 @@ def send_prospecting_email(
             "success": True,
             "statut": "envoye",
             "message_id": message_id,
+            "resend_id": resend_id,
             "erreur": None
         }
 

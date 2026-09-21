@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirurgie & médecine esthétique à Bordeaux — La Clinique George V</title>
+<meta name="description" content="Chirurgie esthétique plastique et reconstructive, médecine esthétique, soins esthétiques sur Bordeaux et la Gironde. Établissement de renom, trois praticiens, note Google EXCELLENT — 69 avis.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MedicalClinic",
+  "name": "Clinique George V",
+  "url": "https://cg5.fr",
+  "telephone": "05 35 54 97 27",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "163 Bd George V",
+    "postalCode": "33400",
+    "addressLocality": "Talence",
+    "addressCountry": "FR"
+  },
+  "knowsAbout": ["Chirurgie esthétique", "Médecine esthétique", "Épilation définitive"]
+}
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          p:  '#191E23',
+          s:  '#2B3238',
+          fl: '#CFCDCE',
+          nd: '#4B454A',
+          soft: '#F8F7F7'
+        },
+        fontFamily: {
+          disp: ['Fraunces', 'Georgia', 'serif'],
+          body: ['Instrument Sans', 'system-ui', 'sans-serif'],
+          data: ['DM Sans', 'system-ui', 'sans-serif']
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400;1,9..144,500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+  html{scroll-behavior:smooth}
+  body{font-family:'Instrument Sans',system-ui,sans-serif;color:#191E23;-webkit-font-smoothing:antialiased;background:#fff}
+  ::selection{background:#191E23;color:#fff}
+  .num{font-family:'DM Sans',system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+  .step{font-family:'DM Sans',system-ui,sans-serif;letter-spacing:.28em;text-transform:uppercase;font-size:.68rem}
+  .hairline{border-top:1px solid #CFCDCE}
+  .vline{border-left:1px solid #CFCDCE}
+
+  .ph{display:inline-block;background:#FEF3C7;border:1px dashed #D97706;border-radius:4px;padding:2px 8px;font-size:.82em;color:#92400E;letter-spacing:.02em;text-transform:none}
+
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .9s cubic-bezier(.22,1,.36,1) var(--d,0s),transform .9s cubic-bezier(.22,1,.36,1) var(--d,0s)}
+  .reveal.in{opacity:1;transform:none}
+
+  .img-in{clip-path:inset(0 0 100% 0);transition:clip-path 1.2s cubic-bezier(.22,1,.36,1) var(--d,0s)}
+  .img-in.ready{clip-path:inset(0 0 0% 0)}
+
+  .par{will-change:transform}
+  .par-img{will-change:transform}
+
+  /* Accordeons */
+  .acc-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s cubic-bezier(.22,1,.36,1)}
+  .acc-panel>div{overflow:hidden}
+  .acc-head svg{transition:transform .4s cubic-bezier(.22,1,.36,1)}
+  .acc.open .acc-head svg{transform:rotate(45deg)}
+  .acc-num{transition:opacity .4s ease}
+  .acc:not(.open) .acc-num{opacity:.4}
+
+  /* Liens soulignés animés */
+  .ul{position:relative}
+  .ul::after{content:"";position:absolute;left:0;bottom:-3px;height:1px;width:100%;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .45s cubic-bezier(.22,1,.36,1)}
+  .ul:hover::after{transform:scaleX(1);transform-origin:left}
+
+  /* Portfolio praticiens : N&B → couleur */
+  .portrait{filter:grayscale(1) contrast(1.05);transition:filter .7s ease,transform .7s cubic-bezier(.22,1,.36,1)}
+  .pcard:hover .portrait{filter:grayscale(0);transform:scale(1.02)}
+
+  /* Marquee */
+  .mar{overflow:hidden}
+  .mar-track{display:flex;width:max-content;animation:mar 30s linear infinite}
+  @keyframes mar{to{transform:translateX(-50%)}}
+  .mar:hover .mar-track{animation-play-state:paused}
+
+  /* Grain cinéma */
+  body::after{content:"";position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  header#header{transition:background-color .5s ease,box-shadow .5s ease}
+  header#header.scrolled{background:rgba(255,255,255,.92);backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(25,30,35,.06)}
+
+  .big-quote::first-letter{float:left;font-family:'Fraunces',Georgia,serif;font-weight:400;font-size:4.6rem;line-height:.82;padding-right:.12em;margin-top:.05em}
+  @media (min-width:768px){.write-vert{writing-mode:vertical-rl}}
+
+  .star{color:#CFCDCE}
+  .star.f{color:#191E23}
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .reveal,.img-in{opacity:1;transform:none;clip-path:none;transition:none}
+    .mar-track{animation:none}
+  }
+</style>
+</head>
+<body class="antialiased text-p bg-white">
+
+<!-- ================================================================
+     HEADER
+================================================================ -->
+<header id="header" class="fixed top-0 left-0 right-0 z-50">
+  <div class="num hidden lg:flex text-[11px] tracking-[.2em] justify-between items-center px-8 pt-3 pb-2 border-b border-fl text-nd">
+    <span>163 Bd George V — 33400 Talence</span>
+    <span class="max-w-xl truncate">Lun – Mar – Jeu – Ven : 9h30–13h puis 14h–17h30 · Mer : 9h30–13h</span>
+    <span>05 35 54 97 27</span>
+  </div>
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-4">
+    <a href="#top" class="flex items-baseline gap-3 group">
+      <span class="font-disp text-2xl font-medium tracking-tight">George&nbsp;V</span>
+      <span class="hidden sm:inline num text-[10px] tracking-[.24em] text-nd group-hover:text-p transition-colors">Clinique · Talence</span>
+    </a>
+    <nav class="hidden md:flex num text-[11px] tracking-[.14em] gap-9 text-nd">
+      <a href="#poles" class="ul hover:text-p">Pôles</a>
+      <a href="#praticiens" class="ul hover:text-p">Praticiens</a>
+      <a href="#histoire" class="ul hover:text-p">Histoire</a>
+      <a href="#avis" class="ul hover:text-p">Avis</a>
+      <a href="#contact" class="ul hover:text-p">Contact</a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <a href="tel:+33535549727" class="hidden xl:block num text-[12px] text-nd">05 35 54 97 27</a>
+      <a href="tel:+33535549727" class="cta inline-flex items-center gap-2 num text-[12px] bg-p text-white px-5 py-2.5 rounded-full font-medium hover:bg-s transition-colors">
+        Rendez-vous
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ================================================================
+     HERO
+================================================================ -->
+<section id="top" class="bg-p text-white relative overflow-hidden">
+  <div class="absolute inset-y-0 right-0 w-1/2 hidden lg:block opacity-[.5]" style="background:radial-gradient(120% 90% at 100% 0%, #2B3238 0%, transparent 60%)"></div>
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 pt-32 lg:pt-44 pb-16 lg:pb-28 grid lg:grid-cols-12 gap-x-4 gap-y-12 lg:gap-y-0">
+
+    <div class="lg:col-span-6 relative">
+      <div class="hidden lg:flex items-center gap-4 num text-[11px] tracking-[.22em] text-fl mb-10">
+        <span class="h-px w-10 bg-fl"></span> Établissement de renom · Bordeaux — Gironde
+      </div>
+      <h1 class="font-disp font-light text-[11vw] lg:text-[4.6rem] xl:text-[5.3rem] leading-[1] tracking-[-0.01em]">
+        <span class="reveal">La beauté qui</span><br>
+        <em class="italic font-light text-fl reveal" style="--d:.12s">ne vieillit pas.</em>
+      </h1>
+      <p class="reveal mt-8 max-w-md text-neutral-300 text-[15px] leading-[1.75] font-light" style="--d:.2s">
+        Chirurgie esthétique plastique et reconstructive, médecine esthétique, soins esthétiques
+        sur Bordeaux et la Gironde.
+      </p>
+      <div class="reveal mt-10 flex flex-wrap items-center gap-4" style="--d:.28s">
+        <a href="tel:+33535549727" class="inline-flex items-center gap-3 bg-white text-p px-7 py-3.5 rounded-full font-medium text-[15px] hover:gap-4 transition-all">
+          Prendre rendez-vous
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+        </a>
+        <span class="num text-[13px] text-neutral-300">05 35 54 97 27</span>
+      </div>
+      <div class="reveal mt-12 inline-flex items-center gap-4 border border-white/10 rounded-full px-5 py-2.5" style="--d:.36s">
+        <span class="flex gap-1">
+          <svg class="star" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          <svg class="star" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          <svg class="star" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          <svg class="star" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          <svg class="star" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        </span>
+        <span class="num text-[12px] tracking-[.12em] text-neutral-200">Google «&nbsp;EXCELLENT&nbsp;» — 69 avis publiés</span>
+      </div>
+    </div>
+
+    <div class="lg:col-span-6 relative">
+      <div class="writing relative z-10 lg:mr-10">
+        <div class="img-in reveal" style="--d:.3s">
+          <img src="assets/img-001.png" alt="La Clinique George V, hôtel particulier à Talence" class="par w-full h-auto object-cover" data-px="0.05" width="1055" height="459">
+        </div>
+        <p class="num text-[11px] tracking-[.18em] text-neutral-400 mt-3">L’hôtel particulier — mascaron Bacchus</p>
+      </div>
+      <div class="writing hidden md:block absolute -bottom-10 -right-2 w-56 lg:w-64 xl:w-72">
+        <div class="img-in" style="--d:.6s">
+          <img src="assets/img-009.jpg" alt="Photographie d'intérieur de la Clinique George V" class="par rounded-none w-full h-auto object-cover border-[6px] border-fl" data-px="0.12" width="1024" height="852">
+        </div>
+      </div>
+      <div class="hidden xl:block write-vert absolute top-0 right-0 num text-[11px] tracking-[.42em] text-fl/60">Hôtel particulier — Bordeaux — depuis une maison de vins et spiritueux</div>
+    </div>
+
+  </div>
+
+  <!-- ruban marquee -->
+  <div class="mar border-t border-white/10 mt-10 lg:mt-0">
+    <div class="mar-track py-5 num text-[12px] tracking-[.22em] text-neutral-300">
+      <span class="px-8">Chirurgie esthétique</span><span class="text-fl">·</span>
+      <span class="px-8">Médecine esthétique</span><span class="text-fl">·</span>
+      <span class="px-8">Épilation définitive</span><span class="text-fl">·</span>
+      <span class="px-8">Note Google « EXCELLENT » — 69 avis</span><span class="text-fl">·</span>
+      <span class="px-8">Chirurgie esthétique</span><span class="text-fl">·</span>
+      <span class="px-8">Médecine esthétique</span><span class="text-fl">·</span>
+      <span class="px-8">Épilation définitive</span><span class="text-fl">·</span>
+      <span class="px-8">Note Google « EXCELLENT » — 69 avis</span><span class="text-fl">·</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     À PROPOS
+================================================================ -->
+<section id="a-propos" class="bg-white py-24 lg:py-36">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-x-4 gap-y-14">
+    <div class="lg:col-span-4">
+      <p class="step text-nd mb-8"><span class="text-p">01</span> / À propos</p>
+      <div class="relative">
+        <div class="img-in reveal">
+          <img src="assets/img-006.jpg" alt="Photo de la Clinique George V" class="par w-full h-auto object-cover" data-px="0.06" width="640" height="427">
+        </div>
+        <span class="absolute -left-3 top-1/2 w-6 h-px bg-p hidden lg:block"></span>
+      </div>
+    </div>
+    <div class="lg:col-span-7 lg:col-start-6">
+      <p class="reveal font-disp text-[7vw] lg:text-6xl xl:text-7xl font-light leading-[1.02] tracking-tight">
+        Un établissement<br>
+        <em class="italic font-light">de renom,</em><br>
+        qui accompagne<br>
+        votre projet.
+      </p>
+      <div class="reveal grid md:grid-cols-2 gap-10 mt-12" style="--d:.12s">
+        <p class="text-[15px] leading-[1.8] text-nd font-light">
+          La Clinique George V est un établissement de renom qui vous accueille et vous accompagne
+          dans votre projet. Le Docteur Drossard, chirurgien esthétique, vous reçoit pour des
+          consultations de chirurgie plastique esthétique ou de reconstruction.
+        </p>
+        <div class="hairline pt-6">
+          <p class="num text-[10px] tracking-[.24em] text-nd mb-3">Note Google</p>
+          <p class="font-disp text-3xl font-light">EXCELLENT</p>
+          <p class="num text-[12px] tracking-[.12em] text-nd mt-2">69 avis · publiés sur Google</p>
+        </div>
+      </div>
+      <p class="reveal font-disp italic text-2xl lg:text-[1.7rem] leading-snug font-light text-s mt-14 max-w-lg" style="--d:.2s">
+        «&nbsp;Utiliser des méthodes et des techniques de plus en plus raffinées pour obtenir des
+        résultats toujours meilleurs.&nbsp;»
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     PÔLES — menu des soins
+================================================================ -->
+<section id="poles" class="bg-soft py-24 lg:py-36 hairline">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8">
+    <div class="grid lg:grid-cols-12 gap-4 items-end mb-16">
+      <div class="lg:col-span-5">
+        <p class="step text-nd mb-8"><span class="text-p">02</span> / Les pôles</p>
+        <h2 class="font-disp font-light text-5xl lg:text-[3.6rem] leading-[1.02]">
+          Trois pôles<br>d’interventions<br><em class="italic">en esthétique.</em>
+        </h2>
+      </div>
+      <div class="lg:col-span-5 lg:col-start-7">
+        <p class="text-[15px] leading-[1.8] text-nd font-light">
+          Se réconcilier avec son image, ou résoudre les problèmes intimes que l’on confie rarement.
+          L’écoute et l’empathie — alliées à une expérience de pratique hospitalière intensive — sont
+          au cœur des rapports de confiance entre patient et praticien.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-12">
+      <div class="lg:col-span-7">
+        <div class="acc border-t border-p/20">
+          <button class="acc-head w-full py-8 flex items-center justify-between gap-6 text-left group" aria-expanded="false">
+            <div class="flex items-baseline gap-6">
+              <span class="acc-num num text-[12px] text-nd">01</span>
+              <div>
+                <h3 class="font-disp font-light text-3xl lg:text-4xl group-hover:italic transition-all">Chirurgie esthétique</h3>
+                <p class="f text-[13px] italic text-nd mt-1.5 font-light">Se réconcilier avec son image.</p>
+              </div>
+            </div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <div class="acc-panel">
+            <div>
+              <div class="pb-10 pl-12 grid md:grid-cols-2 gap-x-12 gap-y-8">
+                <div>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4">Visage</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Rhinoplastie</li><li>Lifting du visage</li><li>Lipofilling du visage</li>
+                    <li>Blépharoplastie</li><li>Otoplastie</li><li>Génioplastie</li>
+                    <li>Liposuccion du double menton</li><li>Bichectomie</li>
+                  </ul>
+                </div>
+                <div>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4">Seins &amp; thorax</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Augmentation mammaire</li><li>Réduction mammaire et lifting</li>
+                    <li>Gynécomastie</li><li>Malformations thorax et seins</li>
+                    <li>Reconstruction après cancer du sein</li>
+                  </ul>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4 mt-7">Cheveux</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Greffe de cheveux</li><li>Greffe de barbe</li><li>Greffe de sourcils</li>
+                  </ul>
+                </div>
+                <div>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4">Silhouette / corps</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Liposuccion</li><li>Abdominoplastie</li><li>Lifting des cuisses</li>
+                    <li>Lifting des bras</li><li>Bodylift</li><li>Chirurgie des fesses</li>
+                    <li>Augmentation des mollets</li>
+                  </ul>
+                </div>
+                <div>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4">Intime</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Chirurgie intime de la femme</li><li>Chirurgie intime de l’homme</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="acc border-t border-p/20">
+          <button class="acc-head w-full py-8 flex items-center justify-between gap-6 text-left group" aria-expanded="false">
+            <div class="flex items-baseline gap-6">
+              <span class="acc-num num text-[12px] text-nd">02</span>
+              <div>
+                <h3 class="font-disp font-light text-3xl lg:text-4xl group-hover:italic transition-all">Médecine esthétique</h3>
+                <p class="text-[13px] italic text-nd mt-1.5 font-light">Le raffinement des méthodes, dans la mesure.</p>
+              </div>
+            </div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <div class="acc-panel">
+            <div>
+              <div class="pb-10 pl-12 grid md:grid-cols-2 gap-x-12 gap-y-8">
+                <div>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4">Injections &amp; volume</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Acide hyaluronique</li><li>Injections de Botox</li><li>Radiesse</li><li>Bloomea</li>
+                  </ul>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4 mt-7">Corps</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Cryolipolyse</li><li>Hifu (Ultrasons Focalisés de Haute intensité)</li><li>Hydrofacial</li>
+                  </ul>
+                </div>
+                <div>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4">Peau</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Lasers</li><li>Microneedling</li><li>Peelings</li><li>Photothérapie LED</li>
+                  </ul>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4 mt-7">Espace forme, santé &amp; bien-être</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Coach sportif &amp; préparateur physique</li><li>Facialiste</li><li>Sexologue</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="acc border-y border-p/20">
+          <button class="acc-head w-full py-8 flex items-center justify-between gap-6 text-left group" aria-expanded="false">
+            <div class="flex items-baseline gap-6">
+              <span class="acc-num num text-[12px] text-nd">03</span>
+              <div>
+                <h3 class="font-disp font-light text-3xl lg:text-4xl group-hover:italic transition-all">Épilation définitive</h3>
+                <p class="text-[13px] italic text-nd mt-1.5 font-light">Des résultats nets, reconnus par nos patientes.</p>
+              </div>
+            </div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <div class="acc-panel">
+            <div>
+              <div class="pb-10 pl-12 grid md:grid-cols-2 gap-x-12 gap-y-8">
+                <div>
+                  <p class="num text-[10px] tracking-[.22em] text-nd mb-4">Laser durable</p>
+                  <ul class="text-[14px] leading-7 text-s font-light">
+                    <li>Encadré par une équipe à l’écoute</li>
+                    <li>L’efficacité la plus citée dans nos avis Google</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-4 lg:col-start-9 relative hidden lg:block">
+        <div class="sticky top-28 space-y-6">
+          <div class="img-in">
+            <img src="assets/img-011.jpg" alt="Soin du visage — médecine esthétique" class="par w-full h-auto object-cover" data-px="0.05" width="1500" height="1000">
+          </div>
+          <img src="assets/img-012.jpg" alt="Consultation de médecine esthétique" class="par w-full h-auto object-cover" data-px="0.1" width="1500" height="1000">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     HISTOIRE
+================================================================ -->
+<section id="histoire" class="bg-p text-white py-24 lg:py-40 overflow-hidden">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8">
+    <div class="grid lg:grid-cols-12 gap-12 items-center">
+      <div class="lg:col-span-6 relative">
+        <div class="img-in">
+          <img src="assets/img-010.jpg" alt="Photographie de la Clinique George V" class="par w-full h-auto object-cover" data-px="0.06" width="1024" height="768">
+        </div>
+        <div class="absolute -bottom-8 -right-3 lg:-right-8 w-52 lg:w-64 hidden md:block">
+          <img src="assets/img-008.jpg" alt="Soirée Blanche — Clinique George V" class="par border-[6px] border-s w-full h-auto object-cover" data-px="0.14" width="763" height="509">
+        </div>
+      </div>
+      <div class="lg:col-span-6 lg:pl-10">
+        <p class="step text-fl mb-8">03 / Histoire &amp; emblème</p>
+        <p class="num text-[12px] tracking-[.2em] text-neutral-300 mb-6">Le saviez-vous ?</p>
+        <h2 class="font-disp font-light text-4xl lg:text-5xl xl:text-[3.4rem] leading-[1.08]">
+          Une maison de vins<br>
+          et de spiritueux,<br>
+          <em class="italic text-fl">symbole de notre ville.</em>
+        </h2>
+        <div class="big-quote text-[15px] leading-[1.95] font-light text-neutral-200 mt-10 max-w-xl">
+          La Clinique George V, hôtel particulier au cœur de la région Bordelaise, est située dans
+          une ancienne maison de vins et spiritueux, qui a comme mascaron Bacchus, dieu du vin.
+          Il est le seul dieu, avec Apollon — dieu de la beauté — à ne pas vieillir. Cette allégorie
+          nous a convaincus de le conserver comme emblème.
+        </div>
+        <div class="hairline border-white/15 mt-10 hidden"></div>
+        <p class="font-disp italic text-2xl lg:text-[1.75rem] leading-snug font-light text-neutral-100 mt-12">
+          «&nbsp;Nous sommes toujours dans la mesure et le respect de l’harmonie et non dans l’excès.&nbsp;»
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     PRATICIENS
+================================================================ -->
+<section id="praticiens" class="bg-white py-24 lg:py-36">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8">
+    <div class="grid lg:grid-cols-12 items-end gap-6 mb-16">
+      <div class="lg:col-span-7">
+        <p class="step text-nd mb-8"><span class="text-p">04</span> / Les praticiens</p>
+        <h2 class="font-disp font-light text-5xl lg:text-[3.4rem] leading-[1.02]">
+          Trois spécialistes,<br><em class="italic">une exigence commune.</em>
+        </h2>
+      </div>
+      <div class="lg:col-span-4 lg:col-start-9">
+        <p class="num text-[11px] leading-6 tracking-[.14em] text-nd">Survolez les portraits<br>pour révéler la couleur.</p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-x-10 gap-y-16">
+      <article class="pcard reveal">
+        <div class="relative overflow-hidden">
+          <img src="assets/img-002.jpg" alt="Portrait du Dr Guillaume Drossard, chirurgien esthétique" class="portrait w-full h-auto object-cover" width="444" height="650">
+          <span class="absolute left-0 bottom-0 bg-white/95 num text-[10px] tracking-[.2em] text-p px-3 py-2">Major de promotion</span>
+        </div>
+        <div class="mt-6 flex items-baseline justify-between gap-4">
+          <h3 class="font-disp text-2xl font-normal">Dr Guillaume Drossard</h3>
+          <span class="num text-[10px] tracking-[.16em] text-nd whitespace-nowrap">01</span>
+        </div>
+        <p class="num text-[11px] tracking-[.16em] text-nd mt-1">Chirurgien esthétique</p>
+        <p class="text-[14px] leading-[1.8] text-s font-light mt-4">Spécialisé en chirurgie et médecine esthétique. Diplômé du DESC et du Collège Français de Chirurgie Plastique, Reconstructrice et Esthétique — major de sa promotion.</p>
+        <a href="tel:+33535549727" class="ul num inline-block text-[11px] tracking-[.16em] mt-5">Prendre rendez-vous</a>
+      </article>
+
+      <article class="pcard reveal" style="--d:.12s">
+        <div class="relative overflow-hidden">
+          <img src="assets/img-004.jpg" alt="Portrait du Dr Antoine Julienne, chirurgien esthétique" class="portrait w-full h-auto object-cover" width="444" height="649">
+          <span class="absolute left-0 bottom-0 bg-white/95 num text-[10px] tracking-[.2em] text-p px-3 py-2">DESC · double clinicat</span>
+        </div>
+        <div class="mt-6 flex items-baseline justify-between gap-4">
+          <h3 class="font-disp text-2xl font-normal">Dr Antoine Julienne</h3>
+          <span class="num text-[10px] tracking-[.16em] text-nd whitespace-nowrap">02</span>
+        </div>
+        <p class="num text-[11px] tracking-[.16em] text-nd mt-1">Chirurgien esthétique</p>
+        <p class="text-[14px] leading-[1.8] text-s font-light mt-4">Spécialiste en Chirurgie Plastique Reconstructrice et Esthétique, titulaire du DESC et d’un double clinicat en chirurgie plastique et esthétique.</p>
+        <a href="tel:+33535549727" class="ul num inline-block text-[11px] tracking-[.16em] mt-5">Prendre rendez-vous</a>
+      </article>
+
+      <article class="pcard reveal" style="--d:.24s">
+        <div class="relative overflow-hidden">
+          <img src="assets/img-005.jpg" alt="Portrait du Dr Benjamin Garreau, chirurgien maxillo-facial et stomatologue" class="portrait w-full h-auto object-cover" width="444" height="650">
+          <span class="absolute left-0 bottom-0 bg-white/95 num text-[10px] tracking-[.2em] text-p px-3 py-2">Ancien chef de clinique — CHU de Bordeaux</span>
+        </div>
+        <div class="mt-6 flex items-baseline justify-between gap-4">
+          <h3 class="font-disp text-2xl font-normal">Dr Benjamin Garreau</h3>
+          <span class="num text-[10px] tracking-[.16em] text-nd whitespace-nowrap">03</span>
+        </div>
+        <p class="num text-[11px] tracking-[.16em] text-nd mt-1">Chirurgien maxillo-facial &amp; stomatologue</p>
+        <p class="text-[14px] leading-[1.8] text-s font-light mt-4">Diplômé de Chirurgie Maxillo-faciale et Stomatologie, ancien chef de clinique assistant du CHU de Bordeaux.</p>
+        <a href="tel:+33535549727" class="ul num inline-block text-[11px] tracking-[.16em] mt-5">Prendre rendez-vous</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     AVIS — LIVRE D'OR
+================================================================ -->
+<section id="avis" class="bg-p text-white py-24 lg:py-40 relative overflow-hidden">
+  <div class="absolute -top-16 -right-6 select-none pointer-events-none font-disp text-[22rem] leading-none text-white/[.03]">69</div>
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 relative">
+    <div class="grid lg:grid-cols-12 items-end gap-6 mb-16">
+      <div class="lg:col-span-7">
+        <p class="step text-fl mb-8">05 / Livre d’or — Google</p>
+        <h2 class="font-disp font-light text-5xl lg:text-[3.6rem] leading-[1.02]">
+          Nos patientes<br><em class="italic text-fl">témoignent.</em>
+        </h2>
+      </div>
+      <div class="lg:col-span-4 lg:col-start-9">
+        <div class="flex items-center gap-4">
+          <span class="flex gap-1">
+            <svg class="star f" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <svg class="star f" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <svg class="star f" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <svg class="star f" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <svg class="star f" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </span>
+          <p class="num text-[12px] tracking-[.12em] text-neutral-300">EXCELLENT — 69 avis · Google</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-x-12 gap-y-14">
+      <figure class="lg:col-span-7 reveal">
+        <blockquote class="font-disp italic font-light text-2xl lg:text-[1.9rem] leading-[1.35]">
+          «&nbsp;J’ai été opérée en janvier 2026 par le docteur Drossard. Je recommande vivement il a
+          fait un travail magnifique, je suis ravie du résultat. L’ensemble de son équipe est
+          humaine, à l’écoute et au petit soin.&nbsp;»
+        </blockquote>
+        <figcaption class="num text-[12px] tracking-[.16em] text-neutral-400 mt-6">Sarah Slous</figcaption>
+      </figure>
+
+      <div class="lg:col-span-5 space-y-14 lg:pt-20">
+        <figure class="reveal">
+          <blockquote class="font-disp italic font-light text-lg leading-[1.6] text-neutral-100">
+            «&nbsp;La clinique Georges V est extraordinaire, tant dans l accueil que dans la qualité de
+            l opération et du suivi. Un suivi idéal après une suture parfaite…&nbsp;»
+          </blockquote>
+          <figcaption class="num text-[12px] tracking-[.16em] text-neutral-400 mt-4">Peggy Violleau</figcaption>
+        </figure>
+        <figure class="reveal" style="--d:.1s">
+          <blockquote class="font-disp italic font-light text-lg leading-[1.6] text-neutral-100">
+            «&nbsp;Je recommande la clinique pour l’accueil, la sympathie du personnel et surtout pour
+            l’efficacité de l’épilation définitive !&nbsp;»
+          </blockquote>
+          <figcaption class="num text-[12px] tracking-[.16em] text-neutral-400 mt-4">DUBEAU Aurélie</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-12 mt-20 hairline border-white/10 lg:pt-16">
+      <figure class="reveal">
+        <blockquote class="font-disp italic font-light text-[15px] leading-[1.75] text-neutral-200">« Personnel très délicat, je suis à ma sixième séance d’épilation laser je vois de net résultats ! »</blockquote>
+        <figcaption class="num text-[11px] tracking-[.16em] text-neutral-400 mt-4">Ambre Gennari</figcaption>
+      </figure>
+      <figure class="reveal" style="--d:.05s">
+        <blockquote class="font-disp italic font-light text-[15px] leading-[1.75] text-neutral-200">« J’ai été opérée d’une septo-rhinoplastie par le Dr Drossard et je tiens vraiment à partager mon immense satisfaction. L’intervention s’est déroulée à merveille. »</blockquote>
+        <figcaption class="num text-[11px] tracking-[.16em] text-neutral-400 mt-4">I T</figcaption>
+      </figure>
+      <figure class="reveal" style="--d:.1s">
+        <blockquote class="font-disp italic font-light text-[15px] leading-[1.75] text-neutral-200">« C’est toujours un plaisir de venir à la clinique autant par l’accueil que par les soins… Je recommande à 100 %. »</blockquote>
+        <figcaption class="num text-[11px] tracking-[.16em] text-neutral-400 mt-4">Marie Picault</figcaption>
+      </figure>
+      <figure class="reveal">
+        <blockquote class="font-disp italic font-light text-[15px] leading-[1.75] text-neutral-200">« Je vais à la clinique george V dans le cadre d’une épilations définitive et j’en suis ravie. Le personnel est professionnel est bienveillant. »</blockquote>
+        <figcaption class="num text-[11px] tracking-[.16em] text-neutral-400 mt-4">filippa colman</figcaption>
+      </figure>
+      <figure class="reveal" style="--d:.05s">
+        <blockquote class="font-disp italic font-light text-[15px] leading-[1.75] text-neutral-200">« Accueil chaleureux et bienveillant. Je recommande. »</blockquote>
+        <figcaption class="num text-[11px] tracking-[.16em] text-neutral-400 mt-4">Clémentine AIQUI REBOUL PAVIET (Grumf)</figcaption>
+      </figure>
+      <figure class="reveal" style="--d:.1s">
+        <blockquote class="font-disp italic font-light text-[15px] leading-[1.75] text-neutral-200">« Je recommande fortement le docteur Drossard et toute son équipe. »</blockquote>
+        <figcaption class="num text-[11px] tracking-[.16em] text-neutral-400 mt-4">Jennyfer Arnal</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     CONTACT / CTA FINAL
+================================================================ -->
+<section id="contact" class="bg-white py-24 lg:py-36">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 grid lg:grid-cols-12 gap-14">
+    <div class="lg:col-span-7">
+      <p class="step text-nd mb-8"><span class="text-p">06</span> / Contact</p>
+      <h2 class="font-disp font-light text-5xl lg:text-[3.6rem] leading-[1.02]">
+        Votre rendez-vous<br><em class="italic">à la Clinique.</em>
+      </h2>
+      <p class="text-[15px] leading-[1.8] text-nd font-light mt-8 max-w-lg">
+        L’écoute, l’empathie et des techniques raffinées — pour des résultats toujours meilleurs.
+      </p>
+      <a href="tel:+33535549727" class="group inline-flex items-center gap-5 mt-10">
+        <span class="font-disp font-light text-4xl lg:text-6xl transition-colors">05 35 54 97 27</span>
+        <span class="ul num text-[11px] tracking-[.2em] text-nd">Appeler</span>
+      </a>
+      <div class="mt-12 flex flex-wrap items-center gap-5">
+        <a href="tel:+33535549727" class="inline-flex items-center gap-3 bg-p text-white px-8 py-4 rounded-full font-medium text-[15px] hover:bg-s transition-colors">
+          Prendre rendez-vous
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+        </a>
+        <span class="inline-flex items-center gap-3 border border-p/20 rounded-full px-5 py-3.5">
+          <img src="assets/brand/img-003.svg" alt="Logo Doctolib" class="h-5 w-auto" loading="lazy">
+          <span class="num text-[12px] tracking-[.08em] text-nd">Réserver en ligne <span class="ph">[À COMPLÉTER : lien Doctolib]</span></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="lg:col-span-4 lg:col-start-9 hairline lg:border-l-0">
+      <div class="space-y-10">
+        <p class="num text-[11px] tracking-[.24em] text-nd">Adresse</p>
+        <p class="font-disp text-2xl font-light leading-snug">163 Bd George V<br>33400 Talence</p>
+      </div>
+      <div class="space-y-10 mt-10">
+        <p class="num text-[11px] tracking-[.24em] text-nd">Horaires</p>
+        <div class="text-[14px] leading-7 text-s font-light border-l border-p vline pl-5">
+          <p>Lundi – Mardi – Jeudi – Vendredi</p>
+          <p class="text-nd">9h30 – 13h · 14h – 17h30</p>
+          <p class="mt-3">Mercredi</p>
+          <p class="text-nd">9h30 – 13h</p>
+        </div>
+      </div>
+      <div class="space-y-6 mt-10">
+        <p class="num text-[11px] tracking-[.24em] text-nd">Email</p>
+        <p><span class="ph">[À COMPLÉTER : adresse email]</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     FOOTER
+================================================================ -->
+<footer class="bg-p text-white">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 py-16 lg:py-20 grid lg:grid-cols-12 gap-12">
+    <div class="lg:col-span-4">
+      <p class="font-disp text-3xl font-light tracking-tight">George&nbsp;V</p>
+      <p class="text-[13px] text-neutral-300 font-light mt-2">Centre multidisciplinaire de médecine et chirurgie esthétique à Bordeaux.</p>
+      <p class="num text-[11px] tracking-[.18em] text-neutral-500 mt-6">163 Bd George V · 33400 Talence<br>05 35 54 97 27</p>
+    </div>
+    <div class="lg:col-span-2">
+      <p class="num text-[10px] tracking-[.24em] text-fl mb-5">Navigation</p>
+      <ul class="text-[13px] text-neutral-300 font-light space-y-3">
+        <li><a href="#poles" class="ul">Pôles</a></li>
+        <li><a href="#praticiens" class="ul">Praticiens</a></li>
+        <li><a href="#histoire" class="ul">Histoire</a></li>
+        <li><a href="#avis" class="ul">Avis</a></li>
+        <li><a href="#contact" class="ul">Contact</a></li>
+      </ul>
+    </div>
+    <div class="lg:col-span-3">
+      <p class="num text-[10px] tracking-[.24em] text-fl mb-5">Newsletter</p>
+      <p class="text-[13px] text-neutral-300 font-light">Restez informé de nos actualités et nouveautés.</p>
+      <p class="mt-4"><span class="ph">[À COMPLÉTER : formulaire email]</span></p>
+    </div>
+    <div class="lg:col-span-3">
+      <p class="num text-[10px] tracking-[.24em] text-fl mb-5">Informations</p>
+      <ul class="text-[13px] text-neutral-300 font-light space-y-3">
+        <li>Protocoles péri-opératoires<br><span class="ph">[À COMPLÉTER : lien]</span></li>
+        <li>Bioma Therapy™ à la Clinique<br><span class="ph">[À COMPLÉTER : lien]</span></li>
+        <li>Actualités <span class="ph">[À COMPLÉTER : lien]</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="max-w-7xl mx-auto px-5 lg:px-8 py-6 flex flex-wrap items-center justify-between gap-3 num text-[10px] tracking-[.18em] text-neutral-500">
+      <span>© <span class="ph">[À COMPLÉTER : année]</span> Clinique George V</span>
+      <span>Mentions légales <span class="ph">[À COMPLÉTER]</span></span>
+      <span>Google « EXCELLENT » — 69 avis</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ---------- Révélations au scroll ----------
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+  // ---------- Clips d'apparition des images ----------
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.img-in').forEach((el) => el.classList.add('ready'));
+  });
+
+  // ---------- Header ---------------------------------------------
+  const header = document.getElementById('header');
+  const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 50);
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ---------- Accordeons pôles -----------------------------------
+  document.querySelectorAll('.acc').forEach((item) => {
+    const btn = item.querySelector('.acc-head');
+    const panel = item.querySelector('.acc-panel');
+    btn.addEventListener('click', () => {
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.acc.open').forEach((o) => {
+        o.classList.remove('open');
+        o.querySelector('.acc-panel').style.gridTemplateRows = '0fr';
+        o.querySelector('.acc-head').setAttribute('aria-expanded', 'false');
+      });
+      if (!wasOpen) {
+        item.classList.add('open');
+        panel.style.gridTemplateRows = '1fr';
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+
+  // ---------- Parallaxe douce ------------------------------------
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) {
+    const els = [...document.querySelectorAll('[data-px]')];
+    let y = window.scrollY, t = y, raf = null;
+    const loop = () => {
+      t += (y - t) * 0.08;
+      els.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -300 || r.top > window.innerHeight + 300) return;
+        const center = r.top + r.height / 2;
+        const vc = window.innerHeight / 2;
+        const speed = parseFloat(el.dataset.px) || 0;
+        el.style.transform = 'translate3d(0,' + (center - vc) * speed * -1 + 'px,0)';
+      });
+      raf = requestAnimationFrame(loop);
+    };
+    document.addEventListener('scroll', () => { y = window.scrollY; }, { passive: true });
+    loop();
+  }
+</script>
+
+</body>
+</html>

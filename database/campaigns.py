@@ -36,7 +36,7 @@ def get_all_campaigns(date_start: str | None = None, date_end: str | None = None
                     (SELECT COUNT(*) FROM emails_envoyes ee JOIN leads_bruts lb ON ee.lead_id = lb.id WHERE lb.campaign_id = c.id AND ee.clique=1) as nb_cliques,
                     (SELECT COUNT(*) FROM emails_envoyes ee JOIN leads_bruts lb ON ee.lead_id = lb.id WHERE lb.campaign_id = c.id AND ee.repondu=1) as nb_reponses,
                     (SELECT COUNT(*) FROM emails_envoyes ee JOIN leads_bruts lb ON ee.lead_id = lb.id WHERE lb.campaign_id = c.id AND ee.rdv_confirme=1) as nb_rdv
-                FROM campagnes c
+                FROM campagnes_legacy c
                 {where_clause}
                 ORDER BY c.date_creation DESC
                 LIMIT 100
@@ -50,7 +50,7 @@ def get_all_campaigns(date_start: str | None = None, date_end: str | None = None
 def get_campaign_by_id(camp_id: int) -> dict | None:
     try:
         with get_conn() as conn:
-            row = conn.execute("SELECT * FROM campagnes WHERE id = ?", (camp_id,)).fetchone()
+            row = conn.execute("SELECT * FROM campagnes_legacy WHERE id = ?", (camp_id,)).fetchone()
             if not row:
                 return None
             campaign = dict(row)
@@ -73,7 +73,7 @@ def delete_campaign(camp_id: int):
     """Supprime une campagne."""
     try:
         with get_conn() as conn:
-            conn.execute("DELETE FROM campagnes WHERE id = ?", (camp_id,))
+            conn.execute("DELETE FROM campagnes_legacy WHERE id = ?", (camp_id,))
             conn.commit()
     except Exception as e:
         logger.error(f"delete_campaign({camp_id}) → {e}")
@@ -89,7 +89,7 @@ def update_campaign(camp_id: int, **fields):
         with get_conn() as conn:
             sets = ", ".join(f"{k} = ?" for k in updates)
             values = list(updates.values()) + [camp_id]
-            conn.execute(f"UPDATE campagnes SET {sets} WHERE id = ?", values)
+            conn.execute(f"UPDATE campagnes_legacy SET {sets} WHERE id = ?", values)
             conn.commit()
             return True
     except Exception as e:

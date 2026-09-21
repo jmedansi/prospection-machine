@@ -1,0 +1,91 @@
+<div id="section-ia" class="v-section">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:15px">
+        <div>
+            <h2 style="margin:0;font-size:1.1rem;font-weight:700">IA ⇄ Dashboard</h2>
+            <p style="margin:4px 0 0;font-size:12px;color:var(--ink3)">
+                Échange exclusivement par le dossier partagé <code>ia_echanges/</code> :
+                export des leads, relecture de la qualification I.A., et consultation des maquettes.
+            </p>
+        </div>
+        <div style="display:flex;gap:10px">
+            <button class="btn sm" onclick="iaEchangesLoadStatus()">Rafraîchir</button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Listes d'échange</div>
+            <div id="ia-stat-listes" style="font-size:32px;font-weight:700;color:var(--accent)">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">CSV exports</div>
+            <div id="ia-stat-csv" style="font-size:32px;font-weight:700">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Maquettes I.A.</div>
+            <div id="ia-stat-maquettes" style="font-size:32px;font-weight:700;color:var(--green)">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Derniers écarts</div>
+            <div id="ia-stat-ecarts" style="font-size:32px;font-weight:700;color:var(--red, #ef4444)">—</div>
+        </div>
+    </div>
+
+    <!-- Outils Export / Scan -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+        <div class="card">
+            <h3 style="font-size:14px;font-weight:600;margin:0 0 12px">Export → IA</h3>
+            <p style="font-size:12px;color:var(--ink3);margin:0 0 12px">
+                Génère <code>ia_echanges/&lt;liste&gt;/leads.csv</code> (UTF-8) pour que l'IA complète
+                <em>Opportunite / Score / Signaux</em>.
+            </p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                <input type="text" id="ia-export-liste" class="source-quota-input" placeholder="Nom de la liste"
+                    style="width:200px" value="leads">
+                <select id="ia-export-objectif" class="source-quota-input" style="width:150px">
+                    <option value="web" selected>Objectif "web"</option>
+                    <option value="tous">Tous les objectifs</option>
+                    <option value="general">Objectif "general"</option>
+                </select>
+                <button class="btn sm" onclick="iaEchangesExport()">Exporter</button>
+            </div>
+            <div id="ia-export-result" style="margin-top:12px;font-size:12px;color:var(--ink3)"></div>
+        </div>
+
+        <div class="card">
+            <h3 style="font-size:14px;font-weight:600;margin:0 0 12px">Scan ← IA</h3>
+            <p style="font-size:12px;color:var(--ink3);margin:0 0 12px">
+                Relit le CSV complété et réintègre la qualification I.A. (raccordement strict par <code>Id</code>,
+                écarts consignés dans <code>ecarts.log</code>).
+            </p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                <input type="text" id="ia-scan-liste" class="source-quota-input" placeholder="Nom de la liste"
+                    style="width:200px" value="leads">
+                <button class="btn sm" onclick="iaEchangesScan()">Scanner & réintégrer</button>
+            </div>
+            <div id="ia-scan-result" style="margin-top:12px;font-size:12px;color:var(--ink3)"></div>
+        </div>
+    </div>
+
+    <!-- Maquettes -->
+    <div class="card" style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:14px;font-weight:600;margin:0">Maquettes produites par l'IA</h3>
+            <button class="btn sm" onclick="iaEchangesLoadMaquettes()">Charger</button>
+        </div>
+        <div id="ia-maquettes-browser" style="font-size:12px;color:var(--ink3)">
+            Choisissez une liste puis chargez ses maquettes.
+        </div>
+    </div>
+
+    <!-- Log des écarts -->
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:14px;font-weight:600;margin:0">Log des écarts</h3>
+            <button class="btn sm" onclick="iaEchangesLog()">Recharger</button>
+        </div>
+        <pre id="ia-ecarts-log" style="font-size:11px;max-height:200px;overflow:auto;margin:0;white-space:pre-wrap;color:var(--ink3)"></pre>
+    </div>
+</div>

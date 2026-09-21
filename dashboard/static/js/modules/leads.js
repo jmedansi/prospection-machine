@@ -6,7 +6,10 @@
 // Use global exports from api.js (loaded as module in base.html)
 const API = window.API_V5 || window.API;
 const AppState = window.AppState || { init: () => {}, get: () => {}, set: () => {} };
-const UI = window.UI || { toast: () => {}, showLoading: () => {}, hideLoading: () => {} };
+// window.UI est exposé par core/ui.js (module JS = exécuté en defer) → résolu à l'appel.
+function getUI() {
+    return window.UI || { toast: () => {}, setText: () => {}, showLoading: () => {}, hideLoading: () => {} };
+}
 
 class LeadsModule {
     static async init() {
@@ -109,7 +112,7 @@ class LeadsModule {
 
         } catch (error) {
             console.error('Failed to load leads:', error);
-            UI.toast('Erreur lors du chargement des leads', 'error');
+            getUI().toast('Erreur lors du chargement des leads', 'error');
         }
     }
 
@@ -150,7 +153,7 @@ class LeadsModule {
         const page = pagination.page || 1;
         const total_pages = pagination.total_pages || 1;
 
-        UI.setText('page-info', `page ${page} sur ${total_pages}`);
+        getUI().setText('page-info', `page ${page} sur ${total_pages}`);
         
         const prevBtn = document.getElementById('btn-prev-page');
         const nextBtn = document.getElementById('btn-next-page');
@@ -168,7 +171,7 @@ class LeadsModule {
     }
 
     static updateCountUI(total) {
-        UI.setText('campaign-count', `${total} leads`);
+        getUI().setText('campaign-count', `${total} leads`);
     }
 
     static getBadgeClass(score) {

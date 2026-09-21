@@ -1,0 +1,677 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chouchou — Restaurant &amp; Bar · Cuisine orientale, nord-africaine &amp; française | 23 Bd de Sébastopol, Paris</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+
+<style>
+:root{
+  --primary:#FF5733;
+  --primary-dark:#C23F1E;
+  --on-primary:#FFFFFF;
+  --neutral-dark:#19100C;
+  --neutral-warm:#50382A;
+  --neutral-light:#F4F4F4;
+  --ink:#1C1917;
+  --muted:#6B6259;
+  --black:#0B0805;
+  --card:#fff;
+  --border:rgba(28,25,23,.10);
+  --border-light:rgba(255,255,255,.14);
+  --ph-bg:#FEF3C7;
+  --ph-br:#F59E0B;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-decoration:none}
+ul{list-style:none}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:clamp(1.1rem,4vw,2.5rem)}
+section{position:relative}
+.placeholder{display:inline-block;background:var(--ph-bg);border:1px dashed var(--ph-br);color:#92400e;padding:2px 9px;border-radius:5px;font-family:var(--sans);font-size:.74rem;font-weight:500;letter-spacing:.02em}
+.eyebrow{font-size:.78rem;letter-spacing:.26em;text-transform:uppercase;color:var(--primary-dark);font-weight:600;display:inline-flex;align-items:center;gap:.8rem}
+.eyebrow::after{content:'';width:2.6rem;height:1px;background:var(--primary)}
+h2.display{font-family:var(--serif);font-weight:600;font-size:clamp(2.1rem,4.6vw,3.4rem);line-height:1.08;letter-spacing:-.01em;color:var(--neutral-dark)}
+.sub{color:var(--muted);max-width:60ch;font-size:1.03rem}
+.btn{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--sans);font-weight:600;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;padding:.95rem 1.8rem;border-radius:3px;transition:all .3s var(--ease);cursor:pointer;border:none}
+.btn--solid{background:var(--primary);color:var(--on-primary)}
+.btn--solid:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:0 12px 30px -12px rgba(255,87,51,.6)}
+.btn--ghost{background:transparent;color:var(--on-primary);border:1px solid var(--border-light)}
+.btn--ghost:hover{border-color:var(--primary);color:var(--primary)}
+.btn--dark{background:var(--neutral-dark);color:#fff}
+.btn--dark:hover{background:var(--neutral-warm)}
+.btn--wa{background:#25D366;color:#fff}
+.btn--wa:hover{filter:brightness(.94);transform:translateY(-2px)}
+.btn--ph{background:transparent;border:1px dashed var(--ph-br);color:#92400e}
+.btn--ph:hover{background:var(--ph-bg)}
+
+/* ============ HEADER ============ */
+.topbar{background:var(--neutral-dark);color:var(--neutral-light);font-size:.78rem;letter-spacing:.06em}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-block:.55rem;flex-wrap:wrap}
+.topbar b{color:#fff;font-weight:600}
+.topbar a:hover{color:#fff}
+.phone-row svg,.topbar svg{vertical-align:-2px}
+header.main{position:sticky;top:0;z-index:90;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.navbar{display:flex;align-items:center;justify-content:space-between;padding-block:1rem;gap:1rem}
+.brand{display:flex;align-items:center;gap:.8rem}
+.brand .mark{font-family:var(--serif);font-weight:700;font-size:1.7rem;color:var(--primary);line-height:1}
+.brand .name{font-family:var(--serif);font-weight:700;font-size:1.4rem;color:var(--neutral-dark);letter-spacing:.01em}
+.brand .tag{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.nav-links{display:flex;gap:1.6rem;align-items:center}
+.nav-links a{font-size:.8rem;font-weight:500;letter-spacing:.04em;color:var(--neutral-dark);position:relative;padding:.2rem 0}
+.nav-links a::after{content:'';position:absolute;left:0;bottom:-2px;width:0;height:2px;background:var(--primary);transition:width .3s var(--ease)}
+.nav-links a:hover{color:var(--primary)}.nav-links a:hover::after{width:100%}
+.nav-cta{display:flex;align-items:center;gap:1rem}
+.burger{display:none;flex-direction:column;gap:5px;background:none;border:none}
+.burger span{width:24px;height:2px;background:var(--neutral-dark);transition:.3s}
+@media(max-width:900px){.nav-links{display:none}.nav-cta a.res{display:none}.burger{display:flex}}
+.mmenu{position:fixed;inset:0;background:var(--neutral-dark);z-index:200;display:flex;flex-direction:column;gap:1.4rem;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .4s var(--ease)}
+.mmenu.open{opacity:1;visibility:visible}
+.mmenu a{font-family:var(--serif);font-size:2rem;color:var(--neutral-light)}
+.mmenu a:hover{color:var(--primary)}
+.mmenu .x{position:absolute;top:1.5rem;right:1.5rem;color:#fff;font-size:2rem;background:none;border:none}
+
+/* ============ HERO ============ */
+.hero{min-height:92vh;display:flex;align-items:flex-end;background:var(--neutral-dark);overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:url('assets/salle-4.jpg') center 40%/cover no-repeat;transform:scale(1.05)}
+.hero-veil{position:absolute;inset:0;background:linear-gradient(to top,rgba(11,8,5,.95) 0%,rgba(11,8,5,.55) 46%,rgba(11,8,5,.12) 78%,rgba(11,8,5,0) 100%)}
+.hero-inner{position:relative;z-index:5;padding:7rem clamp(1.1rem,4vw,2.5rem) 4rem;max-width:1200px;margin:0 auto;width:100%}
+.hero-eyebrow{color:var(--primary);font-size:.78rem;letter-spacing:.3em;text-transform:uppercase;font-weight:600;margin-bottom:1.4rem}
+.hero h1{font-family:var(--serif);font-weight:600;color:#fff;font-size:clamp(2.6rem,6.5vw,5rem);line-height:1.02;letter-spacing:-.015em;max-width:16ch}
+.hero h1 em{color:var(--primary);font-style:normal}
+.hero-sub{margin-top:1.6rem;color:rgba(244,244,244,.88);font-size:clamp(1rem,1.8vw,1.18rem);max-width:56ch}
+.hero-actions{margin-top:2.4rem;display:flex;gap:1rem;flex-wrap:wrap}
+.hero-badges{margin-top:2.2rem;display:flex;gap:.7rem;flex-wrap:wrap}
+.hbadge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.08);border:1px solid var(--border-light);color:var(--neutral-light);padding:.5rem 1rem;border-radius:100px;font-size:.8rem;font-weight:500;backdrop-filter:blur(4px)}
+.hbadge b{color:#fff}
+
+/* ============ BANDEAU SERVICES ============ */
+.services-strip{background:var(--neutral-dark);color:var(--neutral-light);border-top:1px solid var(--border-light)}
+.services-strip .wrap{display:grid;gap:.4rem;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));padding-block:1.8rem}
+.svc{display:flex;align-items:flex-start;gap:.8rem;padding:.7rem .6rem}
+.svc .ic{color:var(--primary);flex:0 0 auto}
+.svc b{display:block;font-size:.86rem;letter-spacing:.05em;color:#fff}
+.svc span{font-size:.76rem;color:var(--neutral-light);opacity:.85}
+
+/* ============ À PROPOS ============ */
+.about{padding:clamp(4rem,9vw,7rem) 0;background:#fff}
+.about-grid{display:grid;gap:3rem;align-items:center}
+@media(min-width:960px){.about-grid{grid-template-columns:1fr 1fr}}
+.about-media{position:relative;border-radius:6px;overflow:hidden}
+.about-media img{width:100%;border-radius:6px}
+.about-media .tag{position:absolute;left:1.2rem;bottom:1.2rem;background:rgba(11,8,5,.7);color:#fff;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;padding:.5rem 1rem;border-radius:100px;font-weight:600;backdrop-filter:blur(4px);display:inline-flex;align-items:center;gap:.5rem}
+.about-text .lead{font-size:1.1rem;color:var(--neutral-dark);font-weight:500;margin:1.4rem 0 1rem}
+.about-text p{color:var(--muted);margin-bottom:1rem}
+.sig{font-family:var(--serif);font-style:italic;font-size:1.2rem;color:var(--primary-dark);margin-top:1.2rem}
+
+/* ============ FORCES / SPÉCIALITÉS ============ */
+.forces{padding:clamp(4rem,9vw,7rem) 0;background:var(--neutral-light)}
+.sec-head{text-align:center;max-width:720px;margin:0 auto 3rem}
+.sec-head .eyebrow{justify-content:center}.sec-head .eyebrow::after{display:none}
+.sec-head p.sub{margin:1rem auto 0}
+.cards{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:#fff;border-radius:10px;padding:2rem 1.7rem;border:1px solid var(--border);transition:all .35s var(--ease);box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.card:hover{transform:translateY(-6px);box-shadow:0 26px 50px -22px rgba(25,16,12,.28);border-color:transparent}
+.card .ic{width:52px;height:52px;border-radius:12px;background:rgba(255,87,51,.1);display:grid;place-items:center;color:var(--primary);margin-bottom:1.2rem}
+.card h3{font-family:var(--serif);font-size:1.5rem;font-weight:700;margin-bottom:.6rem}
+.card p{color:var(--muted);font-size:.95rem}
+.card .badge{display:inline-block;margin-top:.9rem;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--primary-dark)}
+
+/* ============ TIRAMISU SIGNATURE ============ */
+.signature{color:var(--neutral-light);background:var(--neutral-dark)}
+.signature .wrap{display:grid;gap:3rem;align-items:center;padding-block:clamp(4rem,9vw,7rem)}
+@media(min-width:960px){.signature .wrap{grid-template-columns:.9fr 1.1fr}}
+.signature img{border-radius:8px;width:100%}
+.signature h2{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,4.4vw,3.2rem);line-height:1.1;color:#fff;margin:1rem 0}
+.signature h2 em{color:var(--primary);font-style:normal}
+.signature p{color:rgba(244,244,244,.82);margin-bottom:1rem}
+.signature .note{font-family:var(--serif);font-style:italic;font-size:1.15rem;color:var(--primary)}
+.flag-new{position:absolute;top:1rem;left:1rem;background:var(--primary);color:#fff;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:.4rem .9rem;border-radius:100px;z-index:2;box-shadow:0 8px 20px -8px rgba(255,87,51,.7)}
+
+/* ============ CUISINES : COUSCOUS & TAJINES ============ */
+.cuisine{padding:clamp(4rem,9vw,7rem) 0;background:#fff}
+.cuisine-grid{display:grid;gap:2rem}
+@media(min-width:960px){.cuisine-grid{grid-template-columns:repeat(3,1fr)}.cuisine-grid.rev{grid-template-columns:1.6fr 1.4fr}}
+.cpiec{border-radius:12px;overflow:hidden;position:relative;min-height:300px;display:flex;align-items:flex-end}
+.cpiec img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s var(--ease)}
+.cpiec:hover img{transform:scale(1.06)}
+.cpiec .cap{position:relative;z-index:2;width:100%;padding:3.4rem 1.6rem 1.4rem;background:linear-gradient(to top,rgba(11,8,5,.88),transparent);color:#fff}
+.cpiec .cap span{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--primary);font-weight:600}
+.cpiec .cap h3{font-family:var(--serif);font-size:1.6rem;font-weight:700}
+.cpiec .split{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
+.cplist{background:var(--neutral-light);border-radius:12px;padding:1.8rem;border:1px solid var(--border)}
+.cplist h4{font-family:var(--serif);font-size:1.4rem;font-weight:700;margin-bottom:.8rem}
+.cplist ul li{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px dashed var(--border);font-size:.93rem}
+.cplist ul li:last-child{border-bottom:none}
+.cplist ul li b{font-weight:600}.cplist ul li span{color:var(--primary-dark)}
+.cplist .pill{margin-top:1rem;font-size:.74rem;display:inline-block;color:var(--primary-dark);font-weight:600;background:rgba(255,87,51,.1);padding:.3rem .8rem;border-radius:100px}
+
+/* ============ BAR / HAPPY HOUR / TROPHÉE CHOUFFE ============ */
+.bar{background:var(--neutral-dark);color:var(--neutral-light)}
+.bar .wrap{padding-block:clamp(4rem,9vw,7rem)}
+.bar .sec-head p.sub{color:rgba(244,244,244,.8)}
+.bar-grid{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.bcard{background:rgba(255,255,255,.04);border:1px solid var(--border-light);border-radius:14px;padding:2rem 1.7rem;transition:all .3s var(--ease)}
+.bcard:hover{background:rgba(255,255,255,.07);transform:translateY(-4px)}
+.bcard .ribbon{display:inline-block;background:var(--primary);color:#fff;font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:.32rem .8rem;border-radius:100px;margin-bottom:1rem}
+.bcard h3{font-family:var(--serif);color:#fff;font-size:1.5rem;font-weight:600;margin-bottom:.5rem}
+.bcard p{color:rgba(244,244,244,.8);font-size:.95rem}
+.bcard b.hh{color:var(--primary);font-size:1.05rem}
+
+/* ============ GALERIE PHOTOS ============ */
+.gallery{padding:clamp(4rem,9vw,7rem) 0;background:var(--neutral-light)}
+.gal-grid{display:grid;gap:1rem;grid-template-columns:repeat(4,1fr);grid-auto-rows:230px}
+.gal-grid .g{position:relative;overflow:hidden;border-radius:8px;min-height:100%}
+.gal-grid .g img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease)}
+.gal-grid .g:hover img{transform:scale(1.08)}
+.gal-grid .g span{position:absolute;left:.9rem;bottom:.9rem;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:#fff;font-weight:600;background:rgba(11,8,5,.55);padding:.35rem .8rem;border-radius:100px;backdrop-filter:blur(3px)}
+.gal-grid .g.wide{grid-column:span 2}
+.gal-grid .g.tall{grid-row:span 2}
+@media(max-width:900px){.gal-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:200px}.gal-grid .g.wide{grid-column:span 2}}
+@media(max-width:520px){.gal-grid{grid-template-columns:1fr 1fr}}
+
+/* ============ TROPHÉE DE PRESTIGE ============ */
+.trophy{background:#fff;padding:clamp(4rem,9vw,7rem) 0}
+.trophy-inner{display:grid;gap:2.6rem;align-items:center;background:linear-gradient(135deg,var(--neutral-warm),var(--neutral-dark));border-radius:18px;padding:clamp(2rem,6vw,4rem);color:var(--neutral-light)}
+@media(min-width:960px){.trophy-inner{grid-template-columns:1fr 1.3fr}}
+.trophy-num{font-family:var(--serif);font-size:clamp(5rem,12vw,8rem);font-weight:700;line-height:.85;color:#fff;text-align:center}
+.trophy-num small{display:block;font-family:var(--sans);font-size:.85rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--primary)}
+.trophy h3{font-family:var(--serif);font-size:1.9rem;color:#fff;margin-bottom:.8rem}
+.trophy p{color:rgba(244,244,244,.85);margin-bottom:1rem}
+
+/* ============ AVIS ============ */
+.reviews{padding:clamp(4rem,9vw,7rem) 0;background:var(--neutral-light)}
+.rhead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:2.6rem}
+.rscore{display:flex;align-items:center;gap:1.4rem}
+.rscore .big{font-family:var(--serif);font-weight:700;font-size:3.4rem;line-height:1;color:var(--neutral-dark)}
+.rscore .stars{color:var(--primary);font-size:1.3rem;letter-spacing:.1em}
+.rscore small{display:block;color:var(--muted);margin-top:.3rem}
+.rgrid{display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.r{background:#fff;border-radius:12px;padding:1.8rem;border:1px solid var(--border);display:flex;flex-direction:column;gap:1rem}
+.r .stars{color:var(--primary);font-size:1rem;letter-spacing:.08em}
+.r blockquote{font-family:var(--serif);font-style:italic;font-size:1.06rem;color:var(--neutral-dark);line-height:1.55}
+.r .who{display:flex;align-items:center;gap:.7rem;margin-top:auto;font-size:.85rem}
+.r .who b{font-weight:600}.r .who span{color:var(--muted)}
+
+/* ============ SERVICES ÉLARGIS ============ */
+.perks{background:#fff;padding:clamp(4rem,9vw,6rem) 0;border-top:1px solid var(--border)}
+.perks-grid{display:grid;gap:1.4rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.perk{background:var(--neutral-light);border:1px solid var(--border);border-radius:12px;padding:1.6rem 1.4rem;text-align:center;transition:all .3s var(--ease)}
+.perk:hover{transform:translateY(-4px);background:#fff;box-shadow:0 18px 36px -20px rgba(25,16,12,.25)}
+.perk .ic{color:var(--primary);margin-bottom:.7rem}
+.perk b{display:block;font-weight:600;margin-bottom:.25rem}
+.perk span{font-size:.85rem;color:var(--muted)}
+
+/* ============ HORAIRES ============ */
+.hours{color:var(--neutral-light);background:var(--neutral-dark)}
+.hours .wrap{display:grid;gap:3rem;align-items:center;padding-block:clamp(4rem,9vw,6rem)}
+@media(min-width:960px){.hours .wrap{grid-template-columns:1fr 1fr}}
+.hours h2{font-family:var(--serif);font-size:clamp(2rem,4.4vw,3rem);color:#fff;margin:1rem 0}
+.hours h2 em{color:var(--primary);font-style:normal}
+.hours p{color:rgba(244,244,244,.82)}
+.hours-list{background:rgba(255,255,255,.04);border:1px solid var(--border-light);border-radius:14px;overflow:hidden}
+.hrow{display:flex;justify-content:space-between;padding:.85rem 1.4rem;border-bottom:1px solid var(--border-light);font-size:.95rem}
+.hrow:last-child{border-bottom:none}
+.hrow .d{font-weight:600;color:#fff}.hrow .t{font-weight:500;color:var(--primary)}
+.hrow.today{background:rgba(255,87,51,.1)}
+.hrow .now{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;background:var(--primary);color:#fff;padding:.18rem .6rem;border-radius:100px;font-weight:700;margin-left:.6rem;vertical-align:2px}
+
+/* ============ RÉSERVATION / CONTACT ============ */
+.contact{overflow:hidden;background:#fff;padding:clamp(4rem,9vw,6rem) 0}
+.cgrid{display:grid;gap:3rem}
+@media(min-width:960px){.cgrid{grid-template-columns:1.1fr .9fr}}
+.cform{background:var(--neutral-light);border:1px solid var(--border);border-radius:16px;padding:clamp(1.6rem,4vw,2.6rem)}
+.cform h3{font-family:var(--serif);font-size:1.7rem;margin-bottom:.4rem}
+.cform form{display:grid;gap:.9rem;margin-top:1.3rem}
+.cform label{font-size:.8rem;font-weight:600;letter-spacing:.04em}
+.cform input,.cform select,.cform textarea{width:100%;padding:.9rem 1rem;border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:.95rem;background:#fff;transition:border-color .2s}
+.cform input:focus,.cform select:focus,.cform textarea:focus{outline:none;border-color:var(--primary)}
+.cform .row2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.rmsg{margin-top:.9rem;font-size:.86rem;color:var(--muted);text-align:center}
+.ccard{background:var(--neutral-dark);border-radius:16px;padding:clamp(1.6rem,4vw,2.4rem);color:var(--neutral-light)}
+.ccard h3{font-family:var(--serif);font-size:1.7rem;color:#fff;margin-bottom:1.2rem}
+.citem{display:flex;gap:1rem;padding:.85rem 0;border-bottom:1px solid var(--border-light);align-items:flex-start}
+.citem:last-of-type{border-bottom:none}
+.citem .ic{color:var(--primary);flex:0 0 auto}
+.citem b{display:block;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--neutral-light);opacity:.8}
+.citem a,.citem span{font-size:1rem;color:#fff;font-weight:500}
+.citem a:hover{color:var(--primary)}
+.cmap{border-radius:16px;overflow:hidden;margin-top:1.4rem;border:1px solid var(--border);min-height:200px;background:linear-gradient(135deg,var(--neutral-warm),var(--neutral-dark));display:grid;place-items:center;color:#fff;text-align:center;padding:2rem}
+.cmap p{font-family:var(--serif);font-style:italic;font-size:1.2rem}
+
+/* ============ FOOTER ============ */
+footer{background:var(--black);color:var(--neutral-light);padding:clamp(3rem,6vw,5rem) 0 1.5rem}
+.fgrid{display:grid;gap:2.4rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));padding-bottom:2.5rem}
+.fgrid h5{font-family:var(--serif);font-weight:700;font-size:1.2rem;color:#fff;margin-bottom:1rem}
+.fbrand .name{font-family:var(--serif);font-weight:700;font-size:1.6rem;color:#fff}
+.fbrand p{color:var(--neutral-light);opacity:.85;margin:0.6rem 0 1rem;max-width:34ch;font-size:.92rem}
+.fsocial{display:flex;gap:.7rem}
+.fsocial a{width:38px;height:38px;border:1px solid var(--border-light);border-radius:50%;display:grid;place-items:center;color:var(--neutral-light);transition:all .3s}
+.fsocial a:hover{background:var(--primary);border-color:var(--primary);color:#fff}
+.flinks li{margin-bottom:.6rem}
+.flinks a{color:var(--neutral-light);opacity:.85;font-size:.92rem}
+.flinks a:hover{color:var(--primary)}
+.fbar{border-top:1px solid var(--border-light);padding-top:1.4rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;font-size:.82rem;opacity:.85}
+.fsignature{display:inline-flex;align-items:center;gap:.4rem;color:var(--neutral-light)}
+.fsignature .heart{color:var(--primary)}
+
+/* révélation */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- ===== TOPBAR ===== -->
+<div class="topbar">
+  <div class="wrap">
+    <div class="phone-row"><a href="tel:0145080203"><b>01 45 08 02 03</b></a><span style="margin:0 .6rem">·</span>23 Bd de Sébastopol, 75001 Paris</div>
+    <div>Ouvert 7j/7 · Service continu <b>06h – 02h</b></div>
+  </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<header class="main">
+  <div class="wrap navbar">
+    <a class="brand" href="#">
+      <span class="mark">C</span>
+      <span style="line-height:1"><span class="name">Chouchou</span><br/><span class="tag">Restaurant &amp; Bar · Paris</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#about">La maison</a>
+      <a href="#cuisine">Notre cuisine</a>
+      <a href="#carte">La carte</a>
+      <a href="#bar">Bar &amp; Happy Hour</a>
+      <a href="#avis">Avis</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn--solid" href="#contact" style="padding:.7rem 1.3rem">Réserver</a>
+      <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="mmenu" id="mmenu">
+  <button class="x" onclick="document.getElementById('mmenu').classList.remove('open')">×</button>
+  <a href="#about">La maison</a><a href="#cuisine">Notre cuisine</a><a href="#carte">La carte</a>
+  <a href="#bar">Bar &amp; Happy Hour</a><a href="#avis">Avis</a><a href="#contact">Contact &amp; Réservation</a>
+</div>
+
+<main>
+
+<!-- ===== SECTION : HERO ===== -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-veil"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow reveal">Cuisine orientale · nord-africaine &amp; française</div>
+    <h1 class="reveal">L'Orient et la France, <em>dans une même assiette.</em></h1>
+    <p class="hero-sub reveal">Depuis 2019, Chouchou enchaîne les saveurs du Maghreb et l'élégance de la table française, au cœur de Paris — boulevard de Sébastopol. Une adresse gourmande, vivante et ouverte très tard.</p>
+    <div class="hero-actions reveal">
+      <a class="btn btn--wa" href="#" onclick="alert('Réservation WhatsApp (à configurer)');return false">
+        Réserver via WhatsApp
+      </a>
+      <a class="btn btn--ghost" href="#carte">Découvrir la carte</a>
+    </div>
+    <div class="hero-badges reveal">
+      <span class="hbadge"><b>4.7</b> ★ sur Google</span>
+      <span class="hbadge">Terrasse chauffée</span>
+      <span class="hbadge">Service continu 7j/7</span>
+      <span class="hbadge">Halal</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : BANDEAU SERVICES ===== -->
+<div class="services-strip">
+  <div class="wrap">
+    <div class="svc"><span class="ic">🍴</span><div><b>Service continu</b><span>Du matin à 02h</span></div></div>
+    <div class="svc"><span class="ic">☀️</span><div><b>Terrasse chauffée</b><span>Installée et idéale</span></div></div>
+    <div class="svc"><span class="ic">🛵</span><div><b>Livraison &amp; à emporter</b><span>Chez vous aussi</span></div></div>
+    <div class="svc"><span class="ic">🥂</span><div><b>Bar &amp; Happy Hour</b><span>Ambiance bondée et vivante</span></div></div>
+    <div class="svc"><span class="ic">📺</span><div><b>Ambiance sport</b><span>Grands écrans TV</span></div></div>
+    <div class="svc"><span class="ic">🌙</span><div><b>Open très tard</b><span>Idéal après-séance</span></div></div>
+  </div>
+</div>
+
+<!-- ===== SECTION : À PROPOS ===== -->
+<section class="about" id="about">
+  <div class="wrap about-grid">
+    <div class="about-media reveal">
+      <img src="assets/salle-2.jpg" alt="La salle de Chouchou"/>
+      <span class="tag"><span class="hero-eyebrow" style="color:var(--primary);font-size:.78rem;letter-spacing:.2em">Depuis 2019</span></span>
+    </div>
+    <div class="about-text reveal">
+      <span class="eyebrow">La maison</span>
+      <h2 class="display" style="margin-top:.9rem">Une aventure gourmande <span style="color:var(--primary)">parisienne</span></h2>
+      <p class="lead">Le 1er octobre 2019, Monsieur Shahir — gentiment surnommé « Chouchou » — ouvre les portes d'une adresse pensée pour offrir une cuisine inégalée, nichée au cœur du 23 boulevard de Sébastopol.</p>
+      <p>Fort d'un succès déjà rencontré dans les ruelles avoisinantes, il transcende les limites pour réunir deux mondes : la <b>profondeur des épices orientales</b> et la <b>précision de la table française</b>. Chaque plat s'écrit comme une œuvre, élaborée avec passion et savoir-faire par nos chefs.</p>
+      <p>L'établissement est reconnu comme l'un des repères parisiens des amateurs de la célèbre bière Chouffe — un trophée de prestige que la maison cultive avec fierté.</p>
+      <div class="sig">« Plus qu'un restaurant, un repère où l'on vit Paris. »</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : FORCES / SPÉCIALITÉS ===== -->
+<section class="forces">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Nos forces</span>
+      <h2 class="display" style="margin-top:.9rem">Ce qui fait notre <span style="color:var(--primary)">signature</span></h2>
+      <p class="sub">Trois engagements qui reviennent dans chaque avis et dans chaque assiette.</p>
+    </div>
+    <div class="cards">
+      <div class="card reveal"><div class="ic">🍽️</div><h3>Des repas exceptionnels</h3><p>Chaque service est pensé comme un moment — de la première bouchée au dernier geste du chef. Des plats généreux, calibrés pour éveiller les sens.</p></div>
+      <div class="card reveal"><div class="ic">🍷</div><h3>Nos vins de qualité</h3><p>Une sélection soignée (et abordable en Happy Hour) pour accompagner la rencontre de deux cuisines, plat après plat, amuse-bouche en amuse-bouche.</p></div>
+      <div class="card reveal"><div class="ic">👨‍🍳</div><h3>Les spécialités du chef</h3><p>Couscous, tajines, grillades de la maison et le fameux tiramisu : une carte vaste, soignée, renouvelée aux saisons.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : TIRAMISU SIGNATURE ===== -->
+<section class="signature">
+  <div class="wrap">
+    <div class="reveal" style="position:relative">
+      <span class="flag-new">Signature de la maison</span>
+      <img src="assets/terrasse-1.jpg" alt="Le tiramisu signature de Chouchou"/>
+    </div>
+    <div class="reveal">
+      <span class="eyebrow" style="color:var(--primary)">Le dessert qui fait la différence</span>
+      <h2>Dégustez notre exquis <em>tiramisu</em></h2>
+      <p>Un véritable chef-d'œuvre culinaire, servi avec générosité et élégance. La douceur du mascarpone rencontre la profondeur de nos arômes — un dessert qui marque les esprits et revient dans toutes les conversations.</p>
+      <p>À côté de lui, nos crèmes brûlées et notre mousse au chocolat complètent une carte de desserts tout aussi gourmande.</p>
+      <p class="note">« Un dessert signature qui mérite le détour. »</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : CUISINES ===== -->
+<section class="cuisine" id="cuisine">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Notre cuisine</span>
+      <h2 class="display" style="margin-top:.9rem">Couscous, tajines &amp; <span style="color:var(--primary)">saveurs du Maghreb</span></h2>
+      <p class="sub">Une offre culinaire portée par la tradition méditerranéenne et nord-africaine, avec un esprit de restaurant de viande apprécié des amateurs de sensations authentiques.</p>
+    </div>
+    <div class="cuisine-grid">
+      <div class="cpiec reveal"><img src="assets/salle-3.jpg" alt="Couscous Chouchou"/><div class="cap"><span>Couscous</span><h3>La spécialité de la maison</h3></div></div>
+      <div class="cpiec reveal"><img src="assets/ambiance-2.jpg" alt="Tajines Chouchou"/><div class="cap"><span>À la carte</span><h3>Tajines &amp; grillades</h3></div></div>
+      <div class="cpiec reveal"><img src="assets/salle-1.jpg" alt="Table Chouchou"/><div class="cap"><span>Saveurs</span><h3>Oriental &amp; français</h3></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : LA CARTE (extraits) ===== -->
+<section class="cuisine" id="carte" style="background:var(--neutral-light)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">La carte</span>
+      <h2 class="display" style="margin-top:.9rem">Un aperçu de nos <span style="color:var(--primary)">spécialités</span></h2>
+      <p class="sub">Une carte vaste et variée — et disponible aussi en livraison, si vous ne pouvez pas vous déplacer.</p>
+      <p style="margin-top:1rem"><span class="placeholder">[Menu complet &amp; prix à remplacer]</span></p>
+    </div>
+    <div class="cuisine-grid" style="grid-template-columns:1fr 1fr">
+      <div class="cplist reveal">
+        <h4>Tajines &amp; couscous</h4>
+        <ul>
+          <li><span><b>Tajine d'agneau</b> · légumes</span><span>—</span></li>
+          <li><span><b>Tajine d'agneau</b> · abricots &amp; amandes</span><span>—</span></li>
+          <li><span><b>Tajine de poulet</b> · miel &amp; cannelle</span><span>—</span></li>
+          <li><span><b>Couscous royal</b> · agneau, poulet</span><span>—</span></li>
+          <li><span><b>Couscous végétarien</b> · légumes du marché</span><span>—</span></li>
+        </ul>
+        <span class="pill">Cuisine méditerranéenne &amp; nord-africaine</span>
+      </div>
+      <div class="cplist reveal">
+        <h4>Grillades &amp; desserts</h4>
+        <ul>
+          <li><span><b>Assortiment de grillades</b> · de la maison</span><span>—</span></li>
+          <li><span><b>Entrées chaudes &amp; froides</b> · variées</span><span>—</span></li>
+          <li><span><b>Notre tiramisu signature</b></span><span>—</span></li>
+          <li><span><b>Crème brûlée</b></span><span>—</span></li>
+          <li><span><b>Mousse au chocolat</b></span><span>—</span></li>
+        </ul>
+        <span class="pill">Viandes halal · service à emporter &amp; livraison</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : BAR / HAPPY HOUR / TROPHÉE CHOUFFE ===== -->
+<section class="bar" id="bar">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Bar &amp; brasserie</span>
+      <h2 class="display" style="margin-top:.9rem;color:#fff">L'âme d'un bar <span style="color:var(--primary)">parisien</span></h2>
+      <p class="sub">Un brassage vivant et bondé, qui attire aussi bien les couche-tard que les amateurs de la célèbre bière belge Chouffe.</p>
+    </div>
+    <div class="bar-grid">
+      <div class="bcard reveal">
+        <span class="ribbon">Le plus demandé</span>
+        <h3>Happy Hour</h3>
+        <p><b class="hh">Des boissons à prix doux</b> — la formule idéale pour profiter du lieu en fin de journée avec des tarifs abordables.</p>
+      </div>
+      <div class="bcard reveal">
+        <span class="ribbon">Open très tard</span>
+        <h3>Ouvrul jusqu'à 02h</h3>
+        <p>Un des rares endroits qui sert encore à 1h à Paris. Parfait après une séance, un spectacle ou une soirée entre amis.</p>
+      </div>
+      <div class="bcard reveal">
+        <span class="ribbon">Ambiance sport</span>
+        <h3>Grands écrans TV</h3>
+        <p>Suivez le match dans une ambiance conviviale, sans manquer la soirée.</p>
+      </div>
+    </div>
+
+    <!-- Trophée Chouffe -->
+    <div class="trophy-inner reveal" style="margin-top:3.4rem;background:linear-gradient(135deg,#50382A,var(--neutral-warm))">
+      <div class="trophy-num">167<small>trophée</small></div>
+      <div>
+        <h3>Un Trophée de Prestige — Maison Chouffe</h3>
+        <p>Chouchou a été honoré par la Maison Chouffe en recevant le <b>167ᵉ trophée</b>, célébré comme l'un des principaux repères des amateurs de la célèbre bière belge dans la capitale.</p>
+        <p>Ce prix consacre l'engagement de l'équipe envers l'excellence brassicole et confirme la volonté du restaurant de maintenir son niveau d'innovation pour offrir une expérience toujours plus mémorable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : GALERIE ===== -->
+<section class="gallery" id="gallery">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">En images</span>
+      <h2 class="display" style="margin-top:.9rem">L'ambiance <span style="color:var(--primary)">Chouchou</span></h2>
+      <p class="sub">La salle, la terrasse, l'art et l'atmosphère — un avant-goût de ce qui vous attend.</p>
+      <p style="margin-top:.9rem"><span class="placeholder">[Photos de plats &amp; carte à remplacer]</span></p>
+    </div>
+    <div class="gal-grid">
+      <div class="g wide reveal"><img src="assets/salle-1.jpg" alt="La salle principale"/><span>La salle</span></div>
+      <div class="g tall reveal"><img src="assets/sculpture.jpg" alt="Sculpture de la maison"/><span>L'art</span></div>
+      <div class="g reveal"><img src="assets/ambiance-1.jpg" alt="Ambiance Chouchou"/><span>Ambiance</span></div>
+      <div class="g reveal"><img src="assets/salle-2.jpg" alt="La salle aux plats"/><span>La table</span></div>
+      <div class="g wide reveal"><img src="assets/salle-3.jpg" alt="Vue de la salle"/><span>La salle</span></div>
+      <div class="g reveal"><img src="assets/ambiance-2.jpg" alt="Détail d'ambiance"/><span>Les détails</span></div>
+      <div class="g reveal"><img src="assets/salle-4.jpg" alt="La salle principale"/><span>La salle</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : AVIS ===== -->
+<section class="reviews" id="avis">
+  <div class="wrap">
+    <div class="rhead reveal">
+      <div>
+        <span class="eyebrow">Ils en parlent</span>
+        <h2 class="display" style="margin-top:.6rem">Ce que disent <span style="color:var(--primary)">nos clients</span></h2>
+      </div>
+      <div class="rscore">
+        <div class="big">4.7</div>
+        <div>
+          <div class="stars">★★★★★</div>
+          <small>Note moyenne Google · plus de 800 avis</small>
+        </div>
+      </div>
+    </div>
+    <div class="rgrid">
+      <div class="r reveal">
+        <div class="stars">★★★★★</div>
+        <blockquote>« Un véritable joyau culinaire au cœur de Paris ! L'accueil et le service impeccable vont de pair avec une cuisine raffinée, préparée avec des produits frais. »</blockquote>
+        <div class="who"><span>·</span><div><b>Client vérifié</b><br/><span>Avis Google</span></div></div>
+      </div>
+      <div class="r reveal">
+        <div class="stars">★★★★★</div>
+        <blockquote>« Trois tajines d'agneau délicieux et très copieux avec des portions généreuses de viande. Le dessert était excellent, surtout la mousse au chocolat et la crème brûlée. »</blockquote>
+        <div class="who"><span>·</span><div><b>Client vérifié</b><br/><span>Avis TripAdvisor</span></div></div>
+      </div>
+      <div class="r reveal">
+        <div class="stars">★★★★★</div>
+        <blockquote>« Restaurant de qualité avec une offre très intéressante et diversifiée, pour les Parisiens, les visiteurs et ceux qui demandent des plats halal. Cuisine orientale et marocaine très variée. »</blockquote>
+        <div class="who"><span>·</span><div><b>Client vérifié</b><br/><span>Avis TripAdvisor</span></div></div>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:2.2rem;font-size:.9rem;color:var(--muted)">Note 4.7/5 sur Google · avis authentiques, extraits fidèles</p>
+  </div>
+</section>
+
+<!-- ===== SECTION : SERVICES ÉLARGIS ===== -->
+<section class="perks">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Nous vous servons</span>
+      <h2 class="display" style="margin-top:.9rem">Tout ce qu'il faut pour <span style="color:var(--primary)">se régaler</span></h2>
+    </div>
+    <div class="perks-grid">
+      <div class="perk reveal"><div class="ic">🛵</div><b>Livraison</b><span>Dégustez chez vous</span></div>
+      <div class="perk reveal"><div class="ic">🛍️</div><b>À emporter</b><span>Rapide &amp; pratique</span></div>
+      <div class="perk reveal"><div class="ic">🚗</div><b>Drive</b><span>Service drive disponible</span></div>
+      <div class="perk reveal"><div class="ic">🍽️</div><b>Sur place</b><span>Terrasse &amp; salle</span></div>
+      <div class="perk reveal"><div class="ic">💻</div><b>Réservation en ligne</b><span>Par téléphone ou web</span></div>
+      <div class="perk reveal"><div class="ic">♿</div><b>Accessible</b><span>Entrée PMR</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : HORAIRES ===== -->
+<section class="hours" id="horaires">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow" style="color:var(--primary)">Horaires</span>
+      <h2>Nous sommes ouverts <em>7j/7</em>, sans interruption</h2>
+      <p>Service continu du matin jusqu'à 2h du matin (plus tard le week-end). Une adresse rare à Paris pour dîner ou tarder.</p>
+      <p style="margin-top:1rem;font-size:.88rem;color:var(--neutral-light);opacity:.85"><span class="placeholder">[Horaires exacts à confirmer]</span> — de source fiable : site et Google Business.</p>
+    </div>
+    <div class="hours-list reveal">
+      <div class="hrow today"><span class="d">Lundi <span class="now">● Ouvert</span></span><span class="t">06h00 – 02h00</span></div>
+      <div class="hrow"><span class="d">Mardi</span><span class="t">06h00 – 02h00</span></div>
+      <div class="hrow"><span class="d">Mercredi</span><span class="t">06h00 – 02h00</span></div>
+      <div class="hrow"><span class="d">Jeudi</span><span class="t">06h00 – 02h00</span></div>
+      <div class="hrow"><span class="d">Vendredi</span><span class="t">06h00 – 02h00</span></div>
+      <div class="hrow"><span class="d">Samedi</span><span class="t">06h00 – 02h00</span></div>
+      <div class="hrow"><span class="d">Dimanche</span><span class="t">06h00 – 02h00</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION : CONTACT / RÉSERVATION ===== -->
+<section class="contact" id="contact">
+  <div class="wrap cgrid">
+    <div class="cform reveal">
+      <h3>Réserver une table</h3>
+      <p style="color:var(--muted);font-size:.95rem">Directement en ligne, ou par téléphone au 01 45 08 02 03.</p>
+      <form>
+        <label for="n">Nom complet</label>
+        <input id="n" type="text" placeholder="Votre nom"/>
+        <div class="row2">
+          <div><label for="d">Date</label><input id="d" type="date"/></div>
+          <div><label for="h">Heure</label>
+            <select id="h"><option>18h00</option><option>19h00</option><option>20h00</option><option>21h00</option><option>22h00</option><option>23h00</option></select>
+          </div>
+        </div>
+        <div class="row2">
+          <div><label for="c">Personnes</label>
+            <select id="c"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>groupe</option></select>
+          </div>
+          <div><label for="t">Téléphone</label><input id="t" type="tel" placeholder="06 / 07 ..."/></div>
+        </div>
+        <button class="btn btn--solid" type="submit" style="justify-content:center;margin-top:.4rem">Confirmer ma réservation</button>
+      </form>
+      <p class="rmsg">Maquette de démonstration — formulaire à brancher sur le système de réservation réel.</p>
+    </div>
+    <div>
+      <div class="ccard reveal">
+        <h3>Contactez-nous</h3>
+        <div class="citem"><span class="ic">📍</span><div><b>Adresse</b><span>23 Boulevard de Sébastopol<br/>75001 Paris</span></div></div>
+        <div class="citem"><span class="ic">📞</span><div><b>Téléphone</b><a href="tel:0145080203">01 45 08 02 03</a></div></div>
+        <div class="citem"><span class="ic">✉️</span><div><b>Email</b><a href="mailto:restauchouchou@gmail.com">restauchouchou@gmail.com</a></div></div>
+        <div class="citem"><span class="ic">🕰️</span><div><b>Horaires</b><span>7j/7 · 06h – 02h</span></div></div>
+        <div class="cmap"><p>📍 Quartier des Halles · Paris 1ᵉʳ<br/>À deux pas des Halles</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div class="fbrand">
+        <div class="name">Chouchou</div>
+        <p>Restaurant &amp; bar au cœur de Paris — cuisine orientale, nord-africaine et française, terrasse chauffée, happy hour et service continu jusqu'à 2h.</p>
+        <div class="fsocial">
+          <a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="Facebook">FB</a><a href="#" aria-label="Google">G</a>
+        </div>
+      </div>
+      <div>
+        <h5>Navigation</h5>
+        <ul class="flinks"><li><a href="#about">La maison</a></li><li><a href="#cuisine">Notre cuisine</a></li><li><a href="#carte">La carte</a></li><li><a href="#bar">Bar &amp; Happy Hour</a></li><li><a href="#avis">Avis</a></li></ul>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <ul class="flinks">
+          <li><a href="tel:0145080203">01 45 08 02 03</a></li>
+          <li><a href="mailto:restauchouchou@gmail.com">restauchouchou@gmail.com</a></li>
+          <li>23 Bd de Sébastopol, 75001 Paris</li>
+        </ul>
+      </div>
+      <div>
+        <h5>Horaires</h5>
+        <ul class="flinks">
+          <li>Lundi – Dimanche</li>
+          <li style="color:var(--primary);font-weight:600">06h00 – 02h00</li>
+          <li>Service continu</li>
+        </ul>
+      </div>
+    </div>
+    <div class="fbar">
+      <span>© Chouchou · Restaurant &amp; Bar · Paris</span>
+      <span class="fsignature">Fait avec <span class="heart">♥</span> par IncidenX</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var burg=document.querySelector('.burger'),mm=document.getElementById('mmenu');
+  if(burg)burg.addEventListener('click',function(){mm.classList.add('open');document.body.style.overflow='hidden';});
+  mm.querySelector('.x').addEventListener('click',function(){mm.classList.remove('open');document.body.style.overflow='';});
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+  var bg=document.querySelector('.hero-bg');
+  if(bg&&window.gsap)gsap.fromTo(bg,{scale:1.06},{scale:1,duration:1.8,ease:'power2.out'});
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</body>
+</html>

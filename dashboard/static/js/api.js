@@ -9,6 +9,12 @@ function _globalFilters(extra = {}) {
     if (_activeCampaignId) p.set('campaign_id', _activeCampaignId);
     if (_activeSector)    p.set('sector', _activeSector);
 
+    // Campagne v2 active (sélecteur top) → stats cockpit (les endpoints legacy ignorent)
+    if (window._ul) {
+        const cid = window._ul.v2CampagneId ?? window._ul.v2ObjectifId;
+        if (cid) p.set('objectif_id', cid);
+    }
+
     // Si on a des collectes spécifiques cochées, on les passe au backend
     if (!_activeCampaignId && !_activeSector &&
         typeof _selectedCollecteIds !== 'undefined' && _selectedCollecteIds.length > 0) {
@@ -210,6 +216,7 @@ async function refreshAll() {
         typeof loadEmails === 'function' ? loadEmails() : Promise.resolve(),
         typeof loadTracking === 'function' ? loadTracking() : Promise.resolve(),
         typeof loadCRM === 'function' ? loadCRM() : Promise.resolve(),
+        typeof window.SuiviModule !== 'undefined' && typeof window.SuiviModule.refresh === 'function' ? window.SuiviModule.refresh() : Promise.resolve(),
         typeof loadReports === 'function' ? loadReports() : Promise.resolve(),
         typeof loadSettings === 'function' ? loadSettings() : Promise.resolve(),
         loadConfig(),

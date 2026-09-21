@@ -1,0 +1,3 @@
+Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,EmailObjet,EmailCorps
+1,IL1,,V,,,,il1@example.com,,,general,,,,Objet pour IL1,Corps pour IL1
+2,IL2,,V,,,,il2@example.com,,,general,,,,Objet pour IL2,Corps pour IL2

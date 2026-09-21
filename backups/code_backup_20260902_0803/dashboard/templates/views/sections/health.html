@@ -1,0 +1,14 @@
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+
+        <div>
+            <div id="health-overall-badge" style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;background:var(--surface2);color:var(--ink3);border:1px solid var(--border)">
+                <span id="health-overall-dot" style="width:10px;height:10px;border-radius:50%;background:var(--ink3);display:inline-block"></span>
+                <span id="health-overall-text">En attente…</span>
+            </div>
+            <div id="health-score-line" style="font-size:12px;color:var(--ink3);margin-top:6px"></div>
+        </div>
+        <button class="btn bg1 sm" onclick="runHealthCheck()" id="health-run-btn">Tester maintenant</button>
+    </div>
+    <div id="health-checks-container">
+        <div style="text-align:center;padding:3rem;color:var(--ink3);font-size:14px">Cliquez sur "Tester maintenant" pour lancer les vérifications.</div>
+    </div>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide de Prospection — IncidenX Prospection Machine</title>
+    <meta name="description" content="Guide officiel et feuille de route interactive pour la prospection B2B avec qualification IA et refonte de site sur-mesure.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #090a0f;
+            --surface: #12141c;
+            --surface-hover: #181c28;
+            --surface-card: rgba(22, 26, 38, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(99, 102, 241, 0.4);
+            
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.25);
+            --accent: #8b5cf6;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --rose: #f43f5e;
+            --cyan: #06b6d4;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            
+            --font-title: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 65%, rgba(139, 92, 246, 0.1) 0%, transparent 45%),
+                radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* Header Navigation */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(9, 10, 15, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo-box {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-title);
+            font-weight: 800;
+            font-size: 18px;
+            color: white;
+            box-shadow: 0 4px 16px var(--primary-glow);
+        }
+
+        .brand-text h1 {
+            font-family: var(--font-title);
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-text span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-cockpit {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px var(--primary-glow);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-cockpit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Hero Banner */
+        .hero {
+            max-width: 1080px;
+            margin: 3rem auto 2.5rem;
+            padding: 0 1.5rem;
+            text-align: center;
+        }
+
+        .badge-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero h2 {
+            font-family: var(--font-title);
+            font-size: 2.75rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Pipeline Overview Matrix */
+        .workflow-matrix {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 3.5rem;
+        }
+
+        .workflow-step-pill {
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 14px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+        }
+
+        .workflow-step-pill:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-2px);
+        }
+
+        .workflow-step-pill .step-num {
+            font-family: var(--font-title);
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .workflow-step-pill .step-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        /* Timeline Cards */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+        }
+
+        .step-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 16px 44px rgba(99, 102, 241, 0.1);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .step-title-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .step-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .step-title-group h3 {
+            font-family: var(--font-title);
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+        }
+
+        .step-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-scraping { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .badge-ia { background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .badge-tri { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-web { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+        .badge-email { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .step-desc {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .step-grid { grid-template-columns: 1fr; }
+            .hero h2 { font-size: 2rem; }
+        }
+
+        .box-instruction {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+        }
+
+        .box-instruction h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .instruction-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.92rem;
+        }
+
+        .instruction-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            color: var(--text-main);
+        }
+
+        .instruction-list li span.dot {
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .prompt-box {
+            background: #06070a;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .prompt-text {
+            font-family: monospace;
+            font-size: 0.88rem;
+            color: #a5b4fc;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-copy:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 5rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <a href="https://incidenx.com" class="brand-container">
+            <div class="logo-box">I</div>
+            <div class="brand-text">
+                <h1>IncidenX</h1>
+                <span>Prospection Machine · Guide</span>
+            </div>
+        </a>
+        <div class="header-actions">
+            <a href="http://localhost:5001" target="_blank" class="btn-cockpit">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+                    <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+                    <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+                    <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+                Ouvrir le Cockpit
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="badge-hero">⚡ Manuel d'utilisation & Feuille de route</div>
+        <h2>Pilotez votre Prospection de A à Z</h2>
+        <p>Scraping de précision, qualification déterministe avec l'IA, maquettes de refonte haute fidélité et rédaction d'emails sur-mesure.</p>
+    </section>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <!-- 6 Steps Matrix -->
+        <div class="workflow-matrix">
+            <div class="workflow-step-pill">
+                <div class="step-num">Étape 1</div>
+                <div class="step-name">🚀 Scraping</div>
+            </div>
+            <div class="workflow-step-pill">
+                <div class="step-num">Étape 2</div>
+                <div class="step-name">📋 Auto-Liste</div>
+            </div>
+            <div class="workflow-step-pill">
+                <div class="step-num">Étape 3</div>
+                <div class="step-name">🧠 Qualification</div>
+            </div>
+            <div class="workflow-step-pill">
+                <div class="step-num">Étape 4</div>
+                <div class="step-name">👁️ Tri & Choix</div>
+            </div>
+            <div class="workflow-step-pill">
+                <div class="step-num">Étape 5</div>
+                <div class="step-name">🎨 Refonte Site</div>
+            </div>
+            <div class="workflow-step-pill">
+                <div class="step-num">Étape 6</div>
+                <div class="step-name">✍️ Email & Envoi</div>
+            </div>
+        </div>
+
+        <!-- Timeline Details -->
+        <div class="timeline">
+
+            <!-- STEP 1 & 2 -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-title-group">
+                        <div class="step-icon">📡</div>
+                        <div>
+                            <h3>1. Lancement du Scraping & Collecte des Données</h3>
+                            <p style="color:var(--text-muted);font-size:0.85rem">Google Maps / Sniper (Ads, BODACC)</p>
+                        </div>
+                    </div>
+                    <span class="step-badge badge-scraping">Étape 1</span>
+                </div>
+                <p class="step-desc">Vous ciblez une niche et une ville précise. Le système collecte toutes les données, recherche les emails et les réseaux sociaux en arrière-plan et crée une auto-liste dédiée.</p>
+
+                <div class="step-grid">
+                    <div class="box-instruction">
+                        <h4>📍 Où cliquer dans le Cockpit</h4>
+                        <ul class="instruction-list">
+                            <li><span class="dot">1.</span> Menu latéral ➔ Cliquez sur <strong>« 📡 Sources & Collecte »</strong>.</li>
+                            <li><span class="dot">2.</span> Remplissez : <strong>Métier</strong> (ex: Plombier) et <strong>Ville</strong> (ex: Lyon).</li>
+                            <li><span class="dot">3.</span> Objectif : Choisissez <strong>« Web (Refonte de site) »</strong>.</li>
+                            <li><span class="dot">4.</span> Cliquez sur <strong>« 🚀 Lancer la Collecte »</strong>.</li>
+                        </ul>
+                    </div>
+                    <div class="box-instruction">
+                        <h4>⚡ Ce qui se passe automatiquement</h4>
+                        <ul class="instruction-list">
+                            <li><span class="dot">✓</span> Déduplication instantanée par nom, ville et téléphone.</li>
+                            <li><span class="dot">✓</span> Extraction de l'email et du numéro de téléphone sur le site.</li>
+                            <li><span class="dot">✓</span> Création automatique de la liste (ex: <em>🎯 Plombier Lyon — 30 leads</em>).</li>
+                            <li><span class="dot">✓</span> Préparation du fichier d'échange <code>leads.csv</code>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-title-group">
+                        <div class="step-icon">🧠</div>
+                        <div>
+                            <h3>2. Qualification Intelligente par l'IA</h3>
+                            <p style="color:var(--text-muted);font-size:0.85rem">Analyse d'obsolescence et opportunité commerciale</p>
+                        </div>
+                    </div>
+                    <span class="step-badge badge-ia">Étape 2</span>
+                </div>
+                <p class="step-desc">L'IA examine l'état réel du site internet ou de la présence en ligne pour évaluer le potentiel client (obsolescence, pas de version mobile, pas de réservation en ligne).</p>
+
+                <div class="step-grid">
+                    <div class="box-instruction">
+                        <h4>💬 Demande directe à l'Assistant IA</h4>
+                        <p style="font-size:0.88rem;color:var(--text-muted)">Copiez ce prompt dans votre chat IA :</p>
+                        <div class="prompt-box">
+                            <span class="prompt-text">Qualifie la liste Plombier Lyon</span>
+                            <button class="btn-copy" onclick="copyText('Qualifie la liste Plombier Lyon', this)">Copier</button>
+                        </div>
+                    </div>
+                    <div class="box-instruction">
+                        <h4>📊 Données produites dans le Cockpit</h4>
+                        <ul class="instruction-list">
+                            <li><span class="dot">•</span> <strong>Opportunité (0-100) :</strong> Probabilité de signer le client.</li>
+                            <li><span class="dot">•</span> <strong>Score d'obsolescence :</strong> État technique du site actuel.</li>
+                            <li><span class="dot">•</span> <strong>Signaux concrets :</strong> <em>« Site 2017, non-responsive, pas d'appel à l'action »</em>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-title-group">
+                        <div class="step-icon">👁️</div>
+                        <div>
+                            <h3>3. Revue, Tri & Élimination des Leads</h3>
+                            <p style="color:var(--text-muted);font-size:0.85rem">Filtrez pour ne garder que les meilleures opportunités</p>
+                        </div>
+                    </div>
+                    <span class="step-badge badge-tri">Étape 3</span>
+                </div>
+                <p class="step-desc">Dans la table des leads, visualisez les opportunités détectées. Écartez en un clic ceux dont le site est déjà moderne ou qui ne correspondent pas à votre stratégie.</p>
+
+                <div class="box-instruction">
+                    <h4>📍 Actions dans le Cockpit</h4>
+                    <ul class="instruction-list">
+                        <li><span class="dot">1.</span> Allez dans <strong>« 👥 Leads »</strong> et sélectionnez votre liste en haut.</li>
+                        <li><span class="dot">2.</span> Triez par la colonne <strong>Opportunité IA</strong> pour voir les prospects les plus chauds en premier.</li>
+                        <li><span class="dot">3.</span> Pour écarter un lead : cliquez sur l'icône <strong>🗑️ Écarter / Archiver</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- STEP 5 -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-title-group">
+                        <div class="step-icon">🎨</div>
+                        <div>
+                            <h3>4. Génération des Maquettes de Refonte</h3>
+                            <p style="color:var(--text-muted);font-size:0.85rem">Création d'une page complète et fidèle (HTML + Screenshot)</p>
+                        </div>
+                    </div>
+                    <span class="step-badge badge-web">Étape 4</span>
+                </div>
+                <p class="step-desc">Pour les leads retenus, l'IA extrait la vérité du client (vraies photos, avis réels, logo, couleurs, services) et produit une page d'accueil moderne ultra-vendeuse.</p>
+
+                <div class="step-grid">
+                    <div class="box-instruction">
+                        <h4>💬 Demande de Maquettes à l'IA</h4>
+                        <p style="font-size:0.88rem;color:var(--text-muted)">Pour toute la liste retenue :</p>
+                        <div class="prompt-box">
+                            <span class="prompt-text">Génère les maquettes pour la liste Plombier Lyon</span>
+                            <button class="btn-copy" onclick="copyText('Génère les maquettes pour la liste Plombier Lyon', this)">Copier</button>
+                        </div>
+                        <p style="font-size:0.88rem;color:var(--text-muted);margin-top:10px">Pour un lead spécifique :</p>
+                        <div class="prompt-box">
+                            <span class="prompt-text">Fais la maquette pour le lead #14</span>
+                            <button class="btn-copy" onclick="copyText('Fais la maquette pour le lead #14', this)">Copier</button>
+                        </div>
+                    </div>
+                    <div class="box-instruction">
+                        <h4>🖼️ Aperçu dans la Galerie Cockpit</h4>
+                        <ul class="instruction-list">
+                            <li><span class="dot">✓</span> Page complète créée : <code>PROMPT/&lt;IdLead&gt;/index.html</code></li>
+                            <li><span class="dot">✓</span> Capture plein écran générée : <code>capture.png</code></li>
+                            <li><span class="dot">✓</span> Ouvrez la maquette directement dans le dashboard pour l'explorer.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 6 -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-title-group">
+                        <div class="step-icon">✍️</div>
+                        <div>
+                            <h3>5. Rédaction des Emails & Validation Manuelle</h3>
+                            <p style="color:var(--text-muted);font-size:0.85rem">Textes percutants liant la maquette · Contrôle 100% sécurisé</p>
+                        </div>
+                    </div>
+                    <span class="step-badge badge-email">Étape 5</span>
+                </div>
+                <p class="step-desc">L'IA rédige un email direct et personnalisé citant les points concrets du prospect et lui offrant la prévisualisation de sa refonte. Rien n'est envoyé sans votre approbation explicite.</p>
+
+                <div class="step-grid">
+                    <div class="box-instruction">
+                        <h4>💬 Demande de Rédaction à l'IA</h4>
+                        <div class="prompt-box">
+                            <span class="prompt-text">Rédige les emails pour la liste Plombier Lyon</span>
+                            <button class="btn-copy" onclick="copyText('Rédige les emails pour la liste Plombier Lyon', this)">Copier</button>
+                        </div>
+                    </div>
+                    <div class="box-instruction">
+                        <h4>✅ Approbation & Envoi</h4>
+                        <ul class="instruction-list">
+                            <li><span class="dot">1.</span> Dans le Cockpit, cliquez sur <strong>« 🔄 Actualiser / Scan »</strong>.</li>
+                            <li><span class="dot">2.</span> Relisez l'email dans <strong>« ✉️ Suivi & Relances »</strong>.</li>
+                            <li><span class="dot">3.</span> Cliquez sur <strong>« ✅ Approuver »</strong> puis <strong>« 📤 Envoyer »</strong>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 IncidenX Prospection Machine · Tous droits réservés.</p>
+    </footer>
+
+    <!-- Interactive Script -->
+    <script>
+        function copyText(text, btn) {
+            navigator.clipboard.writeText(text).then(function() {
+                var original = btn.innerText;
+                btn.innerText = 'Copié !';
+                btn.style.background = '#10b981';
+                btn.style.color = '#ffffff';
+                setTimeout(function() {
+                    btn.innerText = original;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

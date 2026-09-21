@@ -1,0 +1,33 @@
+    <div id="modal-edit-email" class="modal-overlay">
+        <div class="modal-content">
+            <div class="mh">
+                <div class="mh-t">Modifier l'email</div>
+                <button class="btn bg0" onclick="closeModal('modal-edit-email')">✕</button>
+            </div>
+            <div class="mb">
+                <input type="hidden" id="edit-email-nom">
+                <div id="email-streaming-loader" style="display:none;padding:16px;background:var(--surface2);border-radius:8px;margin-bottom:12px">
+                    <div style="font-size:12px;color:var(--accent);margin-bottom:8px">Génération en cours...</div>
+                    <div id="email-streaming-text" style="font-size:13px;line-height:1.5;min-height:60px;color:var(--ink)"></div>
+                    <div class="typing-cursor" style="display:inline-block;width:2px;height:16px;background:var(--accent);animation:blink 1s infinite"></div>
+                </div>
+                <div class="form-grp">
+                    <label>Objet de l'email</label>
+                    <input type="text" id="edit-email-objet" class="inp" placeholder="Objet de l'email">
+                </div>
+                <div class="form-grp">
+                    <label>Corps du message (HTML supporté)</label>
+                    <textarea id="edit-email-corps" class="inp" style="height:300px" placeholder="Contenu de l'email..."></textarea>
+                </div>
+            </div>
+            <div class="mf">
+                <button class="btn bg2" onclick="closeModal('modal-edit-email')">Annuler</button>
+                <button class="btn bp1" onclick="regenerateEmailWithStreaming()">Régénérer</button>
+                <button class="btn bp1" onclick="saveEmail()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    </style>

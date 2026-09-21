@@ -25,6 +25,19 @@ from .stats import (
 )
 from .crm import update_crm_manual, get_crm_counts, get_crm_data
 from .sync import log_sync
+from . import objectifs as objectifs_repo
+from . import campagnes as campagnes_repo
+from . import listes as listes_repo
+from . import prospects as prospects_repo
+from .campagnes import (
+    get_auto_send_enabled, set_auto_send_enabled,
+    create_campagne, get_campagne, get_campagne_by_nom,
+    list_campagnes, update_campagne, delete_campagne,
+)
+from .listes import (
+    create_liste, get_liste, list_listes,
+    update_liste, archive_liste, delete_liste,
+)
 
 __all__ = [
     'get_conn', 'DB_PATH', 'logger', '_serialize_json', '_deserialize_json',
@@ -40,5 +53,9 @@ __all__ = [
     'get_dashboard_stats', 'get_leads_for_dashboard',
     'get_niche_performance', 'get_ab_test_performance',
     'update_crm_manual', 'get_crm_counts', 'get_crm_data',
+    'create_campagne', 'get_campagne', 'get_campagne_by_nom',
+    'list_campagnes', 'update_campagne', 'delete_campagne',
+    'create_liste', 'get_liste', 'list_listes',
+    'update_liste', 'archive_liste', 'delete_liste',
     'log_sync'
 ]

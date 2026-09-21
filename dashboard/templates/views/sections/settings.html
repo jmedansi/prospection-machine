@@ -1,6 +1,7 @@
 <div class="section-tabs">
     <button class="section-tab active" onclick="switchSectionTab('setting_profil', this)">Profil</button>
     <button class="section-tab" onclick="switchSectionTab('setting_api', this)">Connexions</button>
+    <button class="section-tab" onclick="switchSectionTab('setting_boites', this)">Boîtes</button>
     <button class="section-tab" onclick="switchSectionTab('setting_system', this)">Système</button>
 </div>
 
@@ -34,6 +35,35 @@
             <button class="btn bg1 sm" onclick="testConnections()">Tester les connexions</button>
             <button class="btn bp1 sm" onclick="saveSettings()">Sauvegarder les clés</button>
         </div>
+    </div>
+</div>
+
+<!-- Tab: Boîtes -->
+<div id="subtab-setting_boites" class="subtab-content" style="display:none">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <div class="ct2" style="margin-bottom:0">Boîtes d'expédition & quotas quotidiens</div>
+            <button class="btn bg1 sm" onclick="loadMailboxes()">Rafraîchir</button>
+        </div>
+        <p style="font-size:12px;color:var(--ink3);margin-bottom:1rem">
+            Le quota quotidien (emails/jour) de chaque boîte est remis à 0 automatiquement
+            chaque nuit (00:05). Un email de <b>test</b> (« Envoyer test ») n'est jamais compté
+            dans le quota : c'est un vrai envoi mais vers votre propre adresse.
+        </p>
+        <table style="width:100%;border-collapse:collapse">
+            <thead>
+                <tr style="text-align:left;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px">
+                    <th style="padding:8px">Label</th>
+                    <th style="padding:8px">Email</th>
+                    <th style="padding:8px">Backend</th>
+                    <th style="padding:8px">Actif</th>
+                    <th style="padding:8px">Quota/jour</th>
+                    <th style="padding:8px">Utilisé</th>
+                    <th style="padding:8px"></th>
+                </tr>
+            </thead>
+            <tbody id="mailboxes-tbody"><tr><td colspan="7" style="padding:1rem;color:var(--ink3);font-size:12px">Chargement…</td></tr></tbody>
+        </table>
     </div>
 </div>
 

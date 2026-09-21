@@ -1,0 +1,97 @@
+    <div class="sl">ROI & Analytics</div>
+    
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Taux de Clic</div>
+            <div id="roi-ctr" style="font-size:32px;font-weight:700;color:var(--accent)">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Taux de Réponse</div>
+            <div id="roi-reply" style="font-size:32px;font-weight:700;color:var(--accent)">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">RDV Confirmés</div>
+            <div id="roi-rdv" style="font-size:32px;font-weight:700;color:var(--green)">—</div>
+        </div>
+        <div class="card" style="text-align:center">
+            <div style="font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:4px">Emails Envoyés</div>
+            <div id="roi-sent" style="font-size:32px;font-weight:700">—</div>
+        </div>
+    </div>
+    
+    <div class="card" style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:14px;font-weight:600">Tunnel de Conversion</h3>
+            <button onclick="loadRoiData()" class="btn sm">Rafraîchir</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;height:200px" id="roi-funnel">
+            <div style="text-align:center">
+                <div id="roi-scraped" style="font-size:24px;font-weight:700">0</div>
+                <div style="font-size:11px;color:var(--ink3)">Scrapés</div>
+            </div>
+            <span style="color:var(--ink3)">→</span>
+            <div style="text-align:center">
+                <div id="roi-audited" style="font-size:24px;font-weight:700">0</div>
+                <div style="font-size:11px;color:var(--ink3)">Audités</div>
+            </div>
+            <span style="color:var(--ink3)">→</span>
+            <div style="text-align:center">
+                <div id="roi-sent2" style="font-size:24px;font-weight:700">0</div>
+                <div style="font-size:11px;color:var(--ink3)">Envoyés</div>
+            </div>
+            <span style="color:var(--ink3)">→</span>
+            <div style="text-align:center">
+                <div id="roi-clicked" style="font-size:24px;font-weight:700">0</div>
+                <div style="font-size:11px;color:var(--ink3)">Clics</div>
+            </div>
+            <span style="color:var(--ink3)">→</span>
+            <div style="text-align:center">
+                <div id="roi-replied" style="font-size:24px;font-weight:700">0</div>
+                <div style="font-size:11px;color:var(--ink3)">Réponses</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card" style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:14px;font-weight:600">Top Niches (par taux de clic)</h3>
+            <a href="/api/stats/export" download class="btn sm" style="text-decoration:none">Export CSV</a>
+        </div>
+        <table class="campaign-table">
+            <thead>
+                <tr>
+                    <th>Secteur</th>
+                    <th>Ville</th>
+                    <th>Emails</th>
+                    <th>Clics</th>
+                    <th>Taux</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-niches">
+                <tr><td colspan="5" style="text-align:center;padding:2rem">Chargement...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- A/B TESTING -->
+    <div class="card" style="margin-bottom:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="font-size:14px;font-weight:600">A/B Testing : V1 vs V2</h3>
+            <span style="font-size:11px;color:var(--ink3)">Comparatif de performance des templates d'emails</span>
+        </div>
+        <table class="campaign-table">
+            <thead>
+                <tr>
+                    <th>Template</th>
+                    <th>Variante</th>
+                    <th>Envoyés</th>
+                    <th>Ouverts</th>
+                    <th>Clics</th>
+                    <th>Réponses</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-abtest">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--ink3)">Chargement des données A/B...</td></tr>
+            </tbody>
+        </table>
+    </div>

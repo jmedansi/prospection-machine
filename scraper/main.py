@@ -40,6 +40,39 @@ except ImportError:
     _DB_AVAILABLE = False
     print("[WARN] database/db_manager.py introuvable — SQLite désactivé")
 
+
+def _resolve_liste_cible(campagne_id, liste_arg, secteur=None, mot_cle=None):
+    """Résout la liste cible (id ou nom exact) dans une campagne.
+
+    Sans liste précisée : crée (ou réutilise le même jour) une LISTE DÉDIÉE au
+    scraping, nom générique compréhensible « Scrap <secteur/mot-clé> — <date> ».
+    Retourne la liste_id, ou None → la campagne utilisera sa liste par défaut.
+    """
+    if not liste_arg:
+        from datetime import date
+        base = (secteur or mot_cle or 'leads').strip()
+        if len(base) > 40:
+            base = base[:40].rstrip()
+        s = f"Scrap {base} — {date.today().isoformat()}"
+    else:
+        s = str(liste_arg).strip()
+    from database import listes as listes_repo
+    if s.isdigit():
+        try:
+            liste = listes_repo.get_liste(int(s))
+        except Exception:
+            liste = None
+        if liste and liste.get('campagne_id') == campagne_id:
+            return liste['id']
+    for l_row in listes_repo.list_listes(campagne_id=campagne_id, search=s):
+        if (l_row.get('nom') or '').strip().lower() == s.lower():
+            return l_row['id']
+    res = listes_repo.create_liste(campagne_id=campagne_id, nom=s, source='scraping',
+                                   secteur=secteur or '')
+    if res.get('success'):
+        return res['liste']['id']
+    return None
+
 # Configuration du logging
 logging.basicConfig(
     filename='errors.log',
@@ -188,6 +221,35 @@ async def scrape_google_maps(keyword, city, limit=20, known_names=None, country=
         await page.goto(url, wait_until="domcontentloaded", timeout=45_000)
         await page.wait_for_timeout(3000)
 
+        # ── Bypass consent Google (redirection consent.google.com) ────────
+        # Sans ce contournement, chaque scrap retombe sur la page de consentement
+        # et ne collecte AUCUN résultat. On accepte les cookies puis on relance.
+        for _ in range(3):
+            if "consent.google.com" in page.url:
+                print("   [Maps] Consentement détecté, acceptation…")
+                accepted = False
+                try:
+                    await page.get_by_role("button", name="Tout accepter").first.click(timeout=6000)
+                    accepted = True
+                except Exception:
+                    try:
+                        await page.click('button[data-testid]:not([data-testid=""]):text-is("Tout accepter")', timeout=4000)
+                        accepted = True
+                    except Exception:
+                        pass
+                if not accepted:
+                    try:
+                        await page.evaluate("""() => { const b=[...document.querySelectorAll('button')].find(x=>(x.innerText||'').includes('Tout accepter')); if(b)b.click(); }""")
+                        accepted = True
+                    except Exception:
+                        pass
+                await page.wait_for_timeout(4000)
+                if "consent.google.com" not in page.url:
+                    break
+            else:
+                break
+        await page.wait_for_timeout(2000)
+
         if await page.evaluate(_JS_IS_CAPTCHA):
             print("   [Maps] Captcha détecté, attente résolution...")
             await handle_captcha_async(page, label="Google Maps")
@@ -211,59 +273,51 @@ async def scrape_google_maps(keyword, city, limit=20, known_names=None, country=
 
                 let rating = 0, nb_avis = 0;
 
-                // Rating from aria-label (primary method)
-                const ratingAria = item.querySelector('[aria-label*="étoiles"], [aria-label*="stars"]');
-                if (ratingAria) {
-                    const label = ratingAria.getAttribute('aria-label') || '';
-                    const starM = label.match(/([\d.,]+)/);
+                // ===== RATING + NB_AVIS depuis span.ZkP5Je (aria-label="X,X étoiles Y avis") =====
+                // C'est la source la plus fiable sur Google Maps FR (format 2024-2026)
+                const zkP5Je = item.querySelector('span.ZkP5Je');
+                if (zkP5Je) {
+                    const label = zkP5Je.getAttribute('aria-label') || '';
+                    // "4,9\xa0étoiles 32\xa0avis"
+                    const starM = label.match(/([\d][\d,\.]+)/);
                     if (starM) rating = parseFloat(starM[1].replace(',', '.'));
+                    const avisM = label.match(/([\d][\d\s\xa0]*)\s*avis/i);
+                    if (avisM) nb_avis = parseInt(avisM[1].replace(/[\s\xa0]/g, ''));
                 }
-                
-                // Fallback: search for star rating in all aria-labels
+
+                // Fallback rating: span.MW4etd (juste le chiffre de la note)
                 if (!rating) {
-                    const allArias = item.querySelectorAll('[aria-label]');
-                    for (const el of allArias) {
-                        const label = el.getAttribute('aria-label') || '';
-                        if (/[\d.,]+\s*(étoile|star)/.test(label)) {
-                            const m = label.match(/([\d.,]+)/);
-                            if (m) { rating = parseFloat(m[1].replace(',', '.')); break; }
-                        }
+                    const mw4 = item.querySelector('span.MW4etd');
+                    if (mw4) {
+                        const m = (mw4.innerText || '').match(/([\d.,]+)/);
+                        if (m) rating = parseFloat(m[1].replace(',', '.'));
                     }
                 }
 
-                // Review count extraction with improved strategies
-                const itemText = item.innerText || '';
-                const parentText = item.parentElement ? item.parentElement.innerText : '';
-                const fullText = itemText + ' ' + parentText;
-
-                // Strategy 1: "• X avis" pattern (current Google Maps France format)
-                let bulletMatch = fullText.match(/[\u00b7\u2022]\s*(\d+)\s*avis/i);
-                if (bulletMatch) {
-                    nb_avis = parseInt(bulletMatch[1]);
-                } else {
-                    // Strategy 2: just "• X" (generic bullet, only numbers)
-                    bulletMatch = fullText.match(/[\u00b7\u2022]\s*(\d+)(?!\s*\w)/);
-                    if (bulletMatch) {
-                        nb_avis = parseInt(bulletMatch[1]);
+                // Fallback nb_avis: span.UY7F9 → contient "(32)" entre parenthèses
+                if (!nb_avis) {
+                    const uy7f9 = item.querySelector('span.UY7F9');
+                    if (uy7f9) {
+                        const m = (uy7f9.innerText || '').match(/\(([\d\s\xa0]+)\)/);
+                        if (m) nb_avis = parseInt(m[1].replace(/[\s\xa0]/g, ''));
                     }
                 }
 
-                // Strategy 3: parenthesized patterns
+                // Fallback nb_avis: depuis l'innerText de l'item (patterns variés)
                 if (!nb_avis) {
-                    const parenMatch = fullText.match(/\((\d[\d\s]*)\s*avis\)/i) || fullText.match(/\((\d[\d\s]*)\)/);
-                    if (parenMatch) nb_avis = parseInt(parenMatch[1].replace(/\s/g, ''));
+                    const itemText = item.innerText || '';
+                    // Pattern: "(183)" standalone
+                    const parenM = itemText.match(/\(([\d][\d\s\xa0]*)\)/);
+                    if (parenM) nb_avis = parseInt(parenM[1].replace(/[\s\xa0]/g, ''));
                 }
 
-                // Strategy 4: aria-label on review button/element
+                // Fallback nb_avis: aria-label sur d'autres éléments
                 if (!nb_avis) {
-                    const ariaEls = item.querySelectorAll('[aria-label]');
+                    const ariaEls = item.querySelectorAll('[aria-label*="avis"]');
                     for (const el of ariaEls) {
                         const label = el.getAttribute('aria-label') || '';
-                        const m = label.match(/(\d[\d\s]*)\s*avis/i) || label.match(/\((\d+)\)/);
-                        if (m) { 
-                            nb_avis = parseInt(m[1].replace(/\s/g, '')); 
-                            if (nb_avis) break; 
-                        }
+                        const m = label.match(/([\d][\d\s\xa0]*)\s*avis/i);
+                        if (m) { nb_avis = parseInt(m[1].replace(/[\s\xa0]/g, '')); if (nb_avis) break; }
                     }
                 }
 
@@ -288,152 +342,134 @@ async def scrape_google_maps(keyword, city, limit=20, known_names=None, country=
                 details = await page.evaluate(r'''() => {
                     const d = { site_web: "", telephone: "", adresse: "", rating: 0, nb_avis: 0, category: "", logo_url: "" };
                     
-                    // ===== WEBSITE EXTRACTION (3 stratégies) =====
-                    const anchors = document.querySelectorAll('a[href]');
-
-                    // Stratégie 1 : data-item-id="website:..." (le plus fiable)
-                    for (const a of anchors) {
-                        const did = a.getAttribute('data-item-id') || '';
-                        if (did.startsWith('website:') && a.href && !a.href.includes('google.') && !a.href.includes('maps.')) {
-                            d.site_web = a.href; break;
-                        }
+                    // ===== WEBSITE EXTRACTION (Google Maps authority & aria) =====
+                    // 1. data-item-id="authority" ou data-item-id="website:..."
+                    const authA = document.querySelector('a[data-item-id="authority"], a[data-item-id^="website:"]');
+                    if (authA && authA.href && !authA.href.includes('google.') && !authA.href.includes('maps.')) {
+                        d.site_web = authA.href;
                     }
-
-                    // Stratégie 2 : texte du lien (FR + EN)
+                    
+                    // 2. aria-label ou texte contenant "site Web" / "website"
                     if (!d.site_web) {
-                        for (const a of anchors) {
-                            const txt = (a.innerText || a.getAttribute('aria-label') || '').toLowerCase().trim();
-                            if ((txt.includes('site web') || txt.includes('site internet') || txt === 'website')
-                                && a.href && !a.href.includes('google.') && !a.href.includes('maps.')) {
-                                d.site_web = a.href; break;
-                            }
-                        }
-                    }
-
-                    // Stratégie 3 : aria-label contenant "website" (labels icônes)
-                    if (!d.site_web) {
+                        const anchors = Array.from(document.querySelectorAll('a[href]'));
                         for (const a of anchors) {
                             const aria = (a.getAttribute('aria-label') || '').toLowerCase();
-                            if (aria.includes('website') && a.href && !a.href.includes('google.') && !a.href.includes('maps.')) {
-                                d.site_web = a.href; break;
+                            const txt = (a.innerText || '').toLowerCase().trim();
+                            if ((aria.includes('site web') || aria.includes('website') || txt.includes('site web') || txt === 'website')
+                                && a.href && !a.href.includes('google.') && !a.href.includes('maps.')) {
+                                d.site_web = a.href;
+                                break;
                             }
                         }
                     }
                     
                     // ===== PHONE EXTRACTION =====
-                    const telBtn = document.querySelector('button[data-item-id^="phone:tel:"]');
-                    if (telBtn) d.telephone = telBtn.getAttribute('data-item-id').replace('phone:tel:', '');
-                    else {
+                    const telBtn = document.querySelector('[data-item-id^="phone:tel:"]');
+                    if (telBtn) {
+                        const did = telBtn.getAttribute('data-item-id') || '';
+                        d.telephone = did.replace('phone:tel:', '').trim();
+                    }
+                    if (!d.telephone) {
                         const telLink = document.querySelector('a[href^="tel:"]');
-                        if (telLink) d.telephone = telLink.getAttribute('href').replace('tel:', '');
+                        if (telLink) d.telephone = telLink.getAttribute('href').replace('tel:', '').trim();
                     }
-                    
-                    // ===== ADDRESS EXTRACTION (improved robustness) =====
-                    const addrEl = document.querySelector('button[data-item-id="address"]');
-                    if (addrEl) {
-                        d.adresse = (addrEl.innerText || '').trim();
-                    } else {
-                        // Fallback: search in aria-labels for address-like patterns
-                        const addrPattern = Array.from(document.querySelectorAll('[aria-label]'))
-                            .find(el => /\d+/.test(el.getAttribute('aria-label') || ''));
-                        if (addrPattern) d.adresse = addrPattern.getAttribute('aria-label').trim();
-                    }
-                    
-                    // ===== RATING EXTRACTION (improved) =====
-                    // Strategy 1: Main rating element with F7nice class
-                    let ratingEl = document.querySelector('div.F7nice span span[aria-hidden="true"]');
-                    if (ratingEl) {
-                        d.rating = parseFloat(ratingEl.innerText.replace(',', '.'));
-                    }
-                    // Strategy 2: aria-label with stars
-                    if (!d.rating) {
-                        const starAria = Array.from(document.querySelectorAll('[aria-label*="étoile"], [aria-label*="star"]'))
-                            .find(el => /[\d.,]+\s*(étoile|star)/.test(el.getAttribute('aria-label') || ''));
-                        if (starAria) {
-                            const m = starAria.getAttribute('aria-label').match(/([\d.,]+)/);
-                            if (m) d.rating = parseFloat(m[1].replace(',', '.'));
+                    if (!d.telephone) {
+                        const telAria = document.querySelector('[aria-label*="téléphone" i], [aria-label*="telephone" i]');
+                        if (telAria) {
+                            const tm = (telAria.getAttribute('aria-label') || '').match(/(\+?\d[\d\s\.\-]{8,})/);
+                            if (tm) d.telephone = tm[1].trim();
                         }
                     }
-                    // Strategy 3: text node containing "sur 5"
+                    
+                    // ===== ADDRESS EXTRACTION =====
+                    const addrEl = document.querySelector('[data-item-id="address"]');
+                    if (addrEl) {
+                        d.adresse = (addrEl.innerText || addrEl.getAttribute('aria-label') || '')
+                            .replace(/^Adresse:\s*/i, '')
+                            .replace(/^[\ue000-\uf8ff\s\n]+/, '')
+                            .trim();
+                    } else {
+                        const addrAria = document.querySelector('[aria-label^="Adresse:"]');
+                        if (addrAria) {
+                            d.adresse = (addrAria.getAttribute('aria-label') || '')
+                                .replace(/^Adresse:\s*/i, '')
+                                .replace(/^[\ue000-\uf8ff\s\n]+/, '')
+                                .trim();
+                        }
+                    }
+                    
+                    // ===== RATING EXTRACTION =====
+                    const rEl = document.querySelector('div.F7nice span[aria-hidden="true"], span.ceNzKf');
+                    if (rEl) {
+                        const rm = rEl.innerText.match(/([\d.,]+)/);
+                        if (rm) d.rating = parseFloat(rm[1].replace(',', '.'));
+                    }
                     if (!d.rating) {
-                        const bodyText = document.body.innerText;
-                        const ratingMatch = bodyText.match(/([\d.,]+)\s*sur\s*5/) || bodyText.match(/([\d.,]+)\s*★/);
-                        if (ratingMatch) d.rating = parseFloat(ratingMatch[1].replace(',', '.'));
+                        const starAria = Array.from(document.querySelectorAll('[aria-label*="étoile"], [aria-label*="star"], [aria-label*="stars"]'))
+                            .find(el => /[\d.,]+\s*(étoile|star)/i.test(el.getAttribute('aria-label') || ''));
+                        if (starAria) {
+                            const sm = starAria.getAttribute('aria-label').match(/([\d.,]+)/);
+                            if (sm) d.rating = parseFloat(sm[1].replace(',', '.'));
+                        }
                     }
                     
-                    // ===== REVIEW COUNT EXTRACTION (improved robustness) =====
-                    const bodyText = document.body.innerText;
-                    
-                    // Strategy 1: Direct "X avis" pattern near the rating area (most reliable)
-                    const ratingArea = document.querySelector('[aria-label*="étoile"], [aria-label*="star"], div.F7nice');
-                    if (ratingArea && !d.nb_avis) {
-                        const areaText = ratingArea.innerText || ratingArea.getAttribute('aria-label') || '';
-                        const m = areaText.match(/(\d[\d\s]*)\s*avis/i);
-                        if (m) d.nb_avis = parseInt(m[1].replace(/\s/g, ''));
+                    // ===== REVIEW COUNT EXTRACTION (fiche détail) =====
+                    // Stratégie 1: span.ZkP5Je (même classe que dans la liste)
+                    const zkDetail = document.querySelector('span.ZkP5Je');
+                    if (zkDetail) {
+                        const label = zkDetail.getAttribute('aria-label') || '';
+                        const am = label.match(/([\d][\d\s\xa0]*)\s*avis/i);
+                        if (am) d.nb_avis = parseInt(am[1].replace(/[\s\xa0]/g, ''));
+                        if (!d.rating) {
+                            const sm = label.match(/([\d][\d,\.]+)/);
+                            if (sm) d.rating = parseFloat(sm[1].replace(',', '.'));
+                        }
                     }
-                    
-                    // Strategy 2: "X avis" pattern in full body (next most reliable)
+                    // Stratégie 2: span.UY7F9 → "(32)"
                     if (!d.nb_avis) {
-                        const avisMatch = bodyText.match(/(\d[\d\s]*)\s*avis/i) || bodyText.match(/(\d[\d\s]*)\s*évaluations?/i);
-                        if (avisMatch) d.nb_avis = parseInt(avisMatch[1].replace(/\s/g, ''));
+                        const uy7f9 = document.querySelector('span.UY7F9');
+                        if (uy7f9) {
+                            const m = (uy7f9.innerText || '').match(/\(([\d\s\xa0]+)\)/);
+                            if (m) d.nb_avis = parseInt(m[1].replace(/[\s\xa0]/g, ''));
+                        }
                     }
-                    
-                    // Strategy 3: parenthesized count
+                    // Stratégie 3: button ou span aria-label "X avis"
                     if (!d.nb_avis) {
-                        const parenMatch = bodyText.match(/\((\d[\d\s]*)\s*avis\)/i) || bodyText.match(/\((\d+)\)/);
-                        if (parenMatch) d.nb_avis = parseInt(parenMatch[1].replace(/\s/g, ''));
+                        const avisEls = Array.from(document.querySelectorAll('[aria-label*="avis" i], button[jsaction*="moreReviews"]'));
+                        for (const el of avisEls) {
+                            const raw = el.getAttribute('aria-label') || el.innerText || '';
+                            const am = raw.match(/([\d][\d\s\xa0]*)\s*avis/i) || raw.match(/\(([\d\s\xa0]+)\)/);
+                            if (am) { d.nb_avis = parseInt(am[1].replace(/[\s\xa0]/g, '')); if (d.nb_avis) break; }
+                        }
                     }
-                    
-                    // Strategy 4: "• X" bullet pattern (fragile, only last resort)
+                    // Stratégie 4: scan global du texte principal
                     if (!d.nb_avis) {
-                        const bulletMatch = bodyText.match(/[\u00b7\u2022]\s*(\d+)/);
-                        if (bulletMatch) d.nb_avis = parseInt(bulletMatch[1]);
-                    }
-                    
-                    // Strategy 5: Review button text
-                    if (!d.nb_avis) {
-                        const reviewBtn = document.querySelector('button[jsaction*="moreReviews"], button[jsaction*="review"]');
-                        if (reviewBtn) {
-                            const btnText = reviewBtn.innerText || reviewBtn.getAttribute('aria-label') || '';
-                            const m = btnText.match(/(\d[\d\s]*)\s*avis/i) || btnText.match(/\((\d+)\)/);
-                            if (m) d.nb_avis = parseInt(m[1].replace(/\s/g, ''));
+                        const mainEl = document.querySelector('div[role="main"]');
+                        if (mainEl) {
+                            const hm = mainEl.innerText.match(/\(([\d][\d\s\xa0]*)\)/) || mainEl.innerText.match(/([\d][\d\s\xa0]*)\s*avis/i);
+                            if (hm) d.nb_avis = parseInt(hm[1].replace(/[\s\xa0]/g, ''));
                         }
                     }
                     
                     // ===== CATEGORY EXTRACTION =====
-                    const catEl = document.querySelector('button[jsaction="pane.rating.category"]');
+                    const catEl = document.querySelector('button[jsaction*="pane.rating.category"], button[jsaction*="category"], button.DkEaL');
                     if (catEl) d.category = (catEl.innerText || '').trim();
                     
-                    // ===== LOGO EXTRACTION (robust with multiple fallbacks) =====
-                    // Strategy 1: img with "logo" in alt or class
+                    // ===== DIRECT EMAIL ON GOOGLE MAPS =====
+                    d.email = "";
+                    const mailtoA = document.querySelector('a[href^="mailto:"]');
+                    if (mailtoA) {
+                        const raw = (mailtoA.getAttribute('href') || '').replace(/^mailto:/i, '').split('?')[0].trim();
+                        if (raw && !raw.includes('google.') && !raw.includes('sentry.')) d.email = raw;
+                    }
+
+                    // ===== LOGO / PHOTO EXTRACTION =====
                     let logoImg = document.querySelector('img[alt*="logo" i], img[class*="logo"]');
-                    if (logoImg && logoImg.src) {
+                    if (!logoImg) logoImg = document.querySelector('button[jsaction*="pane.heroHeaderImage"] img, div[role="main"] img');
+                    if (logoImg && logoImg.src && !logoImg.src.startsWith('data:')) {
                         d.logo_url = logoImg.src;
                     }
                     
-                    // Strategy 2: img with data-is-logo attribute
-                    if (!d.logo_url) {
-                        logoImg = document.querySelector('img[data-is-logo]');
-                        if (logoImg && logoImg.src) d.logo_url = logoImg.src;
-                    }
-                    
-                    // Strategy 3: header/banner image
-                    if (!d.logo_url) {
-                        logoImg = document.querySelector('[class*="header"] img:first-child, [class*="banner"] img:first-child, [class*="cover"] img:first-child');
-                        if (logoImg && logoImg.src) d.logo_url = logoImg.src;
-                    }
-                    
-                    // Strategy 4: large img near top of page (likely photo/logo)
-                    if (!d.logo_url) {
-                        const allImgs = Array.from(document.querySelectorAll('img'));
-                        const topImg = allImgs.filter(img => {
-                            const rect = img.getBoundingClientRect();
-                            return rect.top < 300 && img.width > 50 && img.height > 50;
-                        })[0];
-                        if (topImg && topImg.src) d.logo_url = topImg.src;
-                    }
-                    
-                    // Ensure logo_url is absolute
                     if (d.logo_url && !d.logo_url.startsWith('http')) {
                         if (d.logo_url.startsWith('/')) {
                             d.logo_url = window.location.origin + d.logo_url;
@@ -458,7 +494,8 @@ async def scrape_google_maps(keyword, city, limit=20, known_names=None, country=
                     'telephone': details['telephone'], 'adresse': details['adresse'],
                     'rating': details['rating'], 'nb_avis': details['nb_avis'],
                     'category': details['category'], 'logo_url': details['logo_url'],
-                    'lien_maps': item['lien'], 'mot_cle': keyword, 'ville': city
+                    'lien_maps': item['lien'], 'mot_cle': keyword, 'ville': city,
+                    'email': details.get('email', '')
                 })
                 seen_names.add(item['nom'].lower())
                 count += 1
@@ -501,6 +538,13 @@ async def main_async(argv=None):
                         help="Nombre maximum de passes de zones (défaut: 30)")
     parser.add_argument("--keyword-variants", action="store_true",
                         help="Générer des variantes de mots-clés via LLM")
+    parser.add_argument("--objectif", type=str, default="",
+                        help="Campagne v2 (nom ou id) dans laquelle ranger les leads collectés "
+                             "(ex: « Refonte site web »). Créée si elle n'existe pas. "
+                             "Compat : l'ancien terme « objectif ».")
+    parser.add_argument("--liste", type=str, default="",
+                        help="Liste cible (nom ou id) DANS la campagne --objectif ; défaut = "
+                             "liste par défaut de la campagne (auto-créée).")
     if argv is not None:
         args = parser.parse_args(argv)
     else:
@@ -516,7 +560,7 @@ async def main_async(argv=None):
 
     start_time = time.time()
     MAX_PAR_PASSE    = 120
-    MIN_EMAILS_CIBLE = args.min_emails
+    MIN_EMAILS_CIBLE = args.min_emails if (args.min_emails and args.min_emails > 0) else None
 
     try: get_config()
     except: pass
@@ -524,6 +568,24 @@ async def main_async(argv=None):
     date_scraping    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     valid_leads  = []
     emails_count = 0
+
+    # ── Campagne v2 cible (résolue UNE fois avant le premier lead) ───────────
+    v2_campagne = None
+    v2_liste = None
+    v2_counters = {'importes': 0, 'doublons': 0, 'supprimes': 0}
+    if args.objectif:
+        try:
+            from core.objectif_registry import resolve_or_create_campagne, get_or_create_liste
+            from database import listes as listes_repo
+            v2_campagne = resolve_or_create_campagne(args.objectif)
+            print(f"   [V2] Campagne cible : #{v2_campagne[0]} « {v2_campagne[1]} »" if v2_campagne
+                  else f"   [V2] ⚠️ Impossible de rattacher la campagne « {args.objectif} »")
+            if v2_campagne:
+                v2_liste = _resolve_liste_cible(v2_campagne[0], args.liste,
+                                                secteur=args.secteur, mot_cle=args.keyword)
+        except Exception as e:
+            print(f"   [V2] ⚠️ Échec résolution campagne « {args.objectif} » : {e}")
+            v2_campagne = None
 
     # Mémoire DB
     seen_noms_global = set()
@@ -570,14 +632,18 @@ async def main_async(argv=None):
     def _enrichir_place(place: dict):
         nom     = place.get("nom", "Inconnu")
         website = place.get("site_web")
+        social_url = None
 
-        # Blacklist social media / annuaire / plateformes tierces
+        # Détection des réseaux sociaux vs site web propre
         if website:
-            domain = extract_domain(website)
+            domain = extract_domain(website) or ""
+            social_domains = ["facebook.com", "instagram.com", "linkedin.com", "tiktok.com", "twitter.com", "x.com"]
+            if any(sd in domain.lower() for sd in social_domains):
+                social_url = website
+                place["site_web"] = None
+                website = None
+
             blacklist = [
-                # Réseaux sociaux
-                "google.com", "facebook.com", "instagram.com", "twitter.com",
-                "linkedin.com", "tiktok.com", "youtube.com", "snapchat.com",
                 # Annuaires FR
                 "pagesjaunes.fr", "societe.com", "infogreffe.fr", "pappers.fr",
                 "verif.com", "manageo.fr", "annuaire-entreprises.data.gouv.fr",
@@ -591,21 +657,78 @@ async def main_async(argv=None):
                 # Menus / cartes
                 "menus-solutions.com", "menuiserie.com", "menu.rest",
             ]
-            if domain and any(bd in domain.lower() for bd in blacklist):
+            if website and any(bd in domain.lower() for bd in blacklist):
                 place["site_web"] = None
                 website = None
+
+        found_emails = []
+        # 1. Email extrait directement sur la fiche Maps (si disponible)
+        if place.get("email"):
+            found_emails.append(place["email"].strip())
+
+        email = ""
+        email_2 = ""
+        statut_email = ""
+        email_source = ""
+        tel = place.get("telephone", "") or ""
+
+        # 2. Recherche email approfondie sur le site web si disponible
+        if website and _EMAIL_FINDER_AVAILABLE:
+            try:
+                res_email = find_email_all_methods(website, verbose=False, fast_mode=True)
+                if res_email and res_email.get("email"):
+                    for e in res_email["email"].split(","):
+                        e_clean = e.strip()
+                        if e_clean:
+                            found_emails.append(e_clean)
+                    email_source = res_email.get("source", "site_web")
+            except Exception as e:
+                logger.error(f"Erreur email_finder pour {nom} ({website}): {e}")
+
+        # 3. Filtrage des emails tiers, jetables ou parasites + déduplication
+        try:
+            from core.email_constants import is_excluded, score_email
+        except ImportError:
+            def is_excluded(x): return False
+            def score_email(x): return 99
+
+        valid_emails = []
+        for em in found_emails:
+            em_clean = em.strip()
+            if em_clean and '@' in em_clean and not is_excluded(em_clean):
+                if em_clean.lower() not in [v.lower() for v in valid_emails]:
+                    valid_emails.append(em_clean)
+
+        # 4. Tri par pertinence (contact@, direction@, etc.) & attribution email / email_2
+        if valid_emails:
+            valid_emails.sort(key=lambda x: score_email(x))
+            email = valid_emails[0]
+            email_2 = ", ".join(valid_emails[1:]) if len(valid_emails) > 1 else ""
+            statut_email = "Valide"
+            if not email_source:
+                email_source = "maps" if place.get("email") else "site_web"
+
+        # Recherche téléphone sur le site web si manquant
+        if website and not tel:
+            try:
+                tel_trouve = search_phone_on_website(website, country=args.country)
+                if tel_trouve:
+                    tel = tel_trouve
+            except Exception as e:
+                logger.error(f"Erreur search_phone pour {nom} ({website}): {e}")
 
         return {
             'nom':          nom,
             'adresse':      place.get('adresse', ''),
             'site_web':     website or '',
-            'telephone':    place.get('telephone', ''),
+            'telephone':    tel,
             'rating':       place.get('rating', ''),
             'nb_avis':      int(place.get('nb_avis') or 0),
             'logo_url':     place.get('logo_url', ''),
-            'email':        '',
-            'statut_email': '',
-            'email_source': '',
+            'email':        email,
+            'email_2':      email_2,
+            'statut_email': statut_email,
+            'email_source': email_source,
             'date_scraping': date_scraping,
             'mot_cle':      args.keyword,
             'ville':        args.city,
@@ -710,6 +833,29 @@ async def main_async(argv=None):
                     except Exception as e:
                         logger.error(f"SQLite insert_lead({lead['nom']}): {e}")
 
+                # Miroir v2 : insertion du lead enrichi DANS la liste cible (ou liste par défaut)
+                if v2_campagne:
+                    try:
+                        from core.objectif_registry import import_lead_as_prospect
+                        r = import_lead_as_prospect(
+                            v2_campagne[0], lead,
+                            source='scraping',
+                            data_extra_extra={'campaign_id': args.campaign_id},
+                            liste_id=v2_liste,
+                        )
+                        if r.get('statut_dedupe') == 'created':
+                            v2_counters['importes'] += 1
+                        elif r.get('statut_dedupe') == 'updated':
+                            v2_counters['importes'] += 1
+                            print(f"   [V2] {lead['nom']} enrichi (déjà en base, autre campagne)")
+                        elif r.get('statut_dedupe') == 'doublon':
+                            v2_counters['doublons'] += 1
+                        elif r.get('statut_dedupe') == 'suppression_list':
+                            v2_counters['supprimes'] += 1
+                            print(f"   [V2] {lead['nom']} ignoré (désinscrit)")
+                    except Exception as e:
+                        logger.error(f"V2 insert prospect({lead['nom']}): {e}")
+
                 if MIN_EMAILS_CIBLE:
                     print(f"   [PROGRESSION] emails={emails_count}/{MIN_EMAILS_CIBLE}  leads={len(valid_leads)}")
                 else:
@@ -725,6 +871,7 @@ async def main_async(argv=None):
                             total=effective_limit,
                             emails_found=emails_count,
                             phase='scraping',
+                            phase_detail=f"{lead.get('nom', '')} ({len(valid_leads)}/{effective_limit})",
                         )
                     except Exception:
                         pass
@@ -772,6 +919,17 @@ async def main_async(argv=None):
     print(f"Scraping terminé en {elapsed:.1f}s")
     print(f"   Total leads      : {len(valid_leads)}")
     print(f"   Avec email       : {emails_count}")
+    if v2_campagne:
+        _liste_nom = ""
+        if v2_liste:
+            try:
+                from database import listes as _lr
+                _liste_nom = ( _lr.get_liste(v2_liste) or {} ).get('nom', '')
+            except Exception:
+                _liste_nom = ""
+        print(f"   [V2] Campagne     : #{v2_campagne[0]} « {v2_campagne[1]} »"
+              f"  (liste: #{v2_liste or 'défaut'} {_liste_nom})")
+        print(f"   [V2] Importés     : {v2_counters['importes']}  (doublons: {v2_counters['doublons']}, désinscrits: {v2_counters['supprimes']})")
     print(f"   RAM utilisée     : {mem_mb:.1f} Mo")
     print("=" * 60)
 

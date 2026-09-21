@@ -20,13 +20,24 @@ def api_scraper_launch():
         sector = data.get('sector', '').strip()
         secteur = data.get('secteur', '').strip() or sector  # campagne sector > niche
         limit = int(data.get('limit', 50))
-        min_emails = int(data.get('min_emails', 10))
+        min_emails = int(data.get('min_emails', 0))
         min_reviews = int(data.get('min_reviews', 0))
         campaign_name = data.get('campaign_name', f"{secteur or keyword} {city}")
         country = data.get('country', 'fr')
         require_contact = data.get('require_contact', False)
         keyword_variants = data.get('keyword_variants', False)
         site_filter = data.get('site_filter', 'all')
+        objectif = data.get('objectif', '')
+        if objectif not in ("web", "general"):
+            objectif = None
+        list_id = data.get('list_id')
+        if list_id is not None:
+            try:
+                list_id = int(list_id)
+            except (TypeError, ValueError):
+                list_id = None
+        v2_objectif = (data.get('v2_objectif') or '').strip() or None
+        v2_liste = (data.get('v2_liste') or '').strip() or None
 
         if not keyword or not city:
             return jsonify({'error': 'keyword et city requis'}), 400
@@ -42,7 +53,11 @@ def api_scraper_launch():
             country=country,
             require_contact=require_contact,
             keyword_variants=keyword_variants,
-            site_filter=site_filter
+            site_filter=site_filter,
+            objectif=objectif,
+            list_id=list_id,
+            v2_objectif=v2_objectif,
+            v2_liste=v2_liste
         )
 
         if not success:
@@ -125,7 +140,7 @@ def api_campaign_restart(camp_id):
         with get_conn() as conn:
             conn.execute("DELETE FROM leads_bruts WHERE campaign_id = ?", (camp_id,))
             conn.execute("""
-                UPDATE campagnes
+                UPDATE campagnes_legacy
                 SET phase = 'pending', error_message = NULL, stopped_at = NULL,
                     finished_at = NULL, progress_data = NULL, total_leads = 0
                 WHERE id = ?
@@ -156,7 +171,7 @@ def api_campaign_abandon(camp_id):
         from services.campaign_tracker import stop_campaign
         stop_campaign(camp_id, reason='Abandonné par l\'utilisateur')
         with get_conn() as conn:
-            conn.execute("UPDATE campagnes SET phase = 'stopped', statut = 'cancelled' WHERE id = ?", (camp_id,))
+            conn.execute("UPDATE campagnes_legacy SET phase = 'stopped', statut = 'cancelled' WHERE id = ?", (camp_id,))
             conn.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -423,28 +438,63 @@ def api_scraper_status():
     """Retourne le statut du dernier scraping en cours (inféré depuis la DB)."""
     try:
         with get_conn() as conn:
-            row = conn.execute("""
-                SELECT c.id, c.nom, c.nb_demande,
-                       COUNT(lb.id)                                              AS leads_total,
-                       COUNT(CASE WHEN lb.email != '' AND lb.email IS NOT NULL
-                                  THEN 1 END)                                   AS with_email
-                FROM campagnes c
-                LEFT JOIN leads_bruts lb ON lb.campaign_id = c.id
-                ORDER BY c.id DESC LIMIT 1
+            # Chercher d'abord une campagne en cours
+            camp = conn.execute("""
+                SELECT id, nom, nb_demande, phase, started_at, finished_at, error_message, progress_data
+                FROM campagnes_legacy
+                WHERE phase IN ('pending', 'scraping')
+                ORDER BY id DESC LIMIT 1
             """).fetchone()
-        if not row:
-            return jsonify({"running": False, "current": 0, "total": 0, "with_email": 0, "logs": []})
-        r = dict(row)
-        running = (r['nb_demande'] or 0) > 0 and r['leads_total'] < r['nb_demande']
-        return jsonify({
-            "running": running,
-            "key": "maps",
-            "label": "Google Maps",
-            "current": r['leads_total'],
-            "total":   r['nb_demande'] or 0,
-            "with_email": r['with_email'],
-            "logs": []
-        })
+            if not camp:
+                camp = conn.execute("""
+                    SELECT id, nom, nb_demande, phase, started_at, finished_at, error_message, progress_data
+                    FROM campagnes_legacy
+                    ORDER BY id DESC LIMIT 1
+                """).fetchone()
+            if not camp:
+                return jsonify({"running": False, "current": 0, "total": 0, "with_email": 0, "logs": []})
+            
+            c = dict(camp)
+            camp_id = c['id']
+            
+            leads_stat = conn.execute("""
+                SELECT COUNT(*) AS leads_total,
+                       COUNT(CASE WHEN email != '' AND email IS NOT NULL THEN 1 END) AS with_email
+                FROM leads_bruts
+                WHERE campaign_id = ?
+            """, (camp_id,)).fetchone()
+            
+            leads_total = leads_stat['leads_total'] if leads_stat else 0
+            with_email = leads_stat['with_email'] if leads_stat else 0
+            
+            is_running = c['phase'] in ('pending', 'scraping')
+            
+            logs = []
+            if c.get('progress_data'):
+                import json
+                try:
+                    prog = json.loads(c['progress_data'])
+                    if prog.get('phase_detail'):
+                        logs.append(f"⚡ {prog['phase_detail']}")
+                except Exception:
+                    pass
+            if is_running and not logs:
+                logs.append(f"Scraping en cours : {leads_total}/{c['nb_demande'] or 0} leads ({with_email} emails)")
+            elif not is_running and c.get('finished_at'):
+                logs.append(f"✓ Terminé : {leads_total} leads collectés ({with_email} emails)")
+            
+            return jsonify({
+                "running": is_running,
+                "key": "maps",
+                "label": "Google Maps",
+                "campaign_id": camp_id,
+                "campaign_name": c['nom'],
+                "phase": c['phase'],
+                "current": leads_total,
+                "total": c['nb_demande'] or 0,
+                "with_email": with_email,
+                "logs": logs
+            })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -525,18 +575,33 @@ def api_scraper_all_status():
     # ── Google Maps (subprocess) ───────────────────────────────────────────────
     try:
         with get_conn() as conn:
+            # Campagne Maps active en priorité
             row = conn.execute("""
-                SELECT nb_demande, phase,
+                SELECT id, nom, nb_demande, phase, progress_data,
                     (SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = c.id) AS leads_total
-                FROM campagnes c
+                FROM campagnes_legacy c
+                WHERE source = 'maps' AND phase IN ('pending', 'scraping')
                 ORDER BY id DESC LIMIT 1
             """).fetchone()
+            if not row:
+                row = conn.execute("""
+                    SELECT id, nom, nb_demande, phase, progress_data,
+                        (SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = c.id) AS leads_total
+                    FROM campagnes_legacy c
+                    WHERE source = 'maps'
+                    ORDER BY id DESC LIMIT 1
+                """).fetchone()
         if row:
             r = dict(row)
-            maps_running = r['phase'] == 'scraping'
+            maps_running = r['phase'] in ('pending', 'scraping')
             sources.append({
                 "running": maps_running, "key": "maps", "label": "Google Maps",
-                "accepted": r['leads_total'], "total": r['nb_demande'] or 0
+                "campaign_id": r['id'],
+                "campaign_name": r['nom'],
+                "phase": r['phase'],
+                "processed": r['leads_total'],
+                "accepted": r['leads_total'],
+                "total": r['nb_demande'] or 0
             })
         else:
             sources.append({"running": False, "key": "maps", "label": "Google Maps"})
@@ -550,14 +615,14 @@ def api_scraper_all_status():
         with get_conn() as conn:
             active_camps = conn.execute("""
                 SELECT id, nom, source, phase, progress_data, error_message, started_at
-                FROM campagnes
-                WHERE phase IN ('scraping', 'enrichment', 'audit', 'email_gen')
+                FROM campagnes_legacy
+                WHERE phase IN ('scraping', 'enrichment', 'audit', 'email_gen', 'pending')
                 ORDER BY id DESC LIMIT 10
             """).fetchall()
 
             failed_recent = conn.execute("""
                 SELECT id, nom, source, phase, error_message, stopped_at
-                FROM campagnes
+                FROM campagnes_legacy
                 WHERE phase IN ('failed', 'stopped')
                   AND stopped_at > datetime('now', '-24 hours')
                 ORDER BY stopped_at DESC LIMIT 5
@@ -682,7 +747,7 @@ def api_collectes():
             rows = conn.execute("""
                 SELECT c.id, c.nom, c.secteur, c.ville, c.nb_demande,
                        COUNT(lb.id) AS leads_total
-                FROM campagnes c
+                FROM campagnes_legacy c
                 LEFT JOIN leads_bruts lb ON lb.campaign_id = c.id
                 GROUP BY c.id
                 ORDER BY c.id DESC
@@ -705,7 +770,7 @@ def api_planning_niche_stats():
                     COUNT(DISTINCT lb.id)                   AS leads_scrapes,
                     COUNT(DISTINCT ee.id)                   AS emails_envoyes,
                     COALESCE(SUM(ee.repondu), 0)            AS nb_reponses
-                FROM campagnes c
+                FROM campagnes_legacy c
                 LEFT JOIN leads_bruts   lb ON lb.campaign_id = c.id
                 LEFT JOIN emails_envoyes ee ON ee.lead_id    = lb.id
                 WHERE c.secteur IS NOT NULL AND c.secteur != ''

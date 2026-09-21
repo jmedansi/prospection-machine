@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinique George V — Direction design v2 (contenu complet)</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+  :root{--p:#191E23;--s:#2B3238;--nl:#FFFFFF;--nd:#4B454A;--fl:#CFCDCE;}
+  body{font-family:'Instrument Sans',system-ui,sans-serif;color:var(--p);background:#fff;}
+  .disp{font-family:'Fraunces',Georgia,serif;}
+  .data{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;}
+  .gotag{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--fl);}
+  .previewbar{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--p);color:#fff;padding:.7rem 1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;font-size:.8rem;}
+  .steplabel{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#9aa2ab;}
+  .swatch{width:64px;height:64px;border-radius:8px;border:1px solid rgba(0,0,0,.08);}
+  .num{color:var(--fl);letter-spacing:.1em;}
+  .cta{background:var(--p);color:#fff;font-weight:600;transition:transform .15s ease;}
+  .cta:hover{transform:translateY(-1px);}
+  .hairline{border-top:1px solid var(--fl);}
+</style>
+</head>
+<body class="antialiased">
+
+<header class="gotag">
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-baseline gap-3">
+      <span class="disp text-xl font-medium">George&nbsp;V</span>
+      <span class="data text-[11px] tracking-[.2em] uppercase text-neutral-500">Clinique · Talence</span>
+    </div>
+    <nav class="data hidden md:flex gap-6 text-[13px] text-neutral-700">
+      <span>La Clinique</span><span>Pôles</span><span>Praticiens</span><span>Avis</span><span>Contact</span>
+    </nav>
+    <div class="flex items-center gap-3">
+      <span class="data hidden sm:block text-[13px]">05 35 54 97 27</span>
+      <span class="cta data text-[12px] px-4 py-2 rounded-full">Rendez-vous</span>
+    </div>
+  </div>
+</header>
+
+<section class="pt-16 bg-[#191E23] text-white">
+  <div class="max-w-6xl mx-auto px-6 py-24 md:py-32 grid md:grid-cols-12 gap-10 items-center">
+    <div class="md:col-span-7">
+      <p class="data text-[11px] tracking-[.22em] uppercase text-[#CFCDCE] mb-6">Chirurgie &amp; médecine esthétique · Bordeaux Gironde</p>
+      <h1 class="disp text-4xl md:text-6xl leading-[1.05] font-light">
+        Chirurgie et médecine<br>esthétique et <em class="font-normal italic">reconstructrice</em><br>sur Bordeaux.
+      </h1>
+      <p class="mt-8 max-w-xl text-neutral-300 text-[15px] leading-relaxed">
+        Chirurgie esthétique plastique et reconstructrice, médecine esthétique, soins
+        esthétiques sur Bordeaux et la Gironde. Établissement de renom, trois praticiens
+        aguerris, 69 avis Google — note <span class="text-white font-medium">EXCELLENT</span>.
+      </p>
+      <div class="mt-10 flex flex-wrap items-center gap-5">
+        <span class="cta px-6 py-3 rounded-full text-[14px]">Prendre un rendez-vous</span>
+        <span class="data text-[13px] text-neutral-400">05 35 54 97 27</span>
+      </div>
+      <p class="data mt-10 text-[12px] text-neutral-400">Lundi–Mardi–Jeudi–Vendredi 9h30→13h puis 14h→17h30 · Mercredi 9h30→13h</p>
+    </div>
+    <div class="md:col-span-5">
+      <div class="rounded-xl overflow-hidden border border-white/10">
+        <img src="../asset-pack/images/img-001.png" alt="La Clinique George V, hôtel particulier à Talence" class="w-full object-cover">
+      </div>
+      <p class="data text-[12px] text-neutral-400 mt-3">La Clinique George V — hôtel particulier, mascaron Bacchus, emblème conservé.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bg-white">
+  <div class="max-w-6xl mx-auto px-6 py-14 grid md:grid-cols-12 gap-10 items-center">
+    <div class="md:col-span-4">
+      <p class="steplabel mb-4">À propos</p>
+      <img src="../asset-pack/images/img-006.jpeg" alt="La clinique" class="rounded-lg object-cover w-full">
+    </div>
+    <div class="md:col-span-8">
+      <h2 class="disp text-3xl md:text-4xl font-light leading-tight mb-5">Un établissement de renom,<br>pour votre projet.</h2>
+      <p class="text-[15px] leading-relaxed text-neutral-700 max-w-xl">
+        La Clinique George V est un établissement de renom qui vous accueille et vous accompagne
+        dans votre projet. Le Docteur Drossard, chirurgien esthétique, vous reçoit pour des
+        consultations de chirurgie plastique esthétique ou de reconstruction.
+      </p>
+      <div class="mt-7 flex items-center gap-4 data">
+        <span class="text-[13px]">Google</span>
+        <span class="disp text-2xl">EXCELLENT</span>
+        <span class="text-[13px] text-neutral-500">· 69 avis · Publié sur Google</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bg-[#F8F7F7] py-20">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid md:grid-cols-12 gap-6 mb-14">
+      <div class="md:col-span-4"><p class="num data text-[12px]">01 — 02 — 03</p></div>
+      <div class="md:col-span-8">
+        <h2 class="disp text-4xl font-light leading-tight">Trois pôles d’interventions<br>en esthétique</h2>
+      </div>
+    </div>
+    <p class="text-[15px] leading-relaxed text-neutral-600 max-w-3xl mb-12">
+      La chirurgie esthétique plastique répond le plus souvent à un besoin de se réconcilier avec
+      son image ou de résoudre les problèmes intimes que l’on confie rarement. L’écoute et
+      l’empathie sont à la base des rapports de confiance instaurés avec son praticien. En y
+      ajoutant leur expérience de pratique hospitalière intensive, les praticiens répondent à
+      ces exigences.
+    </p>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="pt-6 pr-6">
+        <p class="num data text-[12px] mb-4">01</p>
+        <h3 class="disp text-2xl font-light mb-3">Chirurgie esthétique</h3>
+        <ul class="text-[14px] leading-7 text-neutral-600">
+          <li>Visage — rhinoplastie, lifting, lipofilling, blépharoplastie…</li>
+          <li>Seins et thorax — augmentation, réduction, reconstruction après cancer…</li>
+          <li>Silhouette — liposuccion, abdominoplastie, bodylift, fesses…</li>
+          <li>Cheveux — greffe cheveux, barbe, sourcils · Intime</li>
+        </ul>
+      </div>
+      <div class="pt-6 pr-6">
+        <p class="num data text-[12px] mb-4">02</p>
+        <h3 class="disp text-2xl font-light mb-3">Médecine esthétique</h3>
+        <ul class="text-[14px] leading-7 text-neutral-600">
+          <li>Acide hyaluronique, Botox, Radiesse</li>
+          <li>Cryolipolyse, HIFU, Hydrofacial, lasers</li>
+          <li>Microneedling, peelings, photothérapie LED</li>
+        </ul>
+      </div>
+      <div class="pt-6 pr-6">
+        <p class="num data text-[12px] mb-4">03</p>
+        <h3 class="disp text-2xl font-light mb-3">Épilation définitive</h3>
+        <ul class="text-[14px] leading-7 text-neutral-600">
+          <li>Laser durable, encadré par une équipe à l’écoute</li>
+          <li>Parmi les avis les plus cités de la clinique</li>
+        </ul>
+      </div>
+    </div>
+    <p class="disp italic text-xl mt-12 text-neutral-600">«&nbsp;Utiliser des méthodes et des techniques de plus en plus raffinées pour obtenir des résultats toujours meilleurs.&nbsp;» — Credo de la Clinique</p>
+  </div>
+</section>
+
+<section class="bg-white py-20">
+  <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-12 gap-8 items-center">
+    <div class="md:col-span-5 space-y-6">
+      <img src="../asset-pack/images/img-009.jpg" class="rounded-lg object-cover w-full" alt="Photo réelle de la clinique">
+      <img src="../asset-pack/images/img-010.jpg" class="rounded-lg object-cover w-full" alt="Photo réelle de la clinique">
+    </div>
+    <div class="md:col-span-7">
+      <p class="num data text-[12px] mb-5">Le saviez-vous ?</p>
+      <h2 class="disp text-3xl md:text-4xl font-light leading-tight mb-5">Un hôtel particulier,<br>une maison de vins et spiritueux.</h2>
+      <p class="text-[15px] leading-relaxed text-neutral-700">
+        La Clinique George V symbolise parfaitement notre ville. Ancienne maison de vins et
+        spiritueux, elle a comme mascaron Bacchus, dieu du vin — <span class="data">le seul dieu,
+        avec Apollon, dieu de la beauté, à ne pas vieillir</span>. Cette allégorie nous a convaincus
+        de le conserver comme emblème.
+      </p>
+      <p class="disp italic text-2xl mt-8 text-neutral-500">« Nous sommes toujours dans la mesure et le respect de l’harmonie et non dans l’excès. »</p>
+    </div>
+  </div>
+</section>
+
+<section class="bg-white py-20 hairline">
+  <div class="max-w-6xl mx-auto px-6">
+    <p class="num data text-[12px] mb-5">Les praticiens de la Clinique</p>
+    <div class="divide-y divide-[#CFCDCE]">
+      <div class="py-8 grid md:grid-cols-12 gap-4">
+        <div class="md:col-span-3"><p class="data text-[12px] uppercase tracking-[.12em] text-neutral-500">Dr Guillaume Drossard</p></div>
+        <div class="md:col-span-6"><p class="text-[14px] leading-relaxed text-neutral-700">Chirurgien esthétique. Diplômé du DESC et du Collège Français de Chirurgie Plastique, Reconstructrice et Esthétique — major de sa promotion.</p></div>
+        <div class="md:col-span-3 md:text-right"><span class="data text-[12px] underline underline-offset-4">Prendre un RDV</span></div>
+      </div>
+      <div class="py-8 grid md:grid-cols-12 gap-4">
+        <div class="md:col-span-3"><p class="data text-[12px] uppercase tracking-[.12em] text-neutral-500">Dr Antoine Julienne</p></div>
+        <div class="md:col-span-6"><p class="text-[14px] leading-relaxed text-neutral-700">Chirurgien esthétique. Spécialiste en chirurgie plastique reconstructrice et esthétique, titulaire du DESC et d’un double clinicat en chirurgie plastique et esthétique.</p></div>
+        <div class="md:col-span-3 md:text-right"><span class="data text-[12px] underline underline-offset-4">Prendre un RDV</span></div>
+      </div>
+      <div class="py-8 grid md:grid-cols-12 gap-4">
+        <div class="md:col-span-3"><p class="data text-[12px] uppercase tracking-[.12em] text-neutral-500">Dr Benjamin Garreau</p></div>
+        <div class="md:col-span-6"><p class="text-[14px] leading-relaxed text-neutral-700">Chirurgien maxillo-facial et stomatologue. Diplômé de chirurgie maxillo-faciale et stomatologie, ancien chef de clinique assistant du CHU de Bordeaux.</p></div>
+        <div class="md:col-span-3 md:text-right"><span class="data text-[12px] underline underline-offset-4">Prendre un RDV</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bg-[#191E23] text-white py-20">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="flex items-baseline justify-between flex-wrap gap-4 mb-12">
+      <p class="steplabel" style="color:#CFCDCE">Livre d’or — Google</p>
+      <p class="data text-[13px]">EXCELLENT · 69 avis · Publié sur Google</p>
+    </div>
+    <div class="grid md:grid-cols-2 gap-x-16 gap-y-9">
+      <blockquote class="disp italic text-xl font-light leading-snug">« J’ai été opérée en janvier 2026 par le docteur Drossard. Je recommande vivement — il a fait un travail magnifique. »</blockquote>
+      <p class="data text-[12px] self-end text-neutral-400">Sarah Slous</p>
+      <blockquote class="disp italic text-xl font-light leading-snug">« La clinique George V est extraordinaire, tant dans l’accueil que dans la qualité de l’opération et du suivi. Je recommande les yeux fermés à 100%. »</blockquote>
+      <p class="data text-[12px] self-end text-neutral-400">Peggy Violleau</p>
+      <blockquote class="disp italic text-xl font-light leading-snug">« J’ai été opérée d’une septo-rhinoplastie par le Dr Drossard. L’intervention s’est déroulée à merveille, immense satisfaction. »</blockquote>
+      <p class="data text-[12px] self-end text-neutral-400">I T</p>
+      <blockquote class="disp italic text-xl font-light leading-snug">« Je recommande la clinique pour l’accueil, la sympathie du personnel et l’efficacité de l’épilation définitive ! »</blockquote>
+      <p class="data text-[12px] self-end text-neutral-400">DUBEAU Aurélie</p>
+      <blockquote class="disp italic text-xl font-light leading-snug">« Personnel très délicat, je suis à ma sixième séance d’épilation laser et je vois de nets résultats ! »</blockquote>
+      <p class="data text-[12px] self-end text-neutral-400">Ambre Gennari</p>
+      <blockquote class="disp italic text-xl font-light leading-snug">« Accueil chaleureux et bienveillant. Je recommande. »</blockquote>
+      <p class="data text-[12px] self-end text-neutral-400">Clémentine AIQUI REBOUL PAVIET</p>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-white">
+  <div class="max-w-6xl mx-auto px-6 py-16 grid md:grid-cols-12 gap-8 hairline">
+    <div class="md:col-span-5">
+      <p class="disp text-xl font-medium mb-3">George V</p>
+      <p class="text-[13px] text-neutral-600 leading-relaxed">Centre multidisciplinaire de médecine et chirurgie esthétique à Bordeaux.<br>163 Bd George V, 33400 Talence · 05 35 54 97 27</p>
+      <p class="data text-[11px] text-neutral-400 mt-4">© 2023 · [À COMPLÉTER : mentions légales]</p>
+    </div>
+    <div class="md:col-span-3">
+      <p class="data text-[11px] uppercase tracking-[.16em] text-neutral-400 mb-3">La Clinique</p>
+      <p class="text-[13px] text-neutral-600 leading-7">Pôles · Praticiens · Actualités · Tarifs · Contact</p>
+      <p class="data text-[11px] leading-6 mt-3 text-neutral-500">L–M–J–V 9h30→13h puis 14h→17h30<br>Mercredi 9h30→13h</p>
+    </div>
+    <div class="md:col-span-4">
+      <p class="data text-[11px] uppercase tracking-[.16em] text-neutral-400 mb-3">Newsletter</p>
+      <p class="text-[13px] text-neutral-600 mb-3">Restez informé de nos actualités, nouveautés.</p>
+      <div class="flex gap-2"><span class="flex-1 border border-neutral-300 rounded-full px-4 py-2 text-[13px] text-neutral-400">Email</span><span class="cta px-5 py-2 rounded-full text-[13px]">Je m’inscris</span></div>
+    </div>
+  </div>
+</footer>
+
+<section class="previewbar data">
+  <span>PREVIEW v2 · direction design — étape 2/3 (point d’arrêt humain)</span>
+  <span>Palette #191E23 / #2B3238 / #CFCDCE · Fraunces + Instrument Sans</span>
+  <span class="hidden md:inline">13 images · 9 avis · contenu 100% verbatim cg5.fr</span>
+</section>
+</body>
+</html>

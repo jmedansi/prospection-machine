@@ -20,6 +20,34 @@ logger = logging.getLogger(__name__)
 PHASES = ('pending', 'scraping', 'enrichment', 'audit', 'email_gen', 'done', 'failed', 'stopped')
 TERMINAL_PHASES = ('done', 'failed', 'stopped')
 
+# Registre in-process : campaign_id -> cible demandée au lancement du scraper.
+# Permet à complete_campaign() d'appliquer l'objectif (+ liste de destination)
+# à l'auto-liste / aux leads SANS migration de schéma (campagnes n'a pas ces colonnes).
+#   cible = { "objectif": "web"|"general", "list_id": int|None }
+#   list_id None  -> auto-liste dédiée par campagne (comportement par défaut)
+#   list_id int   -> reverser les leads de la campagne dans cette liste existante
+_CAMPAIGN_TARGET: dict[int, dict] = {}
+
+
+def set_campaign_target(camp_id: int, objectif: str | None = None, list_id: int | None = None) -> None:
+    """Mémorise l'objectif et/ou la liste de destination d'une campagne."""
+    entry = {"objectif": "general", "list_id": None}
+    if objectif in ("web", "general"):
+        entry["objectif"] = objectif
+    if list_id:
+        entry["list_id"] = int(list_id)
+    _CAMPAIGN_TARGET[camp_id] = entry
+
+
+def set_campaign_objectif(camp_id: int, objectif: str | None) -> None:
+    """Compat. : mémorise uniquement l'objectif d'une campagne."""
+    entry = _CAMPAIGN_TARGET.get(camp_id, {"objectif": "general", "list_id": None})
+    if objectif in ("web", "general"):
+        entry["objectif"] = objectif
+        _CAMPAIGN_TARGET[camp_id] = entry
+    elif camp_id in _CAMPAIGN_TARGET:
+        del _CAMPAIGN_TARGET[camp_id]
+
 
 def _now() -> str:
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -36,7 +64,7 @@ def create_campaign(nom: str, secteur: str = '', ville: str = '',
     try:
         with get_conn() as conn:
             cur = conn.execute("""
-                INSERT INTO campagnes (nom, secteur, ville, source, nb_demande, pays, phase, started_at)
+                INSERT INTO campagnes_legacy (nom, secteur, ville, source, nb_demande, pays, phase, started_at)
                 VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
             """, (nom, secteur, ville, source, nb_demande, pays, _now()))
             conn.commit()
@@ -55,7 +83,7 @@ def start_campaign(campaign_id: int, phase: str = 'scraping') -> None:
     try:
         with get_conn() as conn:
             conn.execute("""
-                UPDATE campagnes
+                UPDATE campagnes_legacy
                 SET phase = ?, started_at = COALESCE(started_at, ?), error_message = NULL
                 WHERE id = ?
             """, (phase, _now(), campaign_id))
@@ -82,13 +110,13 @@ def update_progress(campaign_id: int, processed: int = 0, total: int = 0,
         with get_conn() as conn:
             if phase:
                 conn.execute("""
-                    UPDATE campagnes
+                    UPDATE campagnes_legacy
                     SET progress_data = ?, phase = ?, total_leads = ?
                     WHERE id = ?
                 """, (progress, phase, processed, campaign_id))
             else:
                 conn.execute("""
-                    UPDATE campagnes
+                    UPDATE campagnes_legacy
                     SET progress_data = ?, total_leads = ?
                     WHERE id = ?
                 """, (progress, processed, campaign_id))
@@ -111,15 +139,54 @@ def complete_campaign(campaign_id: int) -> None:
             total = row[0] if row else 0
 
             conn.execute("""
-                UPDATE campagnes
+                UPDATE campagnes_legacy
                 SET phase = 'done', finished_at = ?, total_leads = ?, statut = 'done'
                 WHERE id = ?
             """, (_now(), total, campaign_id))
 
-            # ── Auto-création de liste ───────────────────────────────────
+            # ── Liste de destination (reversement) ────────────────────────
             try:
-                camp = conn.execute("SELECT nom, pays FROM campagnes WHERE id=?", (campaign_id,)).fetchone()
-                if camp and camp['nom']:
+                target = _CAMPAIGN_TARGET.pop(campaign_id, None) or {"objectif": "general", "list_id": None}
+                obj = target["objectif"] if target.get("objectif") in ("web", "general") else "general"
+                dest_list_id = target.get("list_id") or None
+
+                camp = conn.execute("SELECT nom, pays FROM campagnes_legacy WHERE id=?", (campaign_id,)).fetchone()
+                leads_rows = conn.execute(
+                    "SELECT id FROM leads_bruts WHERE campaign_id=?", (campaign_id,)
+                ).fetchall()
+                ids = [r['id'] for r in leads_rows]
+
+                # Objectif sur les leads de la campagne
+                if ids:
+                    conn.executemany(
+                        "UPDATE leads_bruts SET objectif=? WHERE id=?",
+                        [(obj, i) for i in ids]
+                    )
+
+                if dest_list_id:
+                    # Reverser dans une liste existante ; ne crée pas de liste dédiée.
+                    conn.executemany(
+                        "INSERT OR IGNORE INTO lead_list_items (list_id, lead_id) VALUES (?, ?)",
+                        [(dest_list_id, i) for i in ids]
+                    )
+                    conn.execute(
+                        "UPDATE lead_lists SET updated_at=? WHERE id=?",
+                        (_now(), dest_list_id)
+                    )
+                    logger.info(f"[TRACKER] Campagne #{campaign_id} reversée → liste #{dest_list_id} ({len(ids)} leads) | objectif={obj}")
+                    # Commit avant de déclencher l'export IA pour éviter le verrou SQLite
+                    conn.commit()
+                    try:
+                        from services import ia_runner
+                        try:
+                            ia_runner.export(liste_id=dest_list_id, liste_nom=None, lead_ids=ids, objectif=obj)
+                            logger.info(f"[TRACKER] Export IA déclenché pour liste #{dest_list_id}")
+                        except Exception as e:
+                            logger.error(f"[TRACKER] Erreur déclenchement export IA liste #{dest_list_id}: {e}")
+                    except Exception:
+                        pass
+                elif camp and camp['nom']:
+                    # Auto-liste dédiée (comportement par défaut)
                     camp_dict = dict(camp)
                     flag = "🎯"
                     list_name = f"{flag} {camp_dict['nom']} — {total} leads"
@@ -127,19 +194,27 @@ def complete_campaign(campaign_id: int) -> None:
                         "INSERT INTO lead_lists (nom, description, icone, campaign_id) VALUES (?, ?, ?, ?)",
                         (list_name, f"Campagne #{campaign_id} ({camp_dict.get('pays','fr')})", flag, campaign_id)
                     )
-                    list_id = cur_list.lastrowid
-                    leads_rows = conn.execute(
-                        "SELECT id FROM leads_bruts WHERE campaign_id=?", (campaign_id,)
-                    ).fetchall()
-                    for lr in leads_rows:
+                    auto_id = cur_list.lastrowid
+                    try:
+                        conn.execute("UPDATE lead_lists SET objectif=? WHERE id=?", (obj, auto_id))
+                    except Exception:
+                        pass
+                    conn.executemany(
+                        "INSERT OR IGNORE INTO lead_list_items (list_id, lead_id) VALUES (?, ?)",
+                        [(auto_id, i) for i in ids]
+                    )
+                    logger.info(f"[TRACKER] Auto-liste #{auto_id} créée pour campagne #{campaign_id} ({total} leads) | objectif={obj}")
+                    # Commit avant de déclencher l'export IA pour éviter le verrou SQLite
+                    conn.commit()
+                    try:
+                        from services import ia_runner
                         try:
-                            conn.execute(
-                                "INSERT OR IGNORE INTO lead_list_items (list_id, lead_id) VALUES (?, ?)",
-                                (list_id, lr['id'])
-                            )
-                        except Exception:
-                            pass
-                    logger.info(f"[TRACKER] Auto-liste #{list_id} créée pour campagne #{campaign_id} ({total} leads)")
+                            ia_runner.export(liste_id=auto_id, liste_nom=list_name, lead_ids=ids, objectif=obj)
+                            logger.info(f"[TRACKER] Export IA déclenché pour auto-liste #{auto_id}")
+                        except Exception as e:
+                            logger.error(f"[TRACKER] Erreur déclenchement export IA auto-liste #{auto_id}: {e}")
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.error(f"[TRACKER] Erreur auto-liste : {e}")
 
@@ -155,14 +230,14 @@ def fail_campaign(campaign_id: int, error_message: str, phase: str = None) -> No
         with get_conn() as conn:
             if phase:
                 conn.execute("""
-                    UPDATE campagnes
+                    UPDATE campagnes_legacy
                     SET phase = 'failed', error_message = ?, stopped_at = ?,
                         statut = 'failed'
                     WHERE id = ?
                 """, (f"[{phase}] {error_message}", _now(), campaign_id))
             else:
                 conn.execute("""
-                    UPDATE campagnes
+                    UPDATE campagnes_legacy
                     SET phase = 'failed', error_message = ?, stopped_at = ?,
                         statut = 'failed'
                     WHERE id = ?
@@ -178,7 +253,7 @@ def stop_campaign(campaign_id: int, reason: str = 'Arrêt utilisateur') -> None:
     try:
         with get_conn() as conn:
             conn.execute("""
-                UPDATE campagnes
+                UPDATE campagnes_legacy
                 SET phase = 'stopped', error_message = ?, stopped_at = ?,
                     statut = 'stopped'
                 WHERE id = ?
@@ -197,7 +272,7 @@ def reset_all_active_campaigns(reason: str = "Force Stop") -> int:
     try:
         with get_conn() as conn:
             cur = conn.execute("""
-                UPDATE campagnes
+                UPDATE campagnes_legacy
                 SET phase = 'stopped', error_message = ?, stopped_at = ?,
                     statut = 'stopped'
                 WHERE phase IN ('scraping', 'enrichment', 'audit', 'email_gen', 'sending')
@@ -223,7 +298,7 @@ def get_campaign_state(campaign_id: int) -> dict | None:
                     (SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = c.id) as real_leads,
                     (SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = c.id
                         AND email IS NOT NULL AND email != '') as real_emails
-                FROM campagnes c WHERE c.id = ?
+                FROM campagnes_legacy c WHERE c.id = ?
             """, (campaign_id,)).fetchone()
             if not row:
                 return None
@@ -249,7 +324,7 @@ def get_resumable_campaigns() -> list:
             rows = conn.execute("""
                 SELECT c.*,
                     (SELECT COUNT(*) FROM leads_bruts WHERE campaign_id = c.id) as real_leads
-                FROM campagnes c
+                FROM campagnes_legacy c
                 WHERE c.phase IN ('failed', 'stopped')
                 ORDER BY c.stopped_at DESC
                 LIMIT 20
@@ -280,7 +355,7 @@ def get_all_campaigns_with_status(limit: int = 50, sector: str = None) -> list:
                     (SELECT COUNT(*) FROM emails_envoyes ee
                         JOIN leads_bruts lb ON ee.lead_id = lb.id
                         WHERE lb.campaign_id = c.id) as emails_envoyes
-                FROM campagnes c
+                FROM campagnes_legacy c
             """
             where = ""
             params = []

@@ -1,0 +1,11 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+8171,HEC Avocats,"
+1966 Zogbo, Immeuble AMETEPE, 2ème étage, avenue du Renouveau Quartier, Cotonou",Cotonou,Avocat,http://hecavocats.com/,97543895,,,Avocat,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+8172,Cabinet d’avocats YABIT Armel Timothée,"
+9C54+WV4, Cotonou",Cotonou,Avocat,https://avocatyabit.bj/,96151344,,,Avocat,web,1,5,no_favicon(+5),,,
+8173,Le Cabinet D'avocats ANGELO HOUNKPATIN,"
+Rue No. 208 Parcelle ""C"" Sikecodji 01 BP 2753, Cotonou",Cotonou,Cabinet d'avocat,,21321711,,0,Cabinet d'avocat,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,
+8174,CABINET BALOGOUN AVOCATS CONSEILS,"
+8e arrondissement, 1279, quartier Houenoussou, Cotonou",Cotonou,Avocat,http://www.barreaudubenin.bj/,0167166324,,,Avocat,web,,,,,,
+8175,Cabinet d'avocats - Maître Bidossessi AGBANI,"
+01BP5050, Cotonou",Cotonou,Cabinet d'avocat,https://wa.me/22995528138,95528138,,0,Cabinet d'avocat,web,5,,"Pas de site, téléphone présent — à contacter (création)",a_contacter,,

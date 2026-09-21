@@ -2,10 +2,21 @@
 from .connection import get_conn, logger
 
 
-def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None = None, date_end: str | None = None, campaign_ids: str | None = None) -> dict:
-    """Toutes les métriques cockpit."""
+def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None = None, date_end: str | None = None, campaign_ids: str | None = None, objectif_id: int | None = None) -> dict:
+    """Toutes les métriques cockpit.
+
+    `objectif_id` set → métriques v2 (prospects machine à états) ; sinon legacy.
+    """
     try:
         with get_conn() as conn:
+            if objectif_id:
+                return _stats_v2(conn, objectif_id, date_start, date_end)
+            # Legacy purgé (décommissionnement §1) → la vue cockpit bascule sur le
+            # pipeline v2 GLOBAL (toutes prospects de tous les objectifs).
+            tables = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+            if 'leads_bruts' not in tables:
+                return _stats_v2(conn, None, date_start, date_end)
             stats = {}
             where_lead = "WHERE 1=1"
             where_email = "WHERE 1=1"
@@ -156,6 +167,90 @@ def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None =
     except Exception as e:
         logger.error(f"get_dashboard_stats → {e}")
         return {}
+
+
+def _stats_v2(conn, campagne_id: int | None, date_start: str | None = None, date_end: str | None = None) -> dict:
+    """Métriques cockpit du modèle v2 (machine à états prospects).
+
+    `campagne_id=None` → vue GLOBALE (toutes les campagnes). `campagne_id` → une seule.
+    Même contrat de clés que la branche legacy (lecteurs : routes/stats.py, stats.js,
+    api.js, dashboard_core.js, sidebar).
+    """
+    if campagne_id is None:
+        from_t = "FROM prospects p"
+        where = "WHERE 1=1"
+        params = []
+    else:
+        from_t = "FROM prospects p JOIN listes l ON p.liste_id = l.id"
+        where = "WHERE l.campagne_id = ?"
+        params = [campagne_id]
+    if date_start and date_end:
+        where += " AND DATE(p.created_at) >= ? AND DATE(p.created_at) <= ?"
+        params += [date_start, date_end]
+
+    SENT = "('en_sequence','relance_1','relance_2','relance_3','sans_reponse'," \
+           "'a_traiter_humain','rdv_obtenu','pas_interesse','a_relancer_plus_tard'," \
+           "'ne_plus_contacter','adresse_invalide')"
+    REPLIED = "('a_traiter_humain','rdv_obtenu','pas_interesse','a_relancer_plus_tard')"
+
+    total = conn.execute(f"SELECT COUNT(*) AS c {from_t} {where}", params).fetchone()['c'] or 0
+    avec_site = conn.execute(
+        f"SELECT COUNT(*) AS c {from_t} {where} AND p.site_web IS NOT NULL AND p.site_web != ''",
+        params).fetchone()['c'] or 0
+    avec_email = conn.execute(
+        f"SELECT COUNT(*) AS c {from_t} {where} AND p.email IS NOT NULL AND p.email != ''",
+        params).fetchone()['c'] or 0
+    qualifie = conn.execute(
+        f"SELECT COUNT(*) AS c {from_t} {where} AND p.statut = 'qualifie' AND p.ecarte = 0",
+        params).fetchone()['c'] or 0
+    envoye = conn.execute(
+        f"SELECT COUNT(*) AS c {from_t} {where} AND p.ecarte = 0 AND p.statut IN {SENT}",
+        params).fetchone()['c'] or 0
+    repondu = conn.execute(
+        f"SELECT COUNT(*) AS c {from_t} {where} AND p.ecarte = 0 AND p.statut IN {REPLIED}",
+        params).fetchone()['c'] or 0
+    rdv = conn.execute(
+        f"SELECT COUNT(*) AS c {from_t} {where} AND p.ecarte = 0 AND p.statut = 'rdv_obtenu'",
+        params).fetchone()['c'] or 0
+
+    stats = {
+        'leads_scrapes': total,
+        'leads_attente': qualifie,
+        'leads_site': avec_site,
+        'emails_trouves': avec_email,
+        'leads_audites': total - qualifie,           # au-delà de "qualifie" = démarré/audité
+        'leads_en_attente': qualifie,
+        'leads_sans_site': total - avec_site,
+        'emails_prets': avec_email - envoye,         # a un email mais pas encore envoyé
+        'envoyes': envoye,
+        'emails_ouverts': 0,
+        'emails_repondus': repondu,
+        'reponses_positives': rdv,
+        'rdv_obtenus': rdv,
+        'bounces': 0,
+        'spam': 0,
+        'nb_envoyes': envoye,
+        'taux_ouverture': 0,
+        'taux_clic': 0,
+        'taux_reponse': round(repondu / envoye * 100) if envoye else 0,
+        'taux_rdv': round(rdv / envoye * 100) if envoye else 0,
+        'indice_perf': round(repondu / envoye * 100 * 0.35 + (rdv / envoye * 100) * 0.35) if envoye else 0,
+        'score_moyen': 0,
+        'mobile_moyen': 0,
+        'seo_moyen': 0,
+        'leads_prioritaires': 0,
+        'pdfs_generes': 0,
+    }
+
+    from config_manager import get_config
+    cfg = get_config()
+    stats['quotas'] = {
+        'groq': 0, 'resend': envoye, 'brevo': 0, 'hunter': 0, 'carbone': 0,
+        'gemini': 0, 'anthropic': 0, 'pagespeed': 0,
+    }
+    avg_basket = cfg.get('average_basket', 1500)
+    stats['projected_roi'] = repondu * avg_basket
+    return stats
 
 
 def get_leads_for_dashboard(campaign_id: int | None = None, date_start: str | None = None, date_end: str | None = None, campaign_ids: str | None = None, limit: int = 500) -> list:

@@ -1,0 +1,11 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+7289,Paris espace automobile,"
+37 Rue Letort, 75018 Paris, France",Paris,concessionnaires_auto,http://www.parisespaceautomobile.fr/,+33951559689,,0,concessionnaires_auto,web,2,20,pas_https(+15); no_favicon(+5),a_verifier,,
+7290,Garage Mécanique & Concession Auto Paris 12 NATION PICPUS - RENAULT DACIA Nissan & Toutes Marques Pare-Brise Rénovation,"
+28 Av. de Saint-Mandé, 75012 Paris, France",Paris,concessionnaires_auto,https://www.iptransauto.fr/,+33143439397,f.renault.dacia@iptrans-fr.com,0,concessionnaires_auto,web,1,5,no_favicon(+5),,,
+7291,[P] Parking Halles Garage - Parking - Station service,"
+10 Rue Bailleul, 75001 Paris, France",Paris,concessionnaires_auto,,+33142603624,,0,concessionnaires_auto,web,2,,Parking/station — hors cible; aucun site,a_verifier,,
+7292,Paris Prestige Cars,"
+79 Av. Marceau, 75116 Paris, France",Paris,concessionnaires_auto,http://www.parisprestigecars.fr/,+33147209090,contact@parisprestigecars.fr,0,concessionnaires_auto,web,4,100,HTTP 503 persistant (site down),a_contacter,,
+7293,FRENCH RIVIERA MOTORS PARIS,"
+60 Rue François 1er, 75008 Paris, France",Paris,concessionnaires_auto,https://www.frenchrivieramotorsparis.com/,+33749418332,,0,concessionnaires_auto,web,4,100,pas de DNS (frenchrivieramotorsparis.com inexistant),a_contacter,,

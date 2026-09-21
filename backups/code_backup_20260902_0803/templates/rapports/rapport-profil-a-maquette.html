@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre futur site — {{ nom }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0d1117;
+            --emerald: #10b981;
+            --emerald-dark: #059669;
+            --slate: #64748b;
+            --ghost: #f8f9fb;
+            --white: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--white);
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--ink);
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-brand {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--white);
+            text-decoration: none;
+        }
+
+        .header-brand span { color: var(--emerald); }
+
+        .header-date {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* HERO */
+        .hero {
+            background: var(--ink);
+            color: var(--white);
+            padding: 6rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--emerald);
+            padding: 0.4rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-family: 'Lora', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-style: italic;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        h1 strong {
+            display: block;
+            font-family: 'Sora', sans-serif;
+            font-weight: 800;
+            font-style: normal;
+            color: var(--white);
+        }
+
+        .hero-sub {
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2rem;
+        }
+
+        /* MOCKUPS */
+        .preview-section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .mockup-frame {
+            background: var(--ghost);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .desktop-screen {
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 8px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+            border: 1px solid var(--border);
+            margin-bottom: 4rem;
+        }
+
+        .mobile-screen {
+            width: 280px;
+            border-radius: 36px;
+            border: 8px solid var(--ink);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        /* ARGUMENTS */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            padding: 5rem 0;
+            align-items: center;
+        }
+
+        .info-text h2 {
+            font-family: 'Lora', serif;
+            font-size: 2.25rem;
+            font-style: italic;
+            margin-bottom: 2rem;
+        }
+
+        .arg-item {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .arg-num {
+            width: 32px;
+            height: 32px;
+            background: var(--ink);
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .arg-content h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .arg-content p {
+            color: var(--slate);
+            font-size: 0.95rem;
+        }
+
+        /* CTA */
+        .cta-box {
+            background: var(--ghost);
+            padding: 6rem 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .cta-title {
+            font-family: 'Lora', serif;
+            font-size: 2rem;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .cta-sub {
+            color: var(--slate);
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--emerald);
+            color: var(--white);
+            padding: 1.25rem 3rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn:hover {
+            background: var(--emerald-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.3);
+        }
+
+        .footer {
+            background: var(--ink);
+            color: rgba(255, 255, 255, 0.3);
+            text-align: center;
+            padding: 3rem;
+            font-size: 0.875rem;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid { grid-template-columns: 1fr; gap: 2rem; }
+            h1 { font-size: 2.5rem; }
+            .header { padding: 1rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="https://incidenx.com" class="header-brand">Incidenx<span>.</span></a>
+        <div class="header-date">Proposition préparée pour {{ nom }}</div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-tag">Propulser votre visibilité locale</div>
+            <h1>
+                Voici votre futur site,<br>
+                <strong>{{ nom }}</strong>
+            </h1>
+            <p class="hero-sub">{{ ville }} · Transformation digitale </p>
+        </div>
+    </section>
+
+    <section class="preview-section">
+        <div class="mockup-frame">
+            {% if screenshot_desktop or screenshot_mobile %}
+            {% if screenshot_desktop %}
+            <img src="{{ screenshot_desktop }}" class="desktop-screen" alt="Previsualisation Ordinateur">
+            {% endif %}
+            {% if screenshot_mobile %}
+            <img src="{{ screenshot_mobile }}" class="mobile-screen" alt="Previsualisation Mobile">
+            {% endif %}
+            {% else %}
+            <!-- Placeholder quand pas de maquette -->
+            <div style="background: linear-gradient(135deg, #1e3a5f 0%, #0a1f38 100%); padding: 60px 40px; text-align: center; border-radius: 8px;">
+                <div style="color: white; font-size: 48px; margin-bottom: 20px;">🏪</div>
+                <h3 style="color: white; margin-bottom: 10px;">Votre futur site ici</h3>
+                <p style="color: rgba(255,255,255,0.7);">Un site professionnel pour {{ nom }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="preview-section">
+        <div class="info-grid">
+            <div class="info-text">
+                <h2>Pourquoi votre entreprise mérite cette présence.</h2>
+                <p style="color:var(--slate)">
+                    Aujourd'hui, 82% des clients à {{ ville }} effectuent une recherche Google avant de choisir un professionnel. Être invisible, c'est laisser le champ libre à vos concurrents.
+                </p>
+            </div>
+            <div class="info-args">
+                <div class="arg-item">
+                    <div class="arg-num">1</div>
+                    <div class="arg-content">
+                        <h3>Crédibilité immédiate</h3>
+                        <p>Une présence web soignée transforme un prospect hésitant en client convaincu.</p>
+                    </div>
+                </div>
+                <div class="arg-item">
+                    <div class="arg-num">2</div>
+                    <div class="arg-content">
+                        <h3>Capture mobile 24/7</h3>
+                        <p>Votre futur site est optimisé pour transformer chaque clic sur smartphone en appel direct.</p>
+                    </div>
+                </div>
+                <div class="arg-item">
+                    <div class="arg-num">3</div>
+                    <div class="arg-content">
+                        <h3>Expansion locale</h3>
+                        <p>Attirez des clients au-delà de votre quartier grâce à un référencement Google Maps maîtrisé.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-box">
+        <div class="cta-title">Ce site peut être en ligne dans 3 semaines.</div>
+        <p class="cta-sub">
+            Nous avons déjà préparé toute la structure technique. Il ne manque plus que votre feu vert pour finaliser les contenus.
+        </p>
+        <a href="https://calendly.com/jmedansi/15min" class="btn">Prendre 15 min avec Jean-Marc</a>
+    </section>
+
+    <footer class="footer">
+        Confidentiel · Proposition réalisée par <a href="https://incidenx.com">Jean-Marc DANSI · Incidenx</a> · 2026
+    </footer>
+
+</body>
+</html>

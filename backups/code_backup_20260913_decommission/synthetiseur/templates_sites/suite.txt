@@ -1,0 +1,223 @@
+<section class="section-suite-floue">
+  <div class="suite-container">
+    <span class="suite-subtitle">Révélez votre éclat</span>
+    <h2 class="suite-title">Soins &amp; bien-être</h2>
+    <div class="suite-grid">
+      <div class="suite-card">
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=600&amp;q=80')"></div>
+        <div class="suite-card-body">
+          <h3>Conseil personnalisé</h3>
+          <p>Une analyse de votre peau et de vos envies pour des soins adaptés à vos besoins.</p>
+        </div>
+      </div>
+      <div class="suite-card">
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&amp;q=80')"></div>
+        <div class="suite-card-body">
+          <h3>Soins sur mesure</h3>
+          <p>Des prestations beauté réalisées avec des produits premium pour un résultat éclatant.</p>
+        </div>
+      </div>
+      <div class="suite-card">
+        <div class="suite-card-img" style="background-image: url('https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&amp;q=80')"></div>
+        <div class="suite-card-body">
+          <h3>Fidélité &amp; abonnement</h3>
+          <p>Un programme de fidélité avantageux avec des soins réguliers pour préserver votre beauté.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="suite-blur-overlay">
+    <div class="suite-blur-layer"></div>
+    <div class="suite-blur-card">
+      <span class="suite-blur-tag">La suite vous attend</span>
+      <h3 class="suite-blur-title">Vous voulez voir la suite de la maquette ?</h3>
+      <p class="suite-blur-text">Nous pouvons personnaliser le reste du site et le mettre en ligne sous quelques jours.</p>
+      <a href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NomEntreprise}}" class="suite-blur-btn" target="_blank">
+        <svg class="icon icon--md" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
+        Nous contacter — 0143681453
+      </a>
+    </div>
+  </div>
+</section>
+
+
+    -webkit-text-size-adjust: 100%;
+    --color-accent: #1a73e8;
+    --color-accent-light: #7eb8f7;
+    --color-bg-dark: #080c14;
+    --color-text: #ffffff;
+    --color-text-muted: rgba(255, 255, 255, 0.65);
+    --color-text-muted-2: rgba(255, 255, 255, 0.38);
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-light: rgba(255, 255, 255, 0.05);
+    --ff-heading: 'Lora', serif;
+    --ff-logo: 'EB Garamond', serif;
+    --ff-body: 'Sora', sans-serif;
+    --fs-title: clamp(2rem, 7.5vw, 2.8rem);
+    --fs-subtitle: 0.9375rem;
+    --fs-body: 0.875rem;
+    --fs-small: 0.75rem;
+    --fs-nav: 0.7rem;
+    --fs-btn: 0.72rem;
+    --lh-tight: 1.05;
+    --lh-normal: 1.8;
+    --nav-height: 4.5rem;
+    --container-padding: 1.25rem;
+    --radius-sm: 0.125rem;
+    --radius-md: 0.25rem;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-fast: 0.2s;
+    --duration-medium: 0.35s;
+    font-family: var(--ff-body);
+    font-size: var(--fs-body);
+    font-weight: 400;
+    line-height: var(--lh-normal);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    box-sizing: border-box;
+    position: relative;
+    background: #ffffff;
+    overflow: hidden;
+    padding: 6rem 1.5rem 10rem;
+    width: 100%;
+
+
+    <section class="profil-a-preview-section">
+  <div class="profil-a-info-grid">
+    <div class="profil-a-info-text">
+      <h2>Pourquoi votre entreprise mérite cette présence.</h2>
+      <p>Aujourd'hui, 82% des clients à Paris effectuent une recherche Google avant de choisir un professionnel. Être invisible, c'est laisser le champ libre à vos concurrents.</p>
+    </div>
+    <div class="profil-a-info-args">
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">1</div>
+        <div class="profil-a-arg-content">
+          <h3>Crédibilité immédiate</h3>
+          <p>Une présence web soignée transforme un prospect hésitant en client convaincu.</p>
+        </div>
+      </div>
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">2</div>
+        <div class="profil-a-arg-content">
+          <h3>Capture mobile 24/7</h3>
+          <p>Votre futur site est optimisé pour transformer chaque clic sur smartphone en appel direct.</p>
+        </div>
+      </div>
+      <div class="profil-a-arg-item">
+        <div class="profil-a-arg-num">3</div>
+        <div class="profil-a-arg-content">
+          <h3>Expansion locale</h3>
+          <p>Attirez des clients au-delà de votre quartier grâce à un référencement Google Maps maîtrisé.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+    -webkit-text-size-adjust: 100%;
+    --color-accent: #c9a0a0;
+    --color-accent-light: #c9a0a0;
+    --color-bg-dark: #0c0608;
+    --color-text: #ffffff;
+    --color-text-muted: rgba(255, 255, 255, 0.62);
+    --color-text-muted-2: rgba(255, 255, 255, 0.38);
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-light: rgba(255, 255, 255, 0.05);
+    --ff-heading: 'Cormorant Garamond', serif;
+    --ff-body: 'Jost', sans-serif;
+    --fs-title: clamp(2rem, 7.5vw, 2.8rem);
+    --fs-subtitle: 0.9375rem;
+    --fs-body: 0.875rem;
+    --fs-small: 0.75rem;
+    --fs-nav: 0.7rem;
+    --fs-btn: 0.7rem;
+    --lh-tight: 1.0;
+    --lh-normal: 1.9;
+    --nav-height: 4.5rem;
+    --container-padding: 1.25rem;
+    --radius-sm: 0.125rem;
+    --radius-pill: 20px;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-fast: 0.2s;
+    --duration-medium: 0.35s;
+    font-size: var(--fs-body);
+    font-weight: 400;
+    line-height: var(--lh-normal);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    box-sizing: border-box;
+    max-width: 100%;
+    margin: 0;
+    font-family: inherit;
+    background: #ffffff;
+    padding: 4rem 1.25rem;
+
+    <section class="profil-a-cta-box">
+  <div class="profil-a-cta-title">Ce site peut être en ligne dans 3 semaines.</div>
+  <p class="profil-a-cta-sub">
+    Nous avons déjà préparé toute la structure technique. Il ne manque plus que votre feu vert pour finaliser les contenus.
+  </p>
+  <a href="https://wa.me/22943681453?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9%20par%20le%20site%20de%20{{NomEntreprise}}" class="suite-blur-btn" target="_blank">
+        <svg class="icon icon--md" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
+        Nous contacter — 0143681453
+      </a>
+</section>
+
+
+<footer class="profil-a-footer">
+  <div class="footer-services-container">
+    <div class="footer-services-title">Nos expertises &amp; prestations</div>
+    <ul class="footer-services-list">
+      <li>Création de site internet</li>
+      <li>Optimisation Google Maps</li>
+      <li>E-réputation &amp; Avis clients</li>
+      <li>Création d'application web</li>
+      <li>Visibilité locale &amp; SEO</li>
+    </ul>
+  </div>
+  <div>
+    Confidentiel · Proposition réalisée par l'équipe d'IncidenX · 2026
+  </div>
+</footer>
+
+
+    -webkit-text-size-adjust: 100%;
+    --color-accent: #c9a0a0;
+    --color-accent-light: #c9a0a0;
+    --color-bg-dark: #0c0608;
+    --color-text: #ffffff;
+    --color-text-muted: rgba(255, 255, 255, 0.62);
+    --color-text-muted-2: rgba(255, 255, 255, 0.38);
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-light: rgba(255, 255, 255, 0.05);
+    --ff-heading: 'Cormorant Garamond', serif;
+    --ff-body: 'Jost', sans-serif;
+    --fs-title: clamp(2rem, 7.5vw, 2.8rem);
+    --fs-subtitle: 0.9375rem;
+    --fs-body: 0.875rem;
+    --fs-small: 0.75rem;
+    --fs-nav: 0.7rem;
+    --fs-btn: 0.7rem;
+    --lh-tight: 1.0;
+    --lh-normal: 1.9;
+    --nav-height: 4.5rem;
+    --container-padding: 1.25rem;
+    --radius-sm: 0.125rem;
+    --radius-pill: 20px;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-fast: 0.2s;
+    --duration-medium: 0.35s;
+    font-weight: 400;
+    line-height: var(--lh-normal);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    box-sizing: border-box;
+    background: #020617;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    padding: 5rem 2rem 3rem;
+    font-size: 0.875rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    font-family: inherit;
+    position: relative;

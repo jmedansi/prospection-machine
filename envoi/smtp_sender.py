@@ -13,7 +13,7 @@ import re
 from typing import Dict, Any, Optional, List
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formataddr
+from email.utils import make_msgid, formataddr
 
 from core.config import ensure_env
 
@@ -49,13 +49,25 @@ def _build_message(
     subject: str,
     body: str,
     reply_to: Optional[str] = None,
-) -> MIMEMultipart:
+    message_id: Optional[str] = None,
+    in_reply_to: Optional[str] = None,
+    references: Optional[str] = None,
+):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject or ''
     msg['From'] = formataddr((from_name, from_email)) if from_name else from_email
     msg['To'] = ', '.join(to_emails)
     if reply_to:
         msg['Reply-To'] = reply_to
+
+    # Threading RFC 2822 : un Message-ID est toujours posé (même si aucun parent)
+    if not message_id or not str(message_id).strip():
+        message_id = make_msgid(domain=from_email.split('@')[-1] if '@' in from_email else None)
+    msg['Message-ID'] = message_id
+    if in_reply_to:
+        msg['In-Reply-To'] = in_reply_to
+    if references:
+        msg['References'] = references
 
     if body.strip().startswith('<') or '<html' in body.lower():
         plain = _strip_html(body)
@@ -67,7 +79,7 @@ def _build_message(
         text_part = MIMEText(body, 'plain', 'utf-8')
         msg.attach(text_part)
 
-    return msg
+    return msg, message_id
 
 
 def send_prospecting_email_smtp(
@@ -78,9 +90,25 @@ def send_prospecting_email_smtp(
     lien_rapport: Optional[str] = None,
     dry_run: bool = False,
     reply_to: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    user: Optional[str] = None,
+    password: Optional[str] = None,
+    use_ssl: Optional[bool] = None,
+    use_tls: Optional[bool] = None,
+    from_email: Optional[str] = None,
+    from_name: Optional[str] = None,
+    message_id: Optional[str] = None,
+    in_reply_to: Optional[str] = None,
+    references: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Envoie un email de prospection via SMTP.
+
+    Les paramètres `host/port/user/password/use_ssl/use_tls/from_email/from_name`
+    permettent à la façade (envoi/gateway.py) d'envoyer via une boîte précise de
+    la table `mailboxes`. S'ils sont absents (None), on retombe sur le fichier .env
+    (comportement historique).
 
     Args:
         prospect_email: adresse destinataire ou liste séparée par des virgules
@@ -90,6 +118,11 @@ def send_prospecting_email_smtp(
         lien_rapport:   lien facultatif à remplacer dans le corps
         dry_run:        si True, ne fait pas d'envoi réel
         reply_to:       adresse Reply-To si nécessaire
+        host, port, user, password, use_ssl, use_tls,
+        from_email, from_name : override SMTP (cf. ci-dessus)
+        message_id:     Message-ID imposé (sinon généré via make_msgid)
+        in_reply_to:    header RFC 2822 (Message-ID du message auquel on répond)
+        references:     header RFC 2822 (chaîne des Message-ID du fil)
 
     Retourne:
         Dict avec les clés success, statut, message_id, erreur
@@ -109,29 +142,29 @@ def send_prospecting_email_smtp(
             'erreur': None,
         }
 
-    smtp_host = os.getenv('SMTP_HOST', '').strip()
+    smtp_host = host or os.getenv('SMTP_HOST', '').strip()
     if not smtp_host:
         # Fallback sur la configuration IMAP
         smtp_host = os.getenv('IMAP_HOST', '').strip()
-        
-    smtp_port = int(os.getenv('SMTP_PORT', '465').strip() or 465)
-    
-    smtp_user = os.getenv('SMTP_USER', '').strip()
+
+    smtp_port = int(port if port is not None else (os.getenv('SMTP_PORT', '465').strip() or 465))
+
+    smtp_user = user or os.getenv('SMTP_USER', '').strip()
     if not smtp_user:
         smtp_user = os.getenv('IMAP_USER', '').strip()
-        
-    smtp_password = os.getenv('SMTP_PASSWORD', '').strip()
+
+    smtp_password = password or os.getenv('SMTP_PASSWORD', '').strip()
     if not smtp_password:
         smtp_password = os.getenv('IMAP_PASSWORD', '').strip()
-        
-    smtp_use_ssl = _bool_env('SMTP_USE_SSL', True)
-    smtp_use_tls = _bool_env('SMTP_USE_TLS', False)
-    
-    from_email = os.getenv('SMTP_FROM_EMAIL', '').strip()
+
+    smtp_use_ssl = bool(use_ssl) if use_ssl is not None else _bool_env('SMTP_USE_SSL', True)
+    smtp_use_tls = bool(use_tls) if use_tls is not None else _bool_env('SMTP_USE_TLS', False)
+
+    from_email = from_email or os.getenv('SMTP_FROM_EMAIL', '').strip()
     if not from_email:
         from_email = smtp_user
-        
-    from_name = os.getenv('SMTP_FROM_NAME', '').strip()
+
+    from_name = from_name or os.getenv('SMTP_FROM_NAME', '').strip()
     if not from_name:
         from_name = os.getenv('BREVO_SENDER_NAME', 'Jean-Marc DANSI').strip()
 
@@ -150,7 +183,10 @@ def send_prospecting_email_smtp(
         logger.error(msg)
         return {'success': False, 'statut': 'erreur_config', 'message_id': None, 'erreur': msg}
 
-    message = _build_message(from_name, from_email, to_emails, email_objet, email_corps, reply_to)
+    message, used_message_id = _build_message(
+        from_name, from_email, to_emails, email_objet, email_corps, reply_to,
+        message_id=message_id, in_reply_to=in_reply_to, references=references,
+    )
 
     try:
         if smtp_use_ssl:
@@ -173,7 +209,7 @@ def send_prospecting_email_smtp(
         return {
             'success': True,
             'statut': 'envoye',
-            'message_id': None,
+            'message_id': used_message_id,
             'erreur': None,
         }
 

@@ -1,0 +1,608 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+8342,L'Osteria Paris Chatelet,"
+27 Rue Aubry le Boucher, 75004 Paris, France",Paris,,https://losteria.net/fr/menu/menu-della-casa/,+33142501503,,,,web,35,,losteria.net = réseau L'Osteria (chaîne internationale) - grand compte,a_verifier,,
+8343,Le Poulbot,"
+3 Rue Poulbot, 75018 Paris, France",Paris,,https://public.zenchef.com/fr/restaurants/351589/virtual-menu,+33974641071,,,,web,2,,public.zenchef.com = plateforme Zenchef - pas de site propre,a_verifier,,
+8344,La Ferrandaise restaurant de terroir Paris 6 table gourmande Gault&Millau 2026,"
+8 Rue de Vaugirard, 75006 Paris, France",Paris,,http://www.laferrandaise.com/menu-carte-vins/carte-menu-la-ferrandaise.pdf,+33143263636,,,,web,2,25,pas_https(+15); no_favicon(+5); no_webp(+5),a_verifier,,
+8345,"Rocaille - Bistrot, terrasse, vins","
+24 Rue de la Parcheminerie, 75005 Paris, France",Paris,,https://www.rocaillerestaurant.com/menus-carte/#menu-456982,+33171323011,,,,web,1,5,no_webp(+5),,,
+8346,Black Angus République,"
+8 Pl. de la République, 75011 Paris, France",Paris,,https://restaurantblackangus.com/reservation/,+33180980359,,,,web,2,,"403 anti-bot (site réel, non analysable)",a_verifier,,
+8347,A Modo Mio,"
+4 Rue de Turenne, 75004 Paris, France",Paris,,https://www.amodomioparis.fr/menus-carte/,+33140299239,,,,web,1,5,no_webp(+5),,,
+8348,Bo'bon,"
+24 Rue des Lombards, 75004 Paris, France",Paris,,https://www.ubereats.com/fr/store/bobon-asian-food/RHGIY1W8TR2YlHcGXadJmg?utm_campaign=CM2508147-search-free-nonbrand-google-pas_e_all_acq_Global&utm_medium=search-free-nonbrand&utm_source=google-pas&rwg_token=AFd1xnFdBK2mpKSBim9HSQQJKTdaYqiI3G_8W2MomjaeLQdrUfpj01oFsPTT-thzvKJLLxqYJqINPYsex9Y3niBj9qR6ESCDc-OLJB7xeQlhootiPonaQUs%3D,+33142716177,,,,web,2,,ubereats.com = plateforme Uber Eats - pas de site propre,a_verifier,,
+8349,Bus Toqué,"
+133 Av. des Champs-Élysées, 75008 Paris, France",Paris,,https://bustoque.fr/carte/,+33621402041,,,,web,1,0,Site moderne,,,
+8350,Occasion,"
+13 Rue Jacques Louvel-Tessier, 75010 Paris, France",Paris,,https://www.occasion-restaurant.fr/,+33781834230,,,,web,1,0,Site moderne,,,
+8351,Pangus-Etoile,"
+11 Rue de l'Étoile, 75017 Paris, France",Paris,,https://reservation.laddition.com/booking/pangus-etoile,+33610498116,,,,web,2,,reservation.laddition.com = plateforme de réservation - pas de site propre,a_verifier,,
+8352,Hakuba,"
+8 Quai du Louvre, 75001 Paris, France",Paris,,https://www.chevalblanc.com/fr/maison/paris/restaurants-et-bars/hakuba/,+33179355120,,,,web,35,,chevalblanc.com = groupe LVMH (Cheval Blanc) - grand compte,a_verifier,,
+8353,Le Coupe Gorge,"
+2 Rue de la Coutellerie, 75004 Paris, France",Paris,,http://lecoupegorge.com/cartes/plats/les-entrees-17.html,+33148047924,,,,web,1,15,pas_https(+15),,,
+8354,Bianca Trattoria - Restaurant & Brunch PARIS 2,"
+2 Rue du 4 septembre, 75002 Paris, France",Paris,,https://thefork.fr/restaurant/bianca-r742779?cc=18174-54f&rwg_token=AFd1xnFMU-sK-bCEGggppx8QYZDDkbn16pYoCLRkO_zYM4OCm1x_ITDfVNj-DqJfLHvT4c-vrxNsaOncHqyZV2eW_hFhb4IuSg%3D%3D,+33982285339,,,,web,2,,thefork.fr = plateforme TheFork - pas de site propre,a_verifier,,
+8355,Les Deux Palais,"
+3 Bd du Palais, 75004 Paris, France",Paris,,https://brasserielesdeuxpalais.fr/fr/booking,+33143542086,,,,web,1,5,no_og(+5),,,
+8356,Le Petit Marcel,"
+65 Rue Rambuteau, 75004 Paris, France",Paris,,https://www.ubereats.com/fr/store/le-petit-marcel/Nt6-ESTnRlKnl_sudaY8aw?utm_campaign=CM2508147-search-free-nonbrand-google-pas_e_all_acq_Global&utm_medium=search-free-nonbrand&utm_source=google-pas&rwg_token=AFd1xnH5acW6GIkAK6h2DzBBPQxJg6RCk6WRVBwaluGGmiNFJjSmBCLSjCbQAJmKw92dA6mCYWGsamXRfssz7aimH5_tLv2z0A%3D%3D,+33148871020,,,,web,2,,ubereats.com = plateforme Uber Eats - pas de site propre,a_verifier,,
+8357,Les Deux Colombes,"
+4 Rue de la Colombe, 75004 Paris, France",Paris,,https://thefork.fr/restaurant/les-deux-colombes-r595107?cc=18174-54f&rwg_token=AFd1xnG6Kxi6mny4vpDGBqyVjz8k9gY33bDwD2sDBrUuVPoN18o8s53Mw8QOfK1zi7a35QRqUE7AGckkHMvyBoj_AFDaizKlE1cqb7j7L7qTDV9rKxxqW7U%3D,+33142030432,,,,web,2,,thefork.fr = plateforme TheFork - pas de site propre,a_verifier,,
+8358,Les Rupins - Restaurant Parisien,"
+35 Bd de Magenta, 75010 Paris, France",Paris,,https://bookings.zenchef.com/results?rid=356442&pid=1001,+33153199704,,,,web,2,,bookings.zenchef.com = plateforme Zenchef - pas de site propre,a_verifier,,
+8359,le Paris Halles,"
+41 Bd de Sébastopol, 75001 Paris, France",Paris,,https://leparishalles.fr/fr/booking,+33140264919,,,,web,1,5,no_og(+5),,,
+8360,Le Cabanon de la Butte,"
+6 Rue Lamarck, 75018 Paris, France",Paris,,https://www.lecabanondelabutte.fr/,+33142572046,,,,web,1,0,Site moderne,,,
+8361,La Riotte,"
+10 Rue de Castellane, 75008 Paris, France",Paris,,https://lariotte.com/,+33140559171,,,,web,1,0,Site moderne,,,
+8362,Benoit Paris,"
+20 Rue Saint-Martin, 75004 Paris, France",Paris,,https://bookings.zenchef.com/results?rid=371167&pid=1001,+33142722576,,,,web,2,,bookings.zenchef.com = plateforme Zenchef - pas de site propre,a_verifier,,
+8363,Le Bistro des Augustins,"
+39 Quai des Grands Augustins, 75006 Paris, France",Paris,,https://thefork.fr/restaurant/bistro-des-augustins-r63066?cc=18174-54f&rwg_token=AFd1xnHhMQQ0QzVSGgtkndk47vYrXJoFpKceZpA2OVn8Nptc7lFLK8NcTC_dWcEgd-i8CQ8fPWdJ2R2yjUeKroekPZLzk3G_dg%3D%3D,+33143540441,,,,web,2,,thefork.fr = plateforme TheFork - pas de site propre,a_verifier,,
+8364,Le 52 Restaurant Paris 10,"
+52 Rue du Faubourg Saint-Denis, 75010 Paris, France",Paris,,https://thefork.fr/restaurant/le-52-r852932?cc=18174-54f&rwg_token=AFd1xnFx_GFK9zdLnAJfvipeHp3OMTURI_CpGmaZizyAwJ4Phxv2pD5QuwsAoudBlVTKBTdPHmc0gRC3Zk8ZrK9OaU8vECOwYJ759dDQcRTjYZov9tWZT-8%3D,+33148009588,,,,web,2,,thefork.fr = plateforme TheFork - pas de site propre,a_verifier,,
+8365,Eataly Paris Marais,"
+37 Rue Sainte-Croix de la Bretonnerie, 75004 Paris, France",Paris,,https://eataly.fr/nos-restaurants,+33183658100,,,,web,35,,eataly.fr = réseau international Eataly - grand compte,a_verifier,,
+8366,Il Grano,"
+212 Bis Bd Pereire, 75017 Paris, France",Paris,,https://www.restaurantilgrano.com/reservations/,+33184162326,,,,web,1,5,no_webp(+5),,,
+8367,L'hirondelle - Paris 4,"
+42 Bd Henri IV, 75004 Paris, France",Paris,,https://www.lhirondelleparis.com/r%C3%A9servations,+33142723512,,,,web,2,25,generator_Wix.com Website Builder(+20); no_og(+5),a_verifier,,
+8368,Le Mistral,"
+2 Pl. du Châtelet, 75004 Paris, France",Paris,,https://wiicmenu-qrcode.com/app/offre.php?r=1817,+33142781399,,,,web,2,,wiicmenu-qrcode.com = plateforme menu QR - pas de site propre,a_verifier,,
+8369,Don Giovanni,"
+19 Rue François Miron, 75004 Paris, France",Paris,,https://thefork.fr/restaurant/don-giovanni-paris-4-r844?cc=18174-54f&rwg_token=AFd1xnGZfIZnEabX8ajjpaRXKb8bxbAUr2gsnr83okD1pLxlbl_UXqwcmuJ5sVANcGVBWRCJzCZ7Km9beQ2qiuCh622HbOv52A%3D%3D,+33148870102,,,,web,0,,non analysé,,,
+8370,Chez Elie,"
+Chez Elie Restaurant Libanais, 67 Rue Rambuteau, 75004 Paris, France",Paris,,https://www.ubereats.com/fr/store/chezelie/6Ve_OQAeSTyzUx4WZGiR3Q?diningMode=PICKUP&utm_campaign=CM2508147-search-free-nonbrand-google-pas_e_all_acq_Global&utm_medium=search-free-nonbrand&utm_source=google-pas&rwg_token=AFd1xnF0qzIwLQ1eXRXP9E1POyKVdcn5zLeUBKGAY16p2YedbKm9Vzwtn5vZSyuY0qs3AFNb_45uKa4ypTQ1AeO-hwbXmxs4WevNWZsXcPmFboy3jCYoyI0%3D,+33142777970,,,,web,2,,ubereats.com = plateforme Uber Eats - pas de site propre,a_verifier,,
+8371,The Hood Paris,"
+80 Rue Jean-Pierre Timbaud, 75011 Paris, France",Paris,,https://www.thehoodparis.com/reservations,+33143576447,,,,web,1,0,Site moderne,,,
+8372,The Place to... Gare de l'Est - Restaurant Pub Paris 10,"
+131 Rue du Faubourg Saint-Martin, 75010 Paris, France",Paris,,https://www.theplaceto.paris/reserver/gare-de-lest,+33140361800,,,,web,35,,theplaceto.paris = réseau ThePlaceTo (plusieurs établissements) - grand compte,a_verifier,,
+8373,Pimpan Restaurant,"
+4 Rue Danton, 75006 Paris, France",Paris,,https://www.damedesarts.com/restaurant,+33181690060,,,,web,1,5,no_webp(+5),,,
+8374,Le Café des Musées,"
+49 Rue de Turenne, 75003 Paris, France",Paris,,http://www.lecafedesmusees.fr/,+33142729617,,,,web,1,15,pas_https(+15),,,
+8375,Le Paname Art Café,"
+14 Rue de la Fontaine au Roi, 75011 Paris, France",Paris,,https://www.billetreduc.com/303576/evt.htm,+33148063127,,,,web,2,,billetreduc.com = plateforme billetterie - pas de site propre,a_verifier,,
+8376,Les Bariolés de Maud Paris 11,"
+8 Rue Saint-Bernard, 75011 Paris, France",Paris,,https://www.lesbariolesdemaud.fr/,+33651074924,,,,web,2,25,generator_Wix.com Website Builder(+20); no_og(+5),a_verifier,,
+8377,Au Bistrot de la Montagne,"
+38 Rue de la Montagne Ste Geneviève, 75005 Paris, France",Paris,,https://www.bistrotlamontagne.com/fr/menu/dejeuner-menu-quartier-latin/,+33146335663,,,,web,1,0,Site moderne,,,
+8378,Bouillon de Paris - Restaurant cuisine Francaise République a Paris,"
+17 Pl. de la République, 75003 Paris, France",Paris,,https://bouillondeparis.com/#menu,+33149295050,,,,web,1,5,no_og(+5),,,
+8379,Terminus Nord,"
+23 Rue de Dunkerque, 75010 Paris, France",Paris,,https://www.terminusnord.com/reserver-une-table/?y_source=1_MTE2NjUxODItNzE1LWxvY2F0aW9uLnJlc2VydmF0aW9uX3VybA%3D%3D,+33142850515,,,,web,1,5,no_webp(+5),,,
+8380,Restaurant Aux Cèdres du Nord,"
+153 Rue La Fayette, 75010 Paris, France",Paris,,https://www.thefork.fr/restaurant/aux-cedres-du-nord-r66565,+33140165151,,,,web,2,,thefork.fr = plateforme TheFork - pas de site propre,a_verifier,,
+8381,Neni Paris,"
+12 Bd de Denain, 75010 Paris, France",Paris,,https://bookings.zenchef.com/results?rid=364022&pid=1001,+33142808234,,,,web,2,,bookings.zenchef.com = plateforme Zenchef - pas de site propre,a_verifier,,
+8382,Mangioni Paris,"
+23 Rue Saint-Vincent de Paul, 75010 Paris, France",Paris,,https://bookings.zenchef.com/results?rid=362777&pid=1001&_ga=2.123135179.1904586551.1699354046-1310191892.1699354045,+33183896114,,,,web,2,,bookings.zenchef.com = plateforme Zenchef - pas de site propre,a_verifier,,
+8383,Restaurant Station Nord-Est,"
+15 Rue du 8 Mai 1945, 75010 Paris, France",Paris,,https://lenordest.com/#livraison,+33140377416,,,,web,4,100,DNS introuvable (site cassé),a_contacter,,
+8384,Brasserie de l'Hôtel du Nord,"
+102 Quai de Jemmapes, 75010 Paris, France",Paris,,https://www.hoteldunordparis.com/menus,+33140407878,,,,web,1,0,Site moderne,,,
+8385,La Factoria O'Parinor | Restaurant Aulnay-sous-Bois 93,"
+Centre Commercial O'Parinor, 93600 Aulnay-sous-Bois, France",Paris,,https://www.ubereats.com/fr/store/la-factoria/m-JSQMDxUqKIrlmR41MVgA?diningMode=PICKUP&utm_campaign=CM2508147-search-free-nonbrand-google-pas_e_all_acq_Global&utm_medium=search-free-nonbrand&utm_source=google-pas&rwg_token=AFd1xnGaU-A1mtRuJfeZ-08weCV3GfNa8EJiO_7JpAGvKSprh3RpuOPo1TvWZftWSZz6jweIuJB_oOe0pR1SEt62WVaQ_4lBBbYa-6CgDuLmKuxNOmCZ3Og%3D,+33148605484,,,,web,2,,ubereats.com = plateforme Uber Eats - pas de site propre,a_verifier,,
+8386,La Pirogue,"
+Rue 104B, Cotonou",Cotonou,,https://wa.me/message/I7TZ3YBP7NI3M1,91954444,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8387,Face À La Mer,"
+03 BP 68 Fidjrossè Route des pêches, Cotonou",Cotonou,,http://www.facealamer.bj/,90390303,,,,web,4,100,DNS introuvable (site cassé),a_contacter,,
+8388,La pergola restaurant cotonou,"
+229, Cotonou",Cotonou,,https://wa.me/message/BRPR4I4WAD4QP1,0198707070,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8389,Frénésie Restaurant Bar,"
+Cotonou",Cotonou,,https://wa.me/message/V6ASJH53M7TOO1,0197143855,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8390,Princess_kitchen catering Cotonou,"
+99GP+HP2, Cotonou",Cotonou,,https://wa.me/22951828718,0151828718,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8391,MAISON ROUGE COTONOU,"
+Boulevard de la Marina, Cotonou",Cotonou,,http://hotel-benin-maison-rouge-cotonou.com/,0165126989,,,,web,2,20,pas_https(+15); no_favicon(+5),a_verifier,,
+8392,Kirikou Restaurant Bar,"
+Unnamed Road, Cotonou",Cotonou,,http://cad-communication.com/menurestokirikou/,0164321919,,,,web,2,,"menu hébergé sur site d'agence de comm (cad-communication.com), pas de site propre",a_verifier,,
+8393,Restaurant en ligne Cotonou _ Mood+Restaurant,"
+Cotonou",Cotonou,,https://wa.me/c/22958500585,0147281212,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8394,LE KARE EBENE,"
+Place de Martyrs, Cotonou",Cotonou,,http://www.lekareebene.com/,0164404040,,,,web,2,20,pas_https(+15); no_favicon(+5),a_verifier,,
+8395,Del Gusto RESTO,"
+0076, Cotonou",Cotonou,,http://wa.me/22944381211,44381211,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8396,Picasso Cake and Food,"
+229, Cotonou",Cotonou,,https://wa.me/message/TFJPMJV7WY2GJ1,0162593745,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8397,KOBE SUSHI BAR - LE KARE EBENE,"
+Place des Martyrs, Cotonou",Cotonou,,https://www.lekareebene.com/fr/kobe-sushi-bar/,0152404040,,,,web,0,,non analysé,,,
+8398,Allocodrome De Cotonou,"
+07 BP 2888, Cotonou",Cotonou,,https://wa.me/c/2290197975337,0197975337,,,,web,5,,Lien WhatsApp (pas de site web) - téléphone présent - à contacter (création),a_contacter,,
+8399,Hôtel Tolbiac,"
+122 Rue de Tolbiac, 75013 Paris, France",Paris,,https://www.hotel-tolbiac.com/,+33144242554,,,,web,1,5,no_webp(+5),,,
+8400,Virgina Hotel - Paris,"
+66 Rue du Père Corentin, 75014 Paris, France",Paris,,http://www.hotelvirgina.com/,+33145407090,,,,web,1,15,pas_https(+15),,,
+8401,Hotel Paris Vaugirard,"
+403 Rue de Vaugirard, 75015 Paris, France",Paris,,https://www.hotel-paris-vaugirard.com/fr/,+33148281872,,,,web,1,5,no_webp(+5),,,
+8402,HÔTEL RACHEL,"
+1 Rue du Capitaine Soyer, 93310 Le Pré-Saint-Gervais, France",Paris,,http://www.hotelrachelparis.com/,+33157147657,,,,web,2,20,pas_https(+15); no_webp(+5),a_verifier,,
+8403,hôtelF1 Paris Gennevilliers,"
+Av. Laurent Cély, 92230 Gennevilliers, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=3176&merchantid=seo-maps-FR-3176&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33891705256,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8404,JO&JOE Paris Gentilly,"
+89-93 Av. Paul Vaillant Couturier, 94250 Gentilly, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=B0D0&merchantid=seo-maps-FR-B0D0&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33184233760,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8405,Hotel Paris Bastille,"
+67 Rue de Lyon, 75012 Paris, France",Paris,,https://www.hotelparisbastille.com/?utm_source=Google&utm_medium=My_Business,+33140010717,,,,web,1,0,Site moderne,,,
+8406,B&B HOTEL Paris Italie Porte de Choisy,"
+15 Rue Charles Leroy, 94200 Ivry-sur-Seine, France",Paris,,https://www.hotel-bb.com/fr/hotel/paris-italie-porte-de-choisy?utm_source=googlemaps&utm_medium=fichehotel&utm_campaign=yext,+33892682480,,,,web,35,,hotel-bb.com = réseau B&B Hotels - grand compte,a_verifier,,
+8407,Absolute Hôtel Paris,"
+1 Rue de la Fontaine au Roi, 75011 Paris, France",Paris,,http://www.absolutehotelparis.com/,+33953774418,,,,web,1,15,pas_https(+15),,,
+8408,Enjoy Hostel,"
+5 Rue des Plantes, 75014 Paris, France",Paris,,https://www.enjoy-hostel.com/,+33145409948,,,,web,1,0,Site moderne,,,
+8409,Nord Est Hotel - Paris,"
+12 Rue des Petits Hôtels, 75010 Paris, France",Paris,,https://www.hotelparisnordest.com/,+33147700718,,,,web,1,5,no_favicon(+5),,,
+8410,Hôtel Courcelles Médéric,"
+4 Rue Médéric, 75017 Paris, France",Paris,,https://www.hotelcourcellesmederic.com/,+33147636913,,,,web,1,0,Site moderne,,,
+8411,Est Hotel Paris,"
+49 Bd de Magenta, 75010 Paris, France",Paris,,http://www.est-hotel-paris.com/,+33142401599,,,,web,2,,"cert TLS invalide - site réel, non analysable",a_verifier,,
+8412,Andréa Hotel - Paris Marais,"
+3 Rue Saint-Bon, 75004 Paris, France",Paris,,https://hotelandrea.paris/fr/,+33142784393,,,,web,1,0,Site moderne,,,
+8413,Hôtel France Louvre,"
+40 Rue de Rivoli, 75004 Paris, France",Paris,,http://www.francelouvre.com/,+33971284606,,,,web,2,20,pas_https(+15); no_webp(+5),a_verifier,,
+8414,D'win Hotel - Paris Marais,"
+20 Rue du Temple, 75004 Paris, France",Paris,,http://www.dwinhotel.com/,+33144540505,,,,web,1,15,pas_https(+15),,,
+8415,B&B HOTEL Paris Ivry Quai de Seine,"
+13 Rue François Mitterrand, 94205 Ivry-sur-Seine, France",Paris,,https://www.hotel-bb.com/fr/hotel/paris-ivry-quai-de-seine?utm_source=googlemaps&utm_medium=fichehotel&utm_campaign=yext,+33892234069,,,,web,35,,hotel-bb.com = réseau B&B Hotels - grand compte,a_verifier,,
+8416,Hosho Paris Sud Porte D'italie,"
+10 Rue Pierre Brossolette, 94270 Le Kremlin-Bicêtre, France",Paris,,https://hosho-paris-sud-porte-italie.premiereclasse.com/fr-fr/?utm_content=partoo&utm_medium=seo-bgp&utm_source=google,+33184040965,,,,web,35,,premiereclasse.com = réseau Première Classe/Hosho - grand compte,a_verifier,,
+8417,Hôtel Merryl,"
+7-9 Rue Pajol, 75018 Paris, France",Paris,,https://www.merrylhotel.com/,+33146077665,,,,web,1,0,Site moderne,,,
+8418,Europe Saint Séverin Hotel - Paris Centre,"
+38-40 Rue Saint-Séverin, 75005 Paris, France",Paris,,http://www.hoteleurope.net/,+33146340570,,,,web,1,15,pas_https(+15),,,
+8419,Hôtel Exe Paris Centre,"
+29 Rue d'Amsterdam, 75008 Paris, France",Paris,,https://www.eurostarshotels.fr/exe-paris-centre.html?referer_code=lb0gg00yx&utm_source=google&utm_medium=business&utm_campaign=lb0gg00yx,+33148740686,,,,web,35,,eurostarshotels.fr = réseau Eurostars/Exe - grand compte,a_verifier,,
+8420,Hotel Daval - Paris,"
+21 Rue Daval, 75011 Paris, France",Paris,,http://www.davalhotel.com/,+33147005123,,,,web,2,25,pas_https(+15); no_og(+5); no_webp(+5),a_verifier,,
+8421,Hôtel Beaunier - Porte d'Orléans - Paris 14,"
+31 Rue Beaunier, 75014 Paris, France",Paris,,http://www.hotelbeaunier.fr/fr/index.html,+33145393645,,,,web,3,65,non_responsive(+40); pas_https(+15); no_favicon(+5); no_og(+5),a_contacter,,
+8422,Hôtel de Paris,"
+104bis Rue de Paris, 92100 Boulogne-Billancourt, France",Paris,,https://www.hoteldeparisboulogne.fr/,+33146051382,,,,web,1,0,Site moderne,,,
+8423,Hôtel du Mont Blanc Paris,"
+28 Rue de la Huchette, 75005 Paris, France",Paris,,https://www.hotelmontblancparis.fr/,+33143544944,,,,web,3,45,non_responsive(+40); no_favicon(+5),a_contacter,,
+8424,The People Paris Marais,"
+17 Bd Morland, 75004 Paris, France",Paris,,https://www.thepeoplehostel.com/fr/destinations/paris-marais/,+33181224088,,,,web,35,,thepeoplehostel.com = réseau The People Hostels - grand compte,a_verifier,,
+8425,Britannique Hotel - Paris Centre,"
+20 Av. Victoria, 75001 Paris, France",Paris,,https://hotel-britannique.fr/,+33142337459,,,,web,1,0,Site moderne,,,
+8426,Hôtel La Comtesse Tour Eiffel,"
+29 Av. de Tourville, 75007 Paris, France",Paris,,http://www.comtesse-hotel.com/,+33145512929,,,,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+8427,Hôtel Beauséjour Parmentier,"
+71 Ave Parmentier, 75011 Paris, France",Paris,,https://www.hotelbeausejourparis.com/,+33147003816,,,,web,1,5,no_webp(+5),,,
+8428,La Maison Lavaud,"
+13 Rue Beaunier, 75014 Paris, France",Paris,,https://maisonlavaud.paris/?utm_source=google&utm_medium=organic&utm_campaign=fiche,+33686482652,,,,web,1,5,no_webp(+5),,,
+8429,Hôtel Aida Opéra,"
+11 Rue Richer, 75009 Paris, France",Paris,,http://www.aida-opera.com/,+33145231111,,,,web,1,15,pas_https(+15),,,
+8430,Hôtel Novotel Paris les Halles,"
+8 Pl. Marguerite de Navarre, 75001 Paris, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=0785&merchantid=seo-maps-FR-0785&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33142213131,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8431,La Manufacture Hotel - Paris,"
+8 Rue Philippe de Champagne, 75013 Paris, France",Paris,,http://www.hotel-la-manufacture.com/,+33145354525,,,,web,1,15,pas_https(+15),,,
+8432,Hôtel de France 18,"
+51 Bd Barbès, 75018 Paris, France",Paris,,http://www.hoteldefrance18.com/,+33146063870,,,,web,1,15,pas_https(+15),,,
+8433,Hôtel Tourisme Avenue,"
+66 Av. de la Motte-Picquet, 75015 Paris, France",Paris,,https://www.hoteltourismeavenue.com/,+33147342801,,,,web,1,0,Site moderne,,,
+8434,Holiday Inn Paris - Gare de l'Est,"
+5 Rue du 8 Mai 1945 45, 75010 Paris, France",Paris,,https://www.ihg.com/holidayinn/hotels/gb/en/paris/parge/hoteldetail?cm_mmc=GoogleMaps-_-HI-_-FR-_-PARGE,+33155260505,,,,web,35,,ihg.com = réseau Holiday Inn (IHG) - grand compte,a_verifier,,
+8435,St Christopher's Inn,"
+5 Rue de Dunkerque, 75010 Paris, France",Paris,,https://www.st-christophers.co.uk/paris/gare-du-nord-hostel,+33170085222,,,,web,35,,st-christophers.co.uk = réseau St Christopher's Inn - grand compte,a_verifier,,
+8436,St Christopher's Inn Paris - Canal,"
+159 Rue de Crimée, 75019 Paris, France",Paris,,https://www.st-christophers.co.uk/paris/canal-hostel,+33140343440,,,,web,35,,st-christophers.co.uk = réseau St Christopher's Inn - grand compte,a_verifier,,
+8437,Hotel London - Paris,"
+32 Bd des Italiens, 75009 Paris, France",Paris,,https://www.hotellondon.fr/,+33148245464,,,,web,1,0,Site moderne,,,
+8438,Citadines Les Halles Paris,"
+4 Rue des Innocents, 75001 Paris, France",Paris,,https://www.discoverasr.com/en/citadines/france/citadines-les-halles-paris?utm_source=google&utm_medium=maps&utm_campaign=hq-google-maps-alwayson-20240531-all-all-eu-fr-citadinesleshallesparis-yext-gbp,+33140392650,,,,web,35,,discoverasr.com = réseau Citadines/Ascott - grand compte,a_verifier,,
+8439,Secret de Paris - Hotel & Spa,"
+2 Rue de Parme, 75009 Paris, France",Paris,,https://www.secretdeparis.com/?utm_source=google&utm_medium=organic&utm_campaign=knowledge-graph,+33153163333,,,,web,1,0,Site moderne,,,
+8440,Generator Hostel,"
+9-11 Pl. du Colonel Fabien, 75010 Paris, France",Paris,,https://staygenerator.com/hostels/paris?lang=fr-FR,+33170988400,,,,web,35,,staygenerator.com = réseau Generator Hostels - grand compte,a_verifier,,
+8441,Café Hôtel de la Poste,"
+94 Rue Riquet, 75018 Paris, France",Paris,,https://www.tiqets.com/en/things-to-do-in-paris-c66746/?partner=la_ville_de_paris-162747,,,,,web,2,,tiqets.com = plateforme billetterie - pas de site propre,a_verifier,,
+8442,B&B HOTEL Paris Sud Châtenay-Malabry,"
+53 Av. de la Division Leclerc, 92290 Châtenay-Malabry, France",Paris,,https://www.hotel-bb.com/fr/hotel/paris-sud-chatenay-malabry?utm_source=googlemaps&utm_medium=fichehotel&utm_campaign=yext,+33890106706,,,,web,35,,hotel-bb.com = réseau B&B Hotels - grand compte,a_verifier,,
+8443,Paris Sud Appart Hotel,"
+3 Rue Assia Djebar, 92220 Bagneux, France",Paris,,https://parissudapparthotel.fr/,+33952573434,,,,web,1,5,no_favicon(+5),,,
+8444,Art Hôtel Paris Est,"
+23-25 Rue Scandicci, 93500 Pantin, France",Paris,,https://www.residhotel.com/paris-est-art-hotel,+33149429513,,,,web,35,,residhotel.com = réseau Residhotel - grand compte,a_verifier,,
+8445,Hôtel F1 Paris Porte de Montreuil,"
+Zac Eugène Barlain, Rue Etienne Marcel 290-302, 93170 Bagnolet, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=3488&merchantid=seo-maps-FR-3488&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33891705349,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8446,Hôtel Libertel Gare de L'Est Français,"
+13 Rue du 8 Mai 1945, 75010 Paris, France",Paris,,https://www.libertel-gare-de-lest-francais.com/,+33140359414,,,,web,35,,libertel-*.com = marque Libertel (groupe hôtelier) - grand compte,a_verifier,,
+8447,Hotel Cactus Paris,"
+47 Rue des Volontaires, 75015 Paris, France",Paris,,http://www.hotelcactusparis.com/,+33147347655,,,,web,1,15,pas_https(+15),,,
+8448,Hôtel Robespierre,"
+190 Rue de Paris, 93100 Montreuil, France",Paris,,https://hotelrobespierre.fr/,+33142872976,,,,web,1,5,no_favicon(+5),,,
+8449,Hôtel d'Alsace,"
+85 Bd de Strasbourg, 75010 Paris, France",Paris,,http://www.hotel-alsace-paris.com/,+33140377541,,,,web,2,20,pas_https(+15); no_favicon(+5),a_verifier,,
+8450,Hôtel Altona,"
+166 Rue du Faubourg Poissonnière, 75010 Paris, France",Paris,,https://www.hotelaltona.com/,+33148786824,,,,web,1,5,no_webp(+5),,,
+8451,Hôtel Le National Clichy Paris,"
+32 Bd Jean Jaurès, 92110 Clichy, France",Paris,,http://hotelnationalclichy.com/,+33140893343,,,,web,1,15,pas_https(+15),,,
+8452,Appart Hôtel - Residhome Paris Opéra,"
+30 Rue Joubert, 75009 Paris, France",Paris,,https://www.myresidhome.com/paris/residhome-paris-opera/apparthotel-residence-hoteliere.html,+33156350035,,,,web,35,,myresidhome.com = réseau Residhome - grand compte,a_verifier,,
+8453,Novotel Paris Est Centre de Conference,"
+1 Av. de la République, 93170 Bagnolet, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=0380&merchantid=seo-maps-FR-0380&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33149936300,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8454,Hôtel du Globe,"
+2 Rue d'Oran, 5 Rue Ernestine, 75018 Paris, France",Paris,,https://hotelduglobeparis.fr/,+33142236969,,,,web,1,0,Site moderne,,,
+8455,Hôtel F1,"
+Rue De La Cokerie, Av. Francis de Pressensé, 93210 Saint-Denis, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=3072&merchantid=seo-maps-FR-3072&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33891705378,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8456,B&B HOTEL Paris Porte de la Villette,"
+4 Rue Emile Reynaud, 75019 Paris, France",Paris,,https://www.hotel-bb.com/fr/hotel/paris-porte-de-la-villette?utm_source=googlemaps&utm_medium=fichehotel&utm_campaign=yext,+33892707550,,,,web,35,,hotel-bb.com = réseau B&B Hotels - grand compte,a_verifier,,
+8457,Modern'Est Hôtel,"
+91 Bd de Strasbourg, 75010 Paris, France",Paris,,https://www.hotel-modernest-paris.com/,+33140377720,,,,web,1,0,Site moderne,,,
+8458,Grand Hôtel de Paris,"
+72 Bd de Strasbourg, 75010 Paris, France",Paris,,https://www.grand-hotel-paris.com/,+33146074056,,,,web,1,0,Site moderne,,,
+8459,Hôtel Libertel Gare du Nord Suède,"
+106 Bd de Magenta, 75010 Paris, France",Paris,,http://www.libertel-gare-du-nord-suede.com/,+33140361012,,,,web,35,,libertel-*.com = marque Libertel (groupe hôtelier) - grand compte,a_verifier,,
+8460,ibis Paris Gare de l'Est TGV,"
+6 Rue Saint-Laurent, 75010 Paris, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=2023&merchantid=seo-maps-FR-2023&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33140380505,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8461,Hôtel De Lorraine,"
+3 Rue d'Alsace, 75010 Paris, France",Paris,,http://www.hotellorraine.com/,+33140358180,,,,web,2,25,pas_https(+15); no_favicon(+5); no_webp(+5),a_verifier,,
+8462,Hôtel de l'Aqueduc,"
+10 Rue Philippe de Girard, 75010 Paris, France",Paris,,http://www.hotelaqueduc.com/,+33140352929,,,,web,1,15,pas_https(+15),,,
+8463,Hôtel Kyriad Paris 10 Canal St Martin République,"
+30 Rue Lucien Sampaix, 75010 Paris, France",Paris,,http://www.kyriad-paris-canal-saint-martin-republique.fr/,+33142081974,,,,web,35,,kyriad-paris-canal-st-martin-republique.fr = réseau Kyriad - grand compte,a_verifier,,
+8464,Hôtel Victory Galou,"
+15 Pass. de l'Industrie, 75010 Paris, France",Paris,,https://www.victory-hotel-galou.com/,+33147701084,,,,web,2,25,generator_Wix.com Website Builder(+20); no_og(+5),a_verifier,,
+8465,Hôtel Aulivia Opéra,"
+4 R. des Petites Écuries, 75010 Paris, France",Paris,,https://www.hotel-aulivia-opera-paris.com/,+33145238888,,,,web,1,0,Site moderne,,,
+8466,ibis Budget Paris porte de la Chapelle - Aréna,"
+7 Imp. Marteau, 75018 Paris, France",Paris,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=B9H3&merchantid=seo-maps-FR-B9H3&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,+33892683072,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8467,Hôtel Paradis Paris,"
+41 R. des Petites Écuries, 75010 Paris, France",Paris,,https://hotelparadisparis.com/fr/?utm_source=gmb&utm_medium=organic,+33145230822,,,,web,1,0,Site moderne,,,
+8468,Campanile Paris Est - Porte De Bagnolet,"
+28 Av. du Général de Gaulle, 93170 Bagnolet, France",Paris,,https://paris-est-porte-de-bagnolet.campanile.com/fr-fr/?utm_content=partoo&utm_medium=seo-bgp&utm_source=google,+33148973600,,,,web,35,,campanile.com = réseau Campanile - grand compte,a_verifier,,
+8469,Orpi Part Dieu Immobilier Conseil Lyon 3eme,"
+157 Rue Paul Bert, 69003 Lyon, France",Lyon,,https://www.orpi.com/agence-part-dieu/?utm_source=gmb&utm_medium=organic&utm_campaign=gmb_lyon%203eme%20arrondissement&utm_content=agence-part-dieu,+33472847510,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8470,Orpi Côté Saône Immobilier Lyon 9eme,"
+11 Rue de Bourgogne, 69009 Lyon, France",Lyon,,https://www.orpi.com/cotesaoneimmo/?utm_source=gmb&utm_medium=organic&utm_campaign=gmb_lyon%209eme%20arrondissement&utm_content=cotesaoneimmo,+33472856303,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8471,APPART & SENS - Agence immobilière responsable,"
+6 Quai Jean Moulin, 69001 Lyon, France",Lyon,,https://www.appart-sens.fr/,+33627126275,,,,web,1,0,Site moderne,,,
+8472,Human Immobilier Lyon 9 Vaise,"
+6 Rue de Bourgogne, 69009 Lyon, France",Lyon,,https://www.human-immobilier.fr/lyon-vaise?utm_campaign=google_my_business_achat&utm_medium=seo&utm_source=google,+33437461020,,,,web,35,,human-immobilier.fr = réseau Human Immobilier - grand compte,a_verifier,,
+8473,OXIA Immobilier - Lyon Bellecour,"
+20 Rue du Plat, 69002 Lyon, France",Lyon,,https://www.oxia.fr/,+33478377717,,,,web,1,0,Site moderne,,,
+8474,Plusse Gestion Locative Lyon,"
+4 Rue de la Bourse, 69001 Lyon, France",Lyon,,https://plusse.co/?utm_source=google&utm_medium=mybusiness&utm_campaign=lyon,+33644640032,,,,web,1,5,no_favicon(+5),,,
+8475,INSTANT IMMOBILIER,"
+20 Rue René Leynaud, 69001 Lyon, France",Lyon,,http://www.instant-immo.com/,+33487914991,,,,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+8476,Orpi Montchat Immobilier Lyon 3eme,"
+33 Cours Dr Long, 69003 Lyon, France",Lyon,,https://www.orpi.com/montchatimmo/nous-contacter/,+33478532814,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8477,Agence PIETRAPOLIS LYON 7eme,"
+227 Gd Rue de la Guillotière, 69007 Lyon, France",Lyon,,"https://www.pietrapolis.fr/agence/pietrapolis-lyon-7-lyon-69007,5",+33472763000,,,,web,35,,pietrapolis.fr = réseau PietraPolis - grand compte,a_verifier,,
+8478,Orpi 4F Gestion Immo Lyon 9eme - GESTION LOCATIVE - LOCATION - CONCIERGERIE,"
+11 Rue de Bourgogne, 69009 Lyon, France",Lyon,,https://www.orpi.com/4fgestion/nous-contacter/,+33482836915,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8479,Orpi JMV - Immobilier Lyon 2eme,"
+12 Rue Vaubecour, 69002 Lyon, France",Lyon,,https://www.orpi.com/jmv/nous-contacter/,+33478383047,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8480,Sixième Avenue Immobilier Lyon 8e,"
+8 Rue Saint-Maurice, 69008 Lyon, France",Lyon,,https://www.sixiemeavenue.com/agences/lyon8/,+33437900367,,,,web,35,,sixiemeavenue.com = réseau Sixième Avenue - grand compte,a_verifier,,
+8481,Orpi Saxe Gambetta Immobilier Lyon 3eme,"
+41 Cr Gambetta, 69003 Lyon, France",Lyon,,https://www.orpi.com/saxegambetta/?utm_source=gmb&utm_medium=organic&utm_campaign=gmb_lyon%203eme%20arrondissement&utm_content=saxegambetta,+33481133555,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8482,ORPI MONPLAISIR LUMIERE IMMOBILIER,"
+35 Av. des Frères Lumière, 69008 Lyon, France",Lyon,,https://www.orpi.com/monplaisirlumiere/nous-contacter/?step=1,+33478766303,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8483,Quatuor - Agence Immobilière à commission fixe et réduite à Lyon et Villeurbanne !,"
+66 Rue Cuvier, 69006 Lyon, France",Lyon,,https://www.quatuor.immo/,+33451420150,,,,web,1,0,Site moderne,,,
+8484,Orpi 4F Gestion Immoparc Lyon 6eme - GESTION LOCATIVE - LOCATION - CONCIERGERIE,"
+79 Rue Tronchet, 69006 Lyon, France",Lyon,,https://www.orpi.com/4fgestion.immoparc/?utm_source=gmb&utm_medium=organic&utm_campaign=gmb_lyon%206eme%20arrondissement&utm_content=4fgestion.immoparc,+33482836912,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8485,Espaces Atypiques Lyon Sarrail - Agence immobilière,"
+11 Quai du Général Sarrail, 69006 Lyon, France",Lyon,,https://www.espaces-atypiques.com/lyon/?utm_campaign=GoogleMyBusiness&utm_medium=Local&utm_source=Google,+33420981244,,,,web,35,,espaces-atypiques.com = réseau Espaces Atypiques - grand compte,a_verifier,,
+8486,"Agence Centrale - Agence Immobilière Lyon, Gestion Locative, Syndic, Locations, Ventes","
+2 Rue Guynemer, 69002 Lyon, France",Lyon,,http://www.agencecentrale.eu/,+33472451919,,,,web,2,20,pas_https(+15); no_favicon(+5),a_verifier,,
+8487,Agence Immobilière Lyon - Citya Bourguignon Palluat,"
+42 Rue de l'Université, 69007 Lyon, France",Lyon,,https://www.citya.com/nous-contacter/326?,+33472823960,,,,web,35,,citya.com = réseau Citya - grand compte,a_verifier,,
+8488,Agence immobilière l'Adresse Lyon 3,"
+51 bis Av. Lacassagne, 69003 Lyon, France",Lyon,,https://www.ladresse.com/agence/l-adresse-lyon/350?utm_source=gmb,+33472686521,,,,web,35,,ladresse.com = réseau L'Adresse - grand compte,a_verifier,,
+8489,Nestenn Immobilier,"
+11 Rue Antoine Lumière, 69008 Lyon, France",Lyon,,https://immobilier-lyon-8.nestenn.com/,+33472784130,,,,web,35,,nestenn.com = réseau Nestenn - grand compte,a_verifier,,
+8490,Guy Hoquet LYON 4 agence immobilière du plateau,"
+119 Bd de la Croix-Rousse, 69004 Lyon, France",Lyon,,https://lyon-4.guy-hoquet.com/,+33472074600,,,,web,35,,guy-hoquet.com = réseau Guy Hoquet - grand compte,a_verifier,,
+8491,Andr'Immo Gestion & Swixim International Lyon 2,"
+5 Pl. Carnot, 69002 Lyon, France",Lyon,,https://andrimmo.fr/,+33478387996,,,,web,1,5,no_favicon(+5),,,
+8492,Agence Immobilière YOUR Immobilier Neuf,"
+16 Rue du Commandant Faurax, 69006 Lyon, France",Lyon,,https://www.yourimmobilier.com/,+33698561383,,,,web,1,0,Site moderne,,,
+8493,Lyon Immobilier,"
+55 Av. des Frères Lumière, 69008 Lyon, France",Lyon,,https://www.lyonimmo.net/,+33478008621,,,,web,3,50,non_responsive(+40); no_favicon(+5); no_og(+5),a_contacter,,
+8494,Tailor Immo,"
+26 Rue Servient, 69003 Lyon, France",Lyon,,https://www.tailorimmo.com/,+33478427220,,,,web,1,0,Site moderne,,,
+8495,Beaux Lieux Immobilier,"
+4 Pl. Gailleton, 69002 Lyon, France",Lyon,,https://www.beaux-lieux.fr/,+33481106737,,,,web,2,,connexion interrompue (site injoignable),a_verifier,,
+8496,Rhône Alpes Immo Stéphane Goutteratel,"
+64 Cr Émile-Zola, 69100 Villeurbanne, France",Lyon,,https://www.rhonealpesimmo.fr/,+33784398349,,,,web,2,25,generator_Wix.com Website Builder(+20); no_og(+5),a_verifier,,
+8497,Lyon 3 Immobilier,"
+151 Av. Lacassagne, 69003 Lyon, France",Lyon,,http://www.lyon3immo.com/,+33478546500,,,,web,2,25,pas_https(+15); no_og(+5); no_webp(+5),a_verifier,,
+8498,Agence immobilière Laforêt Villeurbanne,"
+131 Cr Émile-Zola, 69100 Villeurbanne, France",Lyon,,https://www.laforet.com/agence-immobiliere/villeurbanne-republique?utm_source=google&utm_medium=mybusiness,+33478687878,,,,web,35,,laforet.com = réseau Laforêt - grand compte,a_verifier,,
+8499,Régie Simonneau - Lyon 6,"
+11 Pl. Maréchal Lyautey, 69006 Lyon, France",Lyon,,https://www.regie-simonneau.com/?utm_source=gmb,+33478242424,,,,web,1,5,no_og(+5),,,
+8500,ERA Immobilier Lyon 3 Lacassagne,"
+23 Av. Lacassagne, 69003 Lyon, France",Lyon,,http://www.era-lacassagne.com/?utm_source=gmb,+33437911965,,,,web,35,,era-lacassagne.com = réseau ERA - grand compte,a_verifier,,
+8501,"Agence Nestenn Immobilier Croix-Rousse, Presqu’île et Caluire et Cuire","
+17 Rue de Belfort, 69004 Lyon, France",Lyon,,https://immobilier-lyon4.nestenn.com/,+33482533509,,,,web,35,,nestenn.com = réseau Nestenn - grand compte,a_verifier,,
+8502,CGI Real Estate Lyon,"
+99 Boulevard des Belges, 69006 Lyon, France",Lyon,,https://www.cgi-re.com/agences/cgi-real-estate-lyon,+33437569900,,,,web,35,,cgi-re.com = réseau CGI Real Estate - grand compte,a_verifier,,
+8503,Groupe Mercure - Agence Lyon-Rhône Alpes,"
+30 Rue Auguste Comte, 69002 Lyon, France",Lyon,,https://www.groupe-mercure.fr/agences/agence-mercure-lyon-rhone-alpes/,+33478429492,,,,web,35,,groupe-mercure.fr = réseau Groupe Mercure - grand compte,a_verifier,,
+8504,FONCIA | Agence Immobilière | Gestion Locative - Syndic - Location | Lyon | R. Garibaldi,"
+264 Rue Garibaldi, 69003 Lyon, France",Lyon,,https://fr.foncia.com/agence-immobiliere/lyon-69003/agence-immobiliere/foncia-saint-louis-5110,+33472845212,,,,web,35,,foncia.com = réseau Foncia - grand compte,a_verifier,,
+8505,Orpi Agence de la place lyon,"
+69 Rue de Trion, 69005 Lyon, France",Lyon,,https://www.orpi.com/adlp/nous-contacter/,+33437460000,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8506,Agence Nestenn Immobilier Lyon 6,"
+38 Rue Professeur Weill, 69006 Lyon, France",Lyon,,https://immobilier-lyon.nestenn.com/,+33472830511,,,,web,35,,nestenn.com = réseau Nestenn - grand compte,a_verifier,,
+8507,REGIE BARI,"
+14 Rue Tronchet, 69006 Lyon, France",Lyon,,http://www.bari.fr/,+33478930016,,,,web,1,15,pas_https(+15),,,
+8508,FONCIA | Agence Immobilière | Syndic-Gestion Locative | Lyon | Cours Charlemagne,"
+132 Cr Charlemagne, 69002 Lyon, France",Lyon,,https://fr.foncia.com/agence-immobiliere/lyon-69002/agence-immobiliere/foncia-confluence-3533,+33472562552,,,,web,35,,foncia.com = réseau Foncia - grand compte,a_verifier,,
+8509,FONCIA | Agence Immobilière | Achat-Vente | Lyon | Pl. Ambroise Courtois,"
+2 Pl. Ambroise Courtois, 69008 Lyon, France",Lyon,,https://fr.foncia.com/agence-immobiliere/lyon-69008/agence-immobiliere/foncia-transaction-lyon-8eme-1689,+33420983119,,,,web,35,,foncia.com = réseau Foncia - grand compte,a_verifier,,
+8510,Le Neuf Gestion,"
+119 Av. Maréchal de Saxe, 69003 Lyon, France",Lyon,,http://www.leneufgestion.com/,+33478143089,,,,web,3,40,pas_https(+15); generator_Wix.com Website Builder(+20); no_og(+5),a_contacter,,
+8511,ACI Immobilier,"
+24 Pl. des Maisons Neuves, 69100 Villeurbanne, France",Lyon,,http://www.acimmo.com/,+33474561010,,,,web,3,65,non_responsive(+40); pas_https(+15); no_favicon(+5); no_og(+5),a_contacter,,
+8512,IDEAL groupe Auvergne - Rhône-Alpes,"
+77 Bd de Stalingrad 8e étage, 69006 Lyon, France",Lyon,,https://www.ideal-groupe.com/,+33426463330,,,,web,35,,ideal-groupe.com = réseau IDEAL groupe immobilier - grand compte,a_verifier,,
+8513,Vilogia Lyon,"
+87 Cr Lafayette, 69006 Lyon, France",Lyon,,https://outlook.office365.com/owa/calendar/AccueilAgencedeLyon@vilogia.fr/bookings/,+33969373635,,,,web,35,,Vilogia = bailleur social (grand compte) ; site = calendrier booking outlook,a_verifier,,
+8514,Galyo,"
+4 Rue de la Charité, 69002 Lyon, France",Lyon,,http://www.galyo.fr/,+33472771577,,,,web,2,20,pas_https(+15); no_favicon(+5),a_verifier,,
+8515,SEMCODA - Agence Lyonnaise,"
+31 Rue Louis Guérin, 69100 Villeurbanne, France",Lyon,,https://www.semcoda.com/espaces-accueil/agence-lyonnaise,+33478932192,,,,web,35,,semcoda.com = bailleur social (SEMCODA) - grand compte,a_verifier,,
+8516,NOTRE AGENCE IMMO,"
+165 Rte de Vienne, 69008 Lyon, France",Lyon,,http://notreagenceimmo.com/,+33472763344,,,,web,2,25,pas_https(+15); no_favicon(+5); no_og(+5),a_verifier,,
+8517,NOUVEAU LYON,"
+BP62057, 69616 Villeurbanne cedex, France",Lyon,,http://nouveaulyon.fr/,,,,,web,2,25,pas_https(+15); no_favicon(+5); no_webp(+5),a_verifier,,
+8518,Regie Juron Tripier,"
+27 Rue de Brest, 69002 Lyon, France",Lyon,,http://www.juron-tripier.fr/,+33472562020,,,,web,2,25,pas_https(+15); no_og(+5); no_webp(+5),a_verifier,,
+8519,Régie Simonneau,"
+1 Rue Croix-Barret, 69007 Lyon, France",Lyon,,https://www.regie-simonneau.com/,+33472755151,,,,web,0,,non analysé,,,
+8520,Régie Lescuyer et associés,"
+17 Quai Joseph Gillet, 69004 Lyon, France",Lyon,,http://www.regie-immobilier-lyon.com/,+33478173638,,,,web,1,15,pas_https(+15),,,
+8521,HQ Tête d'or,"
+35-37 Rue Louis Guérin Immeuble le Patio, 69100 Villeurbanne, France",Lyon,,https://www.hq.com/en/france/auvergne-rhone-alpes/villeurbanne?utm_source=google_uberall&utm_medium=places&utm_campaign=uberall&utm_content=uberall,+33805543831,,,,web,35,,hq.com = réseau HQ (bureaux/coworking international) - grand compte,a_verifier,,
+8522,in'li Aura,"
+14 Rue Tronchet, 69006 Lyon, France",Lyon,,https://www.inli.fr/,+33484311111,,,,web,35,,inli.fr = réseau bailleur in'li - grand compte,a_verifier,,
+8523,Rapin Immobilier,"
+57 Rue de Trion, 69005 Lyon, France",Lyon,,http://www.rapin-immo.com/,+33478361662,,,,web,2,25,pas_https(+15); no_og(+5); no_webp(+5),a_verifier,,
+8524,Habitat de Caractère,"
+6 Pl. Sathonay, 69001 Lyon, France",Lyon,,http://www.habitatdecaractere.com/,+33472800572,,,,web,1,15,pas_https(+15),,,
+8525,Le Plan Immobilier,,Lyon,,https://www.plan-immobilier.fr/,,,,,web,1,0,Site moderne,,,
+8526,Atrium Conseil Immobilier,"
+119 Bd de Stalingrad, 69100 Villeurbanne, France",Lyon,,https://www.atrium69immo.com/,+33670485718,,,,web,3,45,non_responsive(+40); no_favicon(+5),a_contacter,,
+8527,Espace Immobilier Lyonnais,"
+5 Rue Bonnefoi, 69003 Lyon, France",Lyon,,https://www.espaceimmolyon.com/,+33472778036,,,,web,1,0,Site moderne,,,
+8528,ParuVendu.fr,"
+86 Rue Paul Bert, 69003 Lyon, France",Lyon,,https://www.paruvendu.fr/,+33482752617,,,,web,2,,paruvendu.fr = plateforme petites annonces - pas de site propre,a_verifier,,
+8529,C.E.C.I.M Centre Etudes de la Conjoncture Immobilière,"
+61 Rue de la République, 69002 Lyon, France",Lyon,,https://www.cecimobs.net/,+33478929396,,,,web,1,10,no_favicon(+5); no_og(+5),,,
+8530,SEFI,"
+1 Rue Croix-Barret, 69007 Lyon, France",Lyon,,http://www.sefi-terrains.com/,+33478404232,,,,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+8531,Immobiliaire,"
+7 Rue du Plat, 69002 Lyon, France",Lyon,,https://limmobiliaire.com/,+33481651819,,,,web,4,100,erreur 521 persistante (site cassé),a_contacter,,
+8532,Prorégie,"
+17 Rue de la Quarantaine, 69005 Lyon, France",Lyon,,https://www.proregie.fr/,+33478793393,,,,web,1,0,Site moderne,,,
+8533,SLCI Promotion,"
+1 Rue Croix-Barret, 69007 Lyon, France",Lyon,,https://www.slci-promotion.com/,+33472804610,,,,web,35,,slci-promotion.com = promoteur immobilier - grand compte,a_verifier,,
+8534,Hapiiz,"
+52 Rue Denuzière, 69002 Lyon, France",Lyon,,http://recrutement.hapiiz.fr/,+33472702367,,,,web,2,,"recrutement.hapiiz.fr = page recrutement, pas le site de l'entreprise",a_verifier,,
+8535,Appart'City Classic Lyon Part-Dieu Villette - Appart Hôtel,"
+6 Av. Lacassagne, 69003 Lyon, France",Lyon,,https://www.appartcity.com/fr/destinations/france/auvergne-rhone-alpes/lyon/lyon-part-dieu-villette?utm_source=google&utm_medium=mybusiness&utm_campaign=lyon-part-dieu-villette,+33437919921,,,,web,35,,appartcity.com = réseau Appart'City - grand compte,a_verifier,,
+8536,Agence immobilière Guy Hoquet LYON 7 Sud,"
+15 Pl. Docteurs Charles et Christophe Mérieux, 69007 Lyon, France",Lyon,,https://lyon-7-sud.guy-hoquet.com/,+33472200207,,,,web,35,,guy-hoquet.com = réseau Guy Hoquet - grand compte,a_verifier,,
+8537,Agence Immobilière Lyon - Citya Barioz,"
+5 Cr Bayard, 69002 Lyon, France",Lyon,,https://www.citya.com/nous-contacter/323?,+33472757070,,,,web,35,,citya.com = réseau Citya - grand compte,a_verifier,,
+8538,Orpi Immo du Quai Lyon 5eme,"
+7 Quai Fulchiron, 69005 Lyon, France",Lyon,,https://www.orpi.com/immoduquai/?utm_source=gmb&utm_medium=organic&utm_campaign=gmb_lyon%205eme%20arrondissement&utm_content=immoduquai,+33428391000,,,,web,35,,orpi.com = réseau ORPI - grand compte,a_verifier,,
+8539,"Immobilière des 2 Lacs | Lyon - Achat, vente et estimation de bien immobilier","
+127 Rue de Sèze, 69006 Lyon, France",Lyon,,https://www.immobilieredes2lacs.com/,+33616934386,,,,web,1,0,Site moderne,,,
+8540,Agence Sixième Avenue Immobilier - Lyon 7e / 2e,"
+39 ter Rue de Marseille, 69007 Lyon, France",Lyon,,https://www.sixiemeavenue.com/agences/lyon7/,+33472720806,,,,web,35,,sixiemeavenue.com = réseau Sixième Avenue - grand compte,a_verifier,,
+8541,Mandalys Immobilier,"
+124 Rue Bossuet, 69006 Lyon, France",Lyon,,http://www.mandalys-immobilier.fr/,+33472040304,,,,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+8542,FONCIA | Agence Immobilière | Location-Syndic-Gestion Locative | Lyon | Av. Marechal de Saxe,"
+119 Av. Maréchal de Saxe, 69003 Lyon, France",Lyon,,https://fr.foncia.com/agence-immobiliere/lyon-69003/agence-immobiliere/foncia-bouvet-bonnamour-6527,+33437482000,,,,web,35,,foncia.com = réseau Foncia - grand compte,a_verifier,,
+8543,CENTURY 21 RIVE GAUCHE | Agence immobilière à Lyon 6ème,"
+31 Cr Lafayette, 69006 Lyon, France",Lyon,,http://www.century21-rg-lyon-6.com/?utm_source=google_business&utm_medium=bouton_fiche_agence&utm_campaign=century-21-rive-gauche,+33481062299,,,,web,35,,century21.com = réseau Century 21 - grand compte,a_verifier,,
+8544,Agence Immobilière Lyon - Citya Gerimmo-Gambetta,"
+125 Rue Garibaldi, 69006 Lyon, France",Lyon,,https://www.citya.com/agences-immobilieres/lyon-6e-arrondissement-69006/620?utm_campaign=lyon_6e_arrondissement&utm_medium=gmb&utm_source=google,+33472812850,,,,web,35,,citya.com = réseau Citya - grand compte,a_verifier,,
+8545,Agence immobilière Cime Transactions Lyon,"
+7 Rue Professeur Rollet, 69008 Lyon, France",Lyon,,http://www.cime-transactions.com/fr/,+33627281348,,,,web,1,15,pas_https(+15),,,
+8546,Agence immobilière Lyon MS PRESTIGE IMMOBILIER,"
+25 Rue Frère Benoît, 69009 Lyon, France",Lyon,,https://www.msprestigeimmobilier.fr/,+33619842011,,,,web,3,45,non_responsive(+40); no_favicon(+5),a_contacter,,
+8547,Agence immobilière Laforêt Lyon 8,"
+136 Av. des Frères Lumière, 69008 Lyon, France",Lyon,,https://www.laforet.com/agence-immobiliere/lyon8?utm_source=google&utm_medium=mybusiness,+33478012526,,,,web,35,,laforet.com = réseau Laforêt - grand compte,a_verifier,,
+8548,Agence immobilière ERA Jean Macé LYON,"
+68 Av. Jean Jaurès, 69007 Lyon, France",Lyon,,https://www.erafrance.com/agence-immobiliere-lyon-7-245,+33481654440,,,,web,35,,erafrance.com = réseau ERA - grand compte,a_verifier,,
+8549,ORPI AGENCE de la Gare,"
+123 Av. Jean Jaurès, 69007 Lyon, France",Lyon,,https://estimationimmobilierlyon.com/,+33437264196,,,,web,35,,estimationimmobilierlyon.com = agence ORPI - réseau ORPI - grand compte,a_verifier,,
+8550,Agence Immobilière Lyon - Citya Gallichet Lemaitre,"
+158 Gd Rue de la Guillotière, 69007 Lyon, France",Lyon,,https://www.citya.com/agences-immobilieres/lyon-7e-arrondissement-69007/603?utm_campaign=lyon_7e_arrondissement&utm_medium=gmb&utm_source=google,+33478721724,,,,web,35,,citya.com = réseau Citya - grand compte,a_verifier,,
+8551,MY CASA IMMOBILIER LYON 4,"
+47 Quai Joseph Gillet, 69004 Lyon, France",Lyon,,https://www.mycasa-immobilier.com/,+33478352839,,,,web,1,0,Site moderne,,,
+8552,Lyon Ouest Immobilier,"
+36 Av. Général de Gaulle, 69260 Charbonnières-les-Bains, France",Lyon,,http://www.lyonouest.fr/,+33437225050,,,,web,2,25,pas_https(+15); no_og(+5); no_webp(+5),a_verifier,,
+8553,THIBAUD VENET IMMOBILIER | Groupe d’Agences | Lyon & Genève | Immobilier de Prestige - Luxe,"
+32 Quai Paul Sédallian, 69009 Lyon, France",Lyon,,https://www.thibaud-venet-immobilier.com/,+33972456082,,,,web,35,,thibaud-venet-immobilier.com = groupe d'agences - grand compte,a_verifier,,
+8554,Novolia immobilier,"
+76 Rue Bechevelin, 69007 Lyon, France",Lyon,,http://www.novolia-immobilier.com/,+33437425125,,,,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+8555,Gestion Immo Lyon,"
+63 Rue André Bollier, 69007 Lyon, France",Lyon,,https://gestion-immo-lyon.fr/,+33428296024,,,,web,1,5,no_favicon(+5),,,
+8556,Agence HOMICCA,"
+11 Quai Arloing, 69009 Lyon, France",Lyon,,https://homicca.fr/,+33437642585,,,,web,1,0,Site moderne,,,
+8557,Ipso Immobilier,"
+13 Rue du Général Plessier, 69002 Lyon, France",Lyon,,https://ipsoimmobilier.simplybook.it/v2/#,+33626689080,,,,web,2,,ipsoimmobilier.simplybook.it = plateforme SimplyBook - pas de site propre,a_verifier,,
+8558,Hôtel Ibis,"
+Boulevard De La Marina, 08 Bp 0929, Cotonou",Cotonou,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=6681&merchantid=seo-maps-BJ-6681&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,21305677,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8559,Benin Royal Hotel,"
+9C7F+Q85, Lot 398 quartier Maro-Militaire. Vons face Toxi Labo, Av. Germain Olory Togbé, Cotonou",Cotonou,,https://www.beninroyalhotel.com/en/,0165898989,,,,web,1,5,no_webp(+5),,,
+8560,HÔTEL SAFARI Cotonou,"
+Rue 1322, Cotonou",Cotonou,,https://www.booking.com/hotel/bj/safari-cotonou.fr.html,97198300,,,,web,2,,booking.com = plateforme réservation - pas de site propre,a_verifier,,
+8561,Residence MaryHouse,"
+12ᵉ Arrondissement, Rue 12 355, Cotonou",Cotonou,,https://www.maryhouse.bj/en/,0157575744,,,,web,1,0,Site moderne,,,
+8562,Nora Hôtel,"
+Pont Martin Luther King, Cotonou",Cotonou,,https://www.norahotelbenin.com/,99997980,,,,web,1,5,no_webp(+5),,,
+8563,AZALAÏ HOTEL COTONOU ( Hôtel de la Plage ),"
+Quartier Ganhi - Cotonou, Cotonou",Cotonou,,https://www.azalai.com/azalai-hotel-cotonou/,0121317200,,,,web,35,,azalai.com = réseau hôtelier Azalaï - grand compte,a_verifier,,
+8564,Hotel Galilée,"
+Rue 753, Cotonou",Cotonou,,https://www.galileehotel.com/en/,57300131,,,,web,1,5,no_webp(+5),,,
+8565,NKOMON - Réservation Hôtels & Restaurants,"
+07003, Cotonou",Cotonou,,https://nkomonapp.com/,0197648617,,,,web,2,,nkomonapp.com = plateforme réservation - pas de site propre,a_verifier,,
+8566,Glory Palace Hôtel Cotonou,"
+9CH4+2H3, Rue 329B, Cotonou",Cotonou,,https://www.glorypalacehotel.com/en/,0194010976,,,,web,1,5,no_webp(+5),,,
+8567,Hotel Novotel Cotonou Orisha,"
+Boulevard de la Marina, Cotonou",Cotonou,,https://all.accor.com/lien_externe.svlt?goto=fiche_hotel&code_hotel=1826&merchantid=seo-maps-BJ-1826&sourceid=aw-cen&utm_medium=seo%20maps&utm_source=google%20Maps&utm_campaign=seo%20maps,0121305662,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8568,Hotel Bel Azur Cotonou,"
+BP: 31, Cotonou",Cotonou,,https://reservation.hotelbelazurbenin.com/cotonou/,62415050,,,,web,2,,308 redirect loop (site injoignable),a_verifier,,
+8569,Golden Tulip Le Diplomate Cotonou,"
+N° 90 rue 12.017 - Boulevard de la Marina, Cotonou",Cotonou,,http://www.goldentuliplediplomatecotonou.com/,0198300200,,,,web,35,,goldentuliplediplomatecotonou.com = réseau Golden Tulip - grand compte,a_verifier,,
+8570,Hotel Saint Jean,"
+Carrefour Cossi Quartier Saint Jean, Cotonou",Cotonou,,http://hotelsaintjeanctn.com/,0195697853,,,,web,4,100,DNS introuvable (site cassé),a_contacter,,
+8571,Hotel du Lac,"
+Cotonou",Cotonou,,http://www.hoteldulacbenin.com/,21331919,,,,web,2,25,pas_https(+15); no_favicon(+5); no_og(+5),a_verifier,,
+8572,Hotel Le Prince,"
+Cotonou",Cotonou,,https://www.hotelleprince.com/en/,97372240,,,,web,1,0,Site moderne,,,
+8573,"La Voile Bleue, Fidjrossè, Cotonou","
+Rue 2354, Cotonou",Cotonou,,https://www.booking.com/hotel/bj/la-voile-bleue-guest-house.fr.html?label=gen173nr-1BCAsoGkIabGEtdm9pbGUtYmxldWUtZ3Vlc3QtaG91c2VIM1gEaE2IAQGYAQ24ARjIAQzYAQHoAQGIAgGoAgS4AtSQ17kGwAIB0gIkYTk1YWMyYTEtMDlhYy00N2EwLTg3OWQtNTAzNDEzYjBmNDRm2AIF4AIB&sid=442f3321c731f39238900d3c140083cd&dist=0&keep_landing=1&sb_price_type=total&type=total&,0154000007,,,,web,2,,booking.com = plateforme réservation - pas de site propre,a_verifier,,
+8574,Paradisia Hôtel,"
+98MW+R8F, Rue RNIE 1, Quartier Godomey, Cotonou",Cotonou,,https://www.paradisiahotel.bj/,96975757,,,,web,1,10,no_favicon(+5); no_og(+5),,,
+8575,Hotel Tamarin,"
+Rue du Centre Nationale de Casier Judiciaire, Rue 231, Cotonou",Cotonou,,https://tamarinhotel.com/,0155610707,,,,web,2,,"cert TLS invalide - site réel, non analysable",a_verifier,,
+8576,"Beach Sand Hotel & Resort, Cotonou, Republic of Bénin. - Best Hotel in Cotonou, Republic of Bénin.","
+Carré 93, Zone des Ambassades Rue 1.120 Akpakpa, Cotonou",Cotonou,,http://www.beachsandhotel.com/,53649165,,,,web,2,25,pas_https(+15); no_og(+5); no_webp(+5),a_verifier,,
+8577,Guesthouse Cocotiers Cotonou,"
+00229, Cotonou",Cotonou,,http://www.guesthouse-cocotiers.com/,66416117,,,,web,2,,temps dépassé (site injoignable),a_verifier,,
+8578,Noahgarden,"
+Gbegame 4 Vons Gnonas Pedro, Rue 616, Cotonou",Cotonou,,https://noahgardenhotel.com/,66760707,,,,web,1,5,no_og(+5),,,
+8579,HOTEL LES ORCHIDEES,"
+Boulevard de la Marina, Cotonou",Cotonou,,https://www.hotellesorchidees.com/,0161412020,,,,web,1,5,no_webp(+5),,,
+8580,Akwa Guesthouse Cotonou,"
+229, Cotonou",Cotonou,,https://akwaguesthousecotonou.com/,66005343,,,,web,4,100,erreur 500 persistante (site cassé),a_contacter,,
+8581,Berca Inn Résidence Hôtel,"
+Cotonou",Cotonou,,https://beracainn.com/,51109662,,,,web,4,100,DNS introuvable (site cassé),a_contacter,,
+8582,Riviera Hotel Benin,"
+Cotonou, Rue Dako Donou, Quartier Tokpa Hoho Carré 57",Cotonou,,http://www.rivierahotelbenin.com/,21312620,,,,web,2,20,pas_https(+15); no_webp(+5),a_verifier,,
+8583,Amazing Grace Residence Hôtel,"
+Fidjrossè Plage, route des pêches, 08 BP 686, Cotonou",Cotonou,,http://www.amazinggraceresidence.com/,0162793399,,,,web,2,25,pas_https(+15); no_favicon(+5); no_og(+5),a_verifier,,
+8584,Hôtel Paquebot,"
+993R+354, Rue 933, Cotonou",Cotonou,,https://www.booking.com/Share-cCVfSUH,0166814141,,,,web,2,,booking.com = plateforme réservation - pas de site propre,a_verifier,,
+8585,Nobila Airport Hotel,"
+Avenue Jean-Paul II, Cotonou",Cotonou,,https://nobilaairporthotel.com/,0121304252,,,,web,1,5,no_og(+5),,,
+8586,Bed & Bistrot Chez Rita (B&B Chez Rita),"
+6°21'14.6""N 2°25'21 Rue 235, Cotonou",Cotonou,,https://www.bnbchezrita.com/,94815353,,,,web,1,10,no_og(+5); no_webp(+5),,,
+8587,Hôtel l'apéro,"
+9C93+68M, Rue 562, Cotonou",Cotonou,,https://lapero-hotel.com/,0157933404,,,,web,1,10,no_favicon(+5); no_og(+5),,,
+8588,Sofitel Cotonou Marina Hotel & Spa,"
+1820 Boulevard de la Marina, Cotonou",Cotonou,,http://sofitel.accor.com/hotels/B845?merchantid=seo-maps-0-B845&sourceid=aw-cen&utm_source=google+Maps&utm_medium=seo+maps&utm_campaign=seo+maps&utm_term=Sofitel-Launch,0120900461,,,,web,35,,all.accor.com / sofitel.accor.com = réseau Accor - grand compte,a_verifier,,
+8589,BEKOUVI Smart Suite- City & Sea,"
+von de l'église catholique saint François d'Assise de fidjrossè, 299, Cotonou",Cotonou,,https://bekouvi.com/,0141666666,,,,web,1,5,no_og(+5),,,
+8590,Hotel La Casa Cielo,"
+9929+48, Cotonou",Cotonou,,http://www.casacielohotel.com/,67867272,,,,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+8591,New Hotel Sossa,"
+Cotonou",Cotonou,,http://www.newhotelsossa.com/,51878723,,,,web,2,20,pas_https(+15); no_webp(+5),a_verifier,,
+8592,Klik Klak Appart Hôtel & Restaurant The Park,"
+Cotonou",Cotonou,,http://www.klikklakappart-hotel.com/,0142000088,,,,web,2,20,pas_https(+15); no_favicon(+5),a_verifier,,
+8593,HÔTEL MAVILLA COTONOU (Salle Prestige),"
+9FG3+8CR Akpakpa, Rue 1458, Cotonou",Cotonou,,https://hotelmavillacotonou.com/chambres/,0152097777,,,,web,1,5,no_og(+5),,,
+8594,Hotel BKBG Benin,"
+Quartier Jak-Aledjo, Rue PLM-ALEDJO 4884, AKPAKPA, Cotonou",Cotonou,,https://benin.bkbghotels.com/,55395656,,,,web,35,,benin.bkbghotels.com = réseau hôtelier BKBG - grand compte,a_verifier,,
+8595,Test Hotel FR,,Paris,,,+33612345678,,,,web,0,,Données factices (Test Hotel FR) - à ignorer,,,
+8596,Pinte Valid,,Lyon,plombier,http://p.fr,,,,plombier,web,2,,Domaine placeholder (p.fr) - pas de site réel - à vérifier,a_verifier,,
+8597,Boul Valid,,Lyon,boulanger,,,,,boulanger,web,2,,"Pas de site, pas de téléphone - à vérifier",a_verifier,,
+8598,Notre dame Restaurant St Germain Paris 5,"
+18 Bd Saint-Germain, 75005 Paris, France",Paris,,,+33142035356,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8599,Le Gratin,"
+1 Pl. de Valois, 75001 Paris, France",Paris,,,+33142613504,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8600,Le Sauvage,"
+7 Rue Roy, 75008 Paris, France",Paris,,,+33145222246,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8601,Architecte d'intérieur Paris｜Studio Kassiopi,"
+30 Rue des Bateliers, 93400 Saint-Ouen-sur-Seine, France",Paris,,,+33634588008,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8602,Agence LFD (Les Fées Déco) - Interior Design - Maîtrise d'oeuvre,"
+30 Rue Sedaine, 75011 Paris, France",Paris,,,+33610760162,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8603,Paris d'intérieur,"
+28 Rue de Cherbourg, 75015 Paris, France",Paris,,,+33609850744,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8604,Atelier Germain Architecte d'intérieur Paris,"
+7 Imp. Charles Petit, 75011 Paris, France",Paris,,,,,,,web,2,,"Pas de site, pas de téléphone - à vérifier",a_verifier,,
+8605,Architecte Intérieur Paris,"
+22 bis Rue Ledion, 75014 Paris, France",Paris,,,+33687142758,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8606,Studio Castille,"
+4 Rue de Compiègne, 75010 Paris, France",Paris,,,+33983915130,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8607,Sébastien Halimi,"
+58 Av. de Versailles, 75016 Paris, France",Paris,,,+33145270733,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8608,Agence Véronique Cotrel,"
+51 Rue Jean-Jacques Rousseau, 75001 Paris, France",Paris,,,+33188326480,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8609,Les Décoreuses - Architectes d'intérieurs Paris 12ème,"
+7T Av. de Saint-Mandé, 75012 Paris, France",Paris,,,+33659191525,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8610,Insidy (Les décorateurs) - Le Showroom,"
+7 Rue de Trétaigne, 75018 Paris, France",Paris,,,+33664624616,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8611,Maison Pavan - Architecte d'intérieur Paris,"
+109 Rue du Faubourg du Temple, 75010 Paris, France",Paris,,,,,,,web,2,,"Pas de site, pas de téléphone - à vérifier",a_verifier,,
+8612,Inspyraya,"4,7 étoiles",Paris,,,+33766706146,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8613,"O2B Design Intérieur, Architecte d'Intérieur Paris 16e","
+129 bis Bd Murat, 75016 Paris, France",Paris,,,+33622870242,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8614,Perspectives Architecture & Design - Architecte d'intérieur - Paris,"
+261 Rue du Faubourg Saint-Martin, 75010 Paris, France",Paris,,,+33762606335,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8615,Xavier Lemoine Architecture d’Intérieur,"
+47 Rue de Prony, 75017 Paris, France",Paris,,,+33784150180,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8616,Manuel MARTINEZ,"
+11 Bis Rue de l'Amiral Mouchez, 75013 Paris, France",Paris,,,+33148897272,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8617,Architecte d'intérieur Paris XIV- Mise en scène m² - Catherine Boisdon,"
+17 Rue d'Odessa, 75014 Paris, France",Paris,,,+33609322428,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8618,Eloïse Gingeyne - EGGD - Architecte d'intérieur - Paris,"
+Av. Daumesnil, 75012 Paris, France",Paris,,,+33631850915,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8619,Architecte d'Intérieur Paris｜ESPRIT PARISIENNE,"
+58 Av. de Wagram, 75017 Paris, France",Paris,,,+33603459201,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8620,Architecte d'intérieur Paris Mio Design,"
+16 Rue du Faubourg Saint-Denis, 75010 Paris, France",Paris,,,+33682562387,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8621,MH INTERIOR - Anne-Sophie Pawlas | Architecte d’intérieur Paris,"4,7 étoiles",Paris,,,+33634328446,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8622,"Thomas Jenny, Architecture & Décoration d’intérieur","
+29 Rue du Dr Heulin, 75017 Paris, France",Paris,,,+33666507390,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8623,RD RETAIL DESIGN - INTERIOR DESIGN PARIS - ARCHITECTE D'INTERIEUR,"
+25 Rue de la Grange aux Belles, 75010 Paris, France",Paris,,,+33616143080,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8624,MH INTERIOR - Sabrina Darmon | Architecte d’intérieur Paris 20e,"
+21 Rue de la Réunion, 75020 Paris, France",Paris,,,+33770490344,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8625,Contrast Deco,"
+58 Rue Bobillot, 75013 Paris, France",Paris,,,+33603390465,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8626,Atelier Soo - Architecte à Paris,"
+83 bis Rue de l'Abbé Groult, 75015 Paris, France",Paris,,,+33621658246,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8627,Sara Camus Bouanha Architecture Intérieure,"
+15 Rue des Montiboeufs, 75020 Paris, France",Paris,,,+33621766113,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8628,Flora Auvray Architecture d'intérieur,"
+6 Rue de Vienne, 75008 Paris, France",Paris,,,+33155300226,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8629,MH INTERIOR | Architecte d’intérieur Paris,"4,8 étoiles",Paris,,,+33674958477,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8630,Studio Emsé - Architecte d'intérieur Paris,"
+60 Rue Raymond Losserand, 75014 Paris, France",Paris,,,+33618288530,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8631,Studio Saint-André Architecture & Design,"
+109 Rue du Bac, 75007 Paris, France",Paris,,,+33688583807,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8632,Micaela Granja | Architecte d'Intérieur Paris,"
+14 Rue d'Aligre, 75012 Paris, France",Paris,,,+33643090434,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8633,Architecte d'intérieur Paris - Manon Maillard,"
+26 Rue de la Folie-Regnault, 75011 Paris, France",Paris,,,+33642415771,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8634,Herold Design,"
+9 Rue Hérold, 75001 Paris, France",Paris,,,+33144825658,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8635,Texier-Soulas Architectes Paris,"
+20 Rue de la Cerisaie, 75004 Paris, France",Paris,,,+33155269196,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8636,"Nouvel Espace, design d'intérieur Paris","
+26 Rue Sainte-Félicite, 75015 Paris, France",Paris,,,+33659530402,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8637,L'Agence BLEU architecte d'intérieur à Paris,"
+39 Av. de la Motte-Picquet, 75007 Paris, France",Paris,,,+33619693972,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8638,"IDEISM Architecte d'intérieur et décoration, vous accompagne dans votre projet de rénovation","
+7 Quai de l'Oise, 75019 Paris, France",Paris,,,+33670573186,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8639,Céline Lortholary | MH INTERIOR,"
+21 Rue de Fécamp, 75012 Paris, France",Paris,,,+33659344889,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8640,Atelier Sylvie Cahen - Architecte DPLG & d'Intérieur,"
+19/21 Rue Claude Tillier, 75012 Paris, France",Paris,,,+33144490708,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8641,STUDIO POINT CARRÉ Architectes,"
+6 Rue des Jeuneurs, 75002 Paris, France",Paris,,,+33627675038,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8642,Bertina Minel Architecture- architecte et architecte d’intérieur,"
+9 Rue de Savoie, 75006 Paris, France",Paris,,,+33621653518,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8643,CLAAAC Architecture Intérieure,"
+2 Rue Henri Chevreau, 75020 Paris, France",Paris,,,+33603232945,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8644,Architecte d'intérieur Paris - JCHH,"
+48 Rue de la Rochefoucauld, 92100 Boulogne-Billancourt, France",Paris,,,+33666859017,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8645,Christophe Antunes - architecte d'intérieur,"
+35 Av. Junot, 75018 Paris, France",Paris,,,+33638721954,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8646,A comme Archi - architecte d'interieur,"
+4 Bd Pasteur, 75015 Paris, France",Paris,,,+33662311074,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8647,Architecte Paris - ACF,"
+98 Bd Malesherbes, 75017 Paris, France",Paris,,,+33683713319,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,
+8648,GOSNI DESIGN ®,"
+58 Rue de Monceau, 75008 Paris, France",Paris,,,+33659626057,,,,web,5,,"Pas de site, téléphone présent - à contacter (création)",a_contacter,,

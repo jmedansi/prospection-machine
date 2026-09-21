@@ -1,0 +1,113 @@
+/*
+  dashboard/static/css/components/animations.css
+  Keyframes & animation utilitaires centralisés — Incidenx v6
+*/
+
+/* ── Entrées ──────────────────────────────────────────────── */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Pulsations & Indicateurs ────────────────────────────── */
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50%       { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.6; }
+    50%       { opacity: 1; }
+}
+
+/* ── Skeleton Loading ─────────────────────────────────────── */
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--surface2) 25%,
+        var(--border) 50%,
+        var(--surface2) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--r);
+}
+
+/* ── Rotation (loaders) ───────────────────────────────────── */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes spinReverse {
+    to { transform: rotate(-360deg); }
+}
+
+/* ── Toast / Notification ────────────────────────────────── */
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(120%); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(120%); }
+}
+
+/* ── Progress Bar ─────────────────────────────────────────── */
+@keyframes progressFill {
+    from { width: 0%; }
+}
+
+/* ── Pill Indicator (tab active glide) ───────────────────── */
+@keyframes pillGlide {
+    from { opacity: 0; transform: scaleX(0.5); }
+    to   { opacity: 1; transform: scaleX(1); }
+}
+
+/* ── Helpers ──────────────────────────────────────────────── */
+.anim-fade-up   { animation: fadeSlideUp 0.3s ease both; }
+.anim-fade-in   { animation: fadeIn 0.25s ease both; }
+.anim-scale-in  { animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.anim-slide-right { animation: slideInRight 0.25s ease both; }
+
+/* Delays */
+.anim-d1 { animation-delay: 0.05s; }
+.anim-d2 { animation-delay: 0.10s; }
+.anim-d3 { animation-delay: 0.15s; }
+.anim-d4 { animation-delay: 0.20s; }
+.anim-d5 { animation-delay: 0.25s; }

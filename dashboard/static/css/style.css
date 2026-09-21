@@ -1,67 +1,6 @@
-:root {
-    --accent: #10b981;
-    --accent-h: #059669;
-    --accent-s: rgba(16, 185, 129, 0.1);
-    --surface: #ffffff;
-    --surface2: #f8fafc;
-    --border: #e2e8f0;
-    --border2: #cbd5e1;
-    --ink: #0f172a;
-    --ink2: #334155;
-    --ink3: #64748b;
-    --sh-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --sh-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --sh-neon: 0 0 15px rgba(16, 185, 129, 0.15);
-    --r: 8px;
-    --r2: 12px;
-    --red: #ef4444;
-    --orange: #f59e0b;
-    --green: #10b981;
-    --blue: #3b82f6;
-    --purple: #8b5cf6;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.4);
-    --glass-blur: blur(12px);
-
-    /* Typography scale */
-    --text-2xs: 0.6875rem;
-    /* 11px — labels, badges, metadata */
-    --text-xs: 0.75rem;
-    /* 12px — secondary labels */
-    --text-sm: 0.8125rem;
-    /* 13px — nav, compact UI */
-    --text-base: 0.875rem;
-    /* 14px — body text, table cells */
-    --text-md: 1rem;
-    /* 16px — headings, emphasis */
-    --text-lg: 1.125rem;
-    /* 18px */
-    --text-xl: 1.25rem;
-    /* 20px */
-    --text-2xl: 1.5rem;
-    /* 24px — metric values */
-    --text-3xl: 2rem;
-    /* 32px — pipeline numbers */
-
-    /* Font family */
-    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-[data-theme="dark"] {
-    --surface: #080808;
-    --surface2: #020202;
-    --border: #1a1a1a;
-    --border2: #262626;
-    --ink: #ffffff;
-    --ink2: #a1a1aa;
-    --ink3: #71717a;
-    --sh-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    --sh-md: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
-    --sh-neon: 0 0 20px rgba(16, 185, 129, 0.25);
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.08);
-}
-
+/* Variables de thème harmonisées : le jeu de variables (light + dark) vit désormais
+   exclusivement dans css/core.css (://root + [data-theme="dark"]).
+   Ancien duplicata supprimé pour finir les conflits de cascade. */
 * {
     margin: 0;
     padding: 0;
@@ -74,7 +13,9 @@ body {
     color: var(--ink);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    font-size: 16px
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 16px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .app {
@@ -3364,6 +3305,34 @@ textarea.inp {
 .kc-score.cold {
     background: var(--surface2);
     color: var(--ink3);
+}
+
+.kc-chip {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--ink2);
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+.kc-chip-ecarte {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+.kc-chip-web {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.kc-chip-general {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .sortable-ghost {

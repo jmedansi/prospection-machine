@@ -16,7 +16,19 @@ def serve_static(filename):
 
 @pages_bp.route('/')
 def dashboard_root():
+    """Dashboard V6 — interface 100 % modèle v2 (objectifs/prospects).
+    V5 reste servie sur /legacy (archive vivante en cours de décommissionnement)."""
+    return render_template('views/dashboard_v6.html')
+
+
+@pages_bp.route('/legacy')
+def dashboard_legacy():
+    """Archive vivante de l'ancienne interface V5 (onglets legacy)."""
     return render_template('views/dashboard_v5.html')
+
+@pages_bp.route('/guide')
+def serve_guide():
+    return send_from_directory(os.path.join(STATIC_DIR, 'static'), 'guide.html')
 
 @pages_bp.route('/sw.js')
 def serve_sw():

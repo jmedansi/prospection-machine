@@ -4,7 +4,10 @@
  */
 
 const API = window.API_V5 || window.API;
-const UI = window.UI;
+// window.UI est exposé par core/ui.js (module JS = exécuté en defer) → résolu à l'appel.
+function getUI() {
+    return window.UI || { setText: () => {}, setHTML: () => {}, toast: () => {}, openSidePanel: () => {}, closeSidePanel: () => {}, toggleActive: () => {} };
+}
 
 class DetailsModule {
     static currentLead = null;
@@ -27,9 +30,9 @@ class DetailsModule {
      */
     static async openLead(leadId) {
         console.log(`[DetailsModule] Opening lead ${leadId}...`);
-        UI.openSidePanel();
-        UI.setHTML('panel-content', '<div style="padding:40px;text-align:center">Chargement...</div>');
-        UI.setHTML('panel-footer', '');
+        getUI().openSidePanel();
+        getUI().setHTML('panel-content', '<div style="padding:40px;text-align:center">Chargement...</div>');
+        getUI().setHTML('panel-footer', '');
 
         try {
             const resp = await API.getLead(leadId);
@@ -37,20 +40,20 @@ class DetailsModule {
             this.currentTab = 'infos';
             
             // Update Header
-            UI.setText('panel-lead-name', this.currentLead.name || 'Lead');
-            UI.setText('panel-lead-meta', `${this.currentLead.city || '-'} · ${this.currentLead.sector || '-'}`);
+            getUI().setText('panel-lead-name', this.currentLead.name || 'Lead');
+            getUI().setText('panel-lead-meta', `${this.currentLead.city || '-'} · ${this.currentLead.sector || '-'}`);
             
             this.renderTab(this.currentTab);
         } catch (error) {
             console.error('Failed to load lead details:', error);
-            UI.toast('Erreur lors du chargement des détails', 'error');
-            UI.setHTML('panel-content', '<div style="padding:40px;text-align:center">Erreur de chargement.</div>');
+            getUI().toast('Erreur lors du chargement des détails', 'error');
+            getUI().setHTML('panel-content', '<div style="padding:40px;text-align:center">Erreur de chargement.</div>');
         }
     }
 
     static switchTab(tab) {
         this.currentTab = tab;
-        UI.toggleActive('.side-panel-tab', tab);
+        getUI().toggleActive('.side-panel-tab', tab);
         this.renderTab(tab);
     }
 
@@ -211,25 +214,6 @@ class DetailsModule {
                 }
             };
         }
-    }
-
-    static typeWriteHTML(el, html) {
-        let i = 0;
-        const speed = 2; // ms per char
-        const type = () => {
-            if (i < html.length) {
-                // Si on rencontre un <, on saute jusqu'au > pour ne pas casser le HTML pendant le rendu
-                if (html.charAt(i) === '<') {
-                    const end = html.indexOf('>', i);
-                    if (end !== -1) i = end;
-                }
-                el.innerHTML = html.substring(0, i + 1);
-                i++;
-                setTimeout(type, speed);
-            }
-        };
-        type();
-    }
 
         const isEnvoye = lead.status === 'envoye' || lead.email_status === 'envoye';
 
@@ -242,6 +226,23 @@ class DetailsModule {
                 ${isEnvoye ? 'Déjà Envoyé' : (lead.is_approved ? 'Envoyer Maintenant' : 'Approuver & Envoyer')}
             </button>
         `;
+    }
+
+    static typeWriteHTML(el, html) {
+        let i = 0;
+        const speed = 2;
+        const type = () => {
+            if (i < html.length) {
+                if (html.charAt(i) === '<') {
+                    const end = html.indexOf('>', i);
+                    if (end !== -1) i = end;
+                }
+                el.innerHTML = html.substring(0, i + 1);
+                i++;
+                setTimeout(type, speed);
+            }
+        };
+        type();
     }
 
     static renderTracking(content, footer) {
@@ -279,53 +280,53 @@ class DetailsModule {
 
     // ACTIONS
     static async launchAudit(id) {
-        UI.toast("Lancement de l'audit...", "info");
+        getUI().toast("Lancement de l'audit...", "info");
         try {
             await API.launchAudit([id]);
-            UI.toast("Audit lancé ✓ — Résultats disponibles à la fin de l'audit", "success");
+            getUI().toast("Audit lancé ✓ — Résultats disponibles à la fin de l'audit", "success");
             // Pas de re-render du panneau — l'audit tourne en arrière-plan
         } catch (e) {
-            UI.toast("Échec de l'audit", "error");
+            getUI().toast("Échec de l'audit", "error");
         }
     }
 
     static async generateEmail(id) {
-        UI.toast("Génération de l'email...", "info");
+        getUI().toast("Génération de l'email...", "info");
         try {
             await API.generateEmail(id);
-            UI.toast("Email généré ✓", "success");
+            getUI().toast("Email généré ✓", "success");
             // Rafraîchit les données silencieusement sans re-render visible
             await this._refreshDataSilently(id);
         } catch (e) {
-            UI.toast("Échec de génération", "error");
+            getUI().toast("Échec de génération", "error");
         }
     }
 
     static async testEmail(id) {
-        UI.toast("Envoi de l'email de test...", "info");
+        getUI().toast("Envoi de l'email de test...", "info");
         try {
             await API.testEmail(id);
-            UI.toast("Email de test envoyé", "success");
+            getUI().toast("Email de test envoyé", "success");
         } catch (e) {
-            UI.toast("Erreur envoi test", "error");
+            getUI().toast("Erreur envoi test", "error");
         }
     }
 
     static async approveAndSend(id) {
         try {
             if (!this.currentLead.is_approved) {
-                UI.toast("Approbation...", "info");
+                getUI().toast("Approbation...", "info");
                 await API.approveEmail(id);
                 this.currentLead.is_approved = true;
             }
-            UI.toast("Envoi en cours...", "info");
+            getUI().toast("Envoi en cours...", "info");
             await API.sendApprovedEmail(id);
-            UI.toast("Email envoyé avec succès ✅", "success");
+            getUI().toast("Email envoyé avec succès ✅", "success");
             // Refresh complet pour mettre à jour les boutons (Approuver → Déjà Envoyé)
             await this._refreshDataSilently(id);
             this.renderTab(this.currentTab);
         } catch (e) {
-            UI.toast("Erreur lors de l'envoi", "error");
+            getUI().toast("Erreur lors de l'envoi", "error");
         }
     }
 
@@ -362,15 +363,15 @@ class DetailsModule {
                 if (this.currentLead && this.currentLead.id === id) {
                     this.currentLead.notes = notes;
                 }
-                UI.toast("Notes sauvegardées", "success");
+                getUI().toast("Notes sauvegardées", "success");
                 // Optionnel: mettre à jour la ligne dans la table si nécessaire,
                 // mais les notes ne sont pas affichées dans la table actuellement.
             } else {
-                UI.toast("Erreur sauvegarde notes", "error");
+                getUI().toast("Erreur sauvegarde notes", "error");
             }
         } catch (e) {
             console.error(e);
-            UI.toast("Erreur sauvegarde notes", "error");
+            getUI().toast("Erreur sauvegarde notes", "error");
         }
     }
 }

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit GMB — {{NOM}}</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+/*
+  VARIABLES PYTHON :
+  {{NOM}}           nom de l'établissement
+  {{VILLE}}         ville
+  {{SECTEUR}}       ex: Restaurant, Garage, etc.
+  {{RATING}}        note actuelle ex: 3.4
+  {{REVIEWS}}       nb avis actuels ex: 6
+  {{PHOTOS}}        nb photos actuelles ex: 4
+  {{BENCH_RATING}}  moyenne secteur ex: 4.6
+  {{BENCH_REVIEWS}} moyenne secteur ex: 87
+  {{BENCH_PHOTOS}}  moyenne secteur ex: 45
+  {{ARG1}}          argument 1 Jean-Marc
+  {{ARG2}}          argument 2 Jean-Marc
+  {{ARG3}}          argument 3 Jean-Marc
+  {{DATE}}          date du rapport
+  {{LIEN_CALENDLY}} https://calendly.com/jmedansi/15min
+*/
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Sora',sans-serif;
+  background:#f8f7f4;
+  color:#1a1a1a;
+  line-height:1.6;
+}
+
+/* ── HEADER ── */
+.header{
+  background:#0d1117;
+  padding:1.5rem 3rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.header-brand{
+  font-size:1rem;font-weight:700;
+  color:#fff;letter-spacing:.04em;
+}
+.header-brand span{color:#10b981}
+.header-meta{
+  font-size:.75rem;
+  color:rgba(255,255,255,.4);
+  letter-spacing:.06em;text-transform:uppercase;
+}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,#0d1117 0%,#1a2744 100%);
+  padding:4rem 3rem;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(
+    ellipse at center,
+    rgba(16,185,129,.08) 0%,
+    transparent 65%
+  );
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(16,185,129,.1);
+  border:1px solid rgba(16,185,129,.25);
+  padding:.35rem 1rem;border-radius:20px;
+  font-size:.68rem;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:#10b981;
+  margin-bottom:1.5rem;
+}
+.hero-title{
+  font-family:'Lora',serif;
+  font-size:clamp(1.6rem,4vw,2.6rem);
+  font-weight:400;font-style:italic;
+  color:#fff;margin-bottom:.5rem;
+}
+.hero-title strong{
+  font-style:normal;font-weight:700;
+  display:block;font-family:'Sora',sans-serif;
+  font-size:clamp(1.8rem,4vw,3rem);
+  color:#fff;
+}
+.hero-sub{
+  font-size:.88rem;color:rgba(255,255,255,.45);
+  letter-spacing:.08em;text-transform:uppercase;
+  margin-top:.75rem;
+}
+
+/* ── SCORE GLOBAL ── */
+.score-section{
+  max-width:860px;margin:0 auto;
+  padding:3rem 2rem 1rem;
+}
+.score-card{
+  background:#fff;border-radius:12px;
+  padding:2.5rem;
+  box-shadow:0 2px 20px rgba(0,0,0,.06);
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:2rem;align-items:center;
+  border-left:4px solid #ef4444;
+}
+.score-card.good{border-left-color:#10b981}
+.score-card.medium{border-left-color:#f59e0b}
+
+.score-left h2{
+  font-size:1rem;font-weight:600;
+  color:#6b7280;margin-bottom:.5rem;
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.score-verdict{
+  font-family:'Lora',serif;
+  font-size:1.5rem;font-style:italic;
+  color:#1a1a1a;margin-bottom:.75rem;
+}
+.score-desc{
+  font-size:.88rem;color:#6b7280;line-height:1.7;
+}
+
+.score-right{text-align:center}
+.score-circle{
+  width:100px;height:100px;border-radius:50%;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(239,68,68,.25);
+}
+.score-circle.good{
+  background:linear-gradient(135deg,#10b981,#059669);
+  box-shadow:0 8px 24px rgba(16,185,129,.25);
+}
+.score-circle.medium{
+  background:linear-gradient(135deg,#f59e0b,#d97706);
+  box-shadow:0 8px 24px rgba(245,158,11,.25);
+}
+.circle-num{
+  font-size:2rem;font-weight:700;color:#fff;line-height:1;
+}
+.circle-label{
+  font-size:.6rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.8);
+  margin-top:2px;
+}
+
+/* ── MÉTRIQUES GMB ── */
+.metrics-section{
+  max-width:860px;margin:0 auto;
+  padding:1rem 2rem 2rem;
+}
+.metrics-title{
+  font-size:.72rem;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:#9ca3af;margin-bottom:1.25rem;
+}
+.metrics-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1rem;
+}
+.metric-card{
+  background:#fff;border-radius:10px;
+  padding:1.75rem 1.5rem;
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+  position:relative;overflow:hidden;
+}
+.metric-card::after{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:#ef4444;
+}
+.metric-card.ok::after{background:#10b981}
+.metric-card.warn::after{background:#f59e0b}
+
+.metric-icon{font-size:1.5rem;margin-bottom:.75rem}
+.metric-label{
+  font-size:.68rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:#9ca3af;margin-bottom:.5rem;
+}
+.metric-value{
+  font-size:2rem;font-weight:700;
+  color:#1a1a1a;line-height:1;margin-bottom:.25rem;
+}
+.metric-value.bad{color:#ef4444}
+.metric-value.ok{color:#10b981}
+.metric-bench{
+  font-size:.78rem;color:#9ca3af;
+}
+.metric-bench strong{color:#6b7280}
+
+/* Barre de comparaison */
+.metric-bar{
+  margin-top:1rem;
+  height:6px;background:#f3f4f6;border-radius:3px;
+  overflow:hidden;
+}
+.metric-bar-fill{
+  height:100%;border-radius:3px;
+  background:#ef4444;
+  transition:width .6s ease;
+}
+.metric-bar-fill.ok{background:#10b981}
+.metric-bar-fill.warn{background:#f59e0b}
+
+/* ── IMPACT VISUEL ── */
+.impact-section{
+  max-width:860px;margin:0 auto;
+  padding:1rem 2rem 2rem;
+}
+.impact-card{
+  background:#fff;border-radius:10px;
+  padding:2rem;
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+}
+.impact-title{
+  font-size:.72rem;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:#9ca3af;margin-bottom:1.5rem;
+}
+.impact-row{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1.5rem;
+}
+.impact-col{padding:1.25rem;border-radius:8px}
+.impact-col.them{background:#fef2f2}
+.impact-col.bench{background:#f0fdf4}
+.impact-col-label{
+  font-size:.68rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:1rem;
+}
+.impact-col.them .impact-col-label{color:#ef4444}
+.impact-col.bench .impact-col-label{color:#10b981}
+.impact-stat{
+  display:flex;align-items:center;
+  gap:.75rem;margin-bottom:.75rem;
+}
+.impact-stat:last-child{margin-bottom:0}
+.impact-dot{
+  width:8px;height:8px;border-radius:50%;
+  flex-shrink:0;
+}
+.impact-col.them .impact-dot{background:#ef4444}
+.impact-col.bench .impact-dot{background:#10b981}
+.impact-stat-text{font-size:.85rem;color:#4b5563}
+.impact-stat-num{font-weight:700;color:#1a1a1a}
+
+/* ── ARGUMENTS ── */
+.args-section{
+  max-width:860px;margin:0 auto;
+  padding:1rem 2rem 2rem;
+}
+.args-card{
+  background:#0d1117;border-radius:10px;
+  padding:2rem;
+}
+.args-title{
+  font-size:.72rem;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin-bottom:1.5rem;
+}
+.arg-item{
+  display:flex;gap:1rem;
+  padding:1.25rem 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.arg-item:last-child{border-bottom:none}
+.arg-num{
+  width:28px;height:28px;border-radius:50%;
+  background:#10b981;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.78rem;font-weight:700;color:#fff;
+  flex-shrink:0;
+}
+.arg-text{
+  font-size:.92rem;color:rgba(255,255,255,.75);
+  line-height:1.7;
+}
+
+/* ── CTA ── */
+.cta-section{
+  max-width:860px;margin:0 auto;
+  padding:1rem 2rem 4rem;
+  text-align:center;
+}
+.cta-card{
+  background:#fff;border-radius:12px;
+  padding:3rem 2rem;
+  box-shadow:0 2px 20px rgba(0,0,0,.06);
+}
+.cta-title{
+  font-family:'Lora',serif;
+  font-size:1.6rem;font-style:italic;
+  color:#1a1a1a;margin-bottom:.75rem;
+}
+.cta-sub{
+  font-size:.92rem;color:#6b7280;
+  max-width:480px;margin:0 auto 2rem;
+  line-height:1.7;
+}
+.cta-btn{
+  display:inline-block;
+  padding:1rem 2.5rem;
+  background:#10b981;color:#fff;
+  font-size:.82rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  border-radius:6px;text-decoration:none;
+  transition:all .25s;
+  box-shadow:0 4px 16px rgba(16,185,129,.3);
+}
+.cta-btn:hover{
+  background:#059669;transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(16,185,129,.4);
+}
+.cta-note{
+  font-size:.78rem;color:#9ca3af;
+  margin-top:1.25rem;
+}
+
+/* ── FOOTER ── */
+.footer{
+  background:#0d1117;
+  padding:1.5rem 3rem;
+  text-align:center;
+  font-size:.75rem;
+  color:rgba(255,255,255,.3);
+}
+.footer a{color:rgba(255,255,255,.5);text-decoration:none}
+.footer a:hover{color:#10b981}
+
+/* MOBILE */
+@media(max-width:640px){
+  .header{padding:1.25rem 1.5rem}
+  .hero{padding:3rem 1.5rem}
+  .score-section,.metrics-section,
+  .impact-section,.args-section,
+  .cta-section{padding-left:1rem;padding-right:1rem}
+  .score-card{grid-template-columns:1fr;text-align:center}
+  .score-right{display:flex;justify-content:center}
+  .metrics-grid{grid-template-columns:1fr}
+  .impact-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-brand">
+    <a href="https://incidenx.com"
+       style="color:inherit;text-decoration:none">
+      Incidenx<span>.</span>
+    </a>
+  </div>
+  <div class="header-meta">Audit GMB · {{DATE}}</div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Audit Fiche Google · {{SECTEUR}}</div>
+  <h1 class="hero-title">
+    Analyse de réputation pour
+    <strong>{{NOM}}</strong>
+  </h1>
+  <div class="hero-sub">{{VILLE}} · {{REVIEWS}} avis · {{RATING}}/5</div>
+</div>
+
+<!-- SCORE GLOBAL -->
+<div class="score-section">
+  <div class="score-card">
+    <div class="score-left">
+      <h2>Diagnostic global</h2>
+      <div class="score-verdict">
+        Votre fiche Google sous-performe
+        par rapport à vos concurrents directs.
+      </div>
+      <div class="score-desc">
+        Avec {{RATING}}/5 et {{REVIEWS}} avis,
+        {{NOM}} apparaît moins souvent dans
+        les résultats Google Maps que vos
+        concurrents à {{VILLE}}.
+        88% de vos prospects consultent
+        ces avis avant de vous contacter.
+      </div>
+    </div>
+    <div class="score-right">
+      <div class="score-circle">
+        <span class="circle-num">{{RATING}}</span>
+        <span class="circle-label">/ 5</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MÉTRIQUES -->
+<div class="metrics-section">
+  <div class="metrics-title">Les 3 indicateurs clés</div>
+  <div class="metrics-grid">
+
+    <!-- Note -->
+    <div class="metric-card">
+      <div class="metric-icon">⭐</div>
+      <div class="metric-label">Note Google</div>
+      <div class="metric-value bad">{{RATING}}/5</div>
+      <div class="metric-bench">
+        Concurrents : <strong>{{BENCH_RATING}}/5</strong>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-bar-fill"
+             style="width:{{RATING_PCT}}%"></div>
+      </div>
+    </div>
+
+    <!-- Avis -->
+    <div class="metric-card">
+      <div class="metric-icon">💬</div>
+      <div class="metric-label">Nombre d'avis</div>
+      <div class="metric-value bad">{{REVIEWS}}</div>
+      <div class="metric-bench">
+        Concurrents : <strong>{{BENCH_REVIEWS}} avis</strong>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-bar-fill"
+             style="width:{{REVIEWS_PCT}}%"></div>
+      </div>
+    </div>
+
+    <!-- Photos -->
+    <div class="metric-card">
+      <div class="metric-icon">📷</div>
+      <div class="metric-label">Photos publiées</div>
+      <div class="metric-value bad">{{PHOTOS}}</div>
+      <div class="metric-bench">
+        Concurrents : <strong>{{BENCH_PHOTOS}} photos</strong>
+      </div>
+      <div class="metric-bar">
+        <div class="metric-bar-fill"
+             style="width:{{PHOTOS_PCT}}%"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- IMPACT VISUEL -->
+<div class="impact-section">
+  <div class="impact-card">
+    <div class="impact-title">
+      {{NOM}} vs concurrents à {{VILLE}}
+    </div>
+    <div class="impact-row">
+      <div class="impact-col them">
+        <div class="impact-col-label">{{NOM}} aujourd'hui</div>
+        <div class="impact-stat">
+          <div class="impact-dot"></div>
+          <span class="impact-stat-text">
+            Note : <span class="impact-stat-num">{{RATING}}/5</span>
+          </span>
+        </div>
+        <div class="impact-stat">
+          <div class="impact-dot"></div>
+          <span class="impact-stat-text">
+            Avis : <span class="impact-stat-num">{{REVIEWS}}</span>
+          </span>
+        </div>
+        <div class="impact-stat">
+          <div class="impact-dot"></div>
+          <span class="impact-stat-text">
+            Photos : <span class="impact-stat-num">{{PHOTOS}}</span>
+          </span>
+        </div>
+      </div>
+      <div class="impact-col bench">
+        <div class="impact-col-label">Vos concurrents</div>
+        <div class="impact-stat">
+          <div class="impact-dot"></div>
+          <span class="impact-stat-text">
+            Note : <span class="impact-stat-num">{{BENCH_RATING}}/5</span>
+          </span>
+        </div>
+        <div class="impact-stat">
+          <div class="impact-dot"></div>
+          <span class="impact-stat-text">
+            Avis : <span class="impact-stat-num">{{BENCH_REVIEWS}}</span>
+          </span>
+        </div>
+        <div class="impact-stat">
+          <div class="impact-dot"></div>
+          <span class="impact-stat-text">
+            Photos : <span class="impact-stat-num">{{BENCH_PHOTOS}}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARGUMENTS -->
+<div class="args-section">
+  <div class="args-card">
+    <div class="args-title">Ce que ça représente concrètement</div>
+    <div class="arg-item">
+      <div class="arg-num">1</div>
+      <div class="arg-text">{{ARG1}}</div>
+    </div>
+    <div class="arg-item">
+      <div class="arg-num">2</div>
+      <div class="arg-text">{{ARG2}}</div>
+    </div>
+    <div class="arg-item">
+      <div class="arg-num">3</div>
+      <div class="arg-text">{{ARG3}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-card">
+    <div class="cta-title">
+      On peut changer ça en 30 jours.
+    </div>
+    <div class="cta-sub">
+      Une stratégie simple, des actions concrètes,
+      des résultats mesurables. Pas de jargon,
+      pas de frais cachés.
+    </div>
+    <a href="{{LIEN_CALENDLY}}" class="cta-btn">
+      📅 Choisir un créneau — 15 minutes
+    </a>
+    <div class="cta-note">
+      Gratuit · Sans engagement · Réponse sous 24h
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Rapport confidentiel · Préparé pour {{NOM}} par
+  <a href="https://incidenx.com">Jean-Marc DANSI · Incidenx</a>
+  · {{DATE}}
+</div>
+
+</body>
+</html>

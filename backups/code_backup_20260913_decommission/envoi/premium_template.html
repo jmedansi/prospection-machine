@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{EMAIL_SUBJECT}}</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #1a1a1a; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; background-color: #f9fafb; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 20px; margin-bottom: 20px; }
+        .header { background: #065f46; padding: 40px 20px; text-align: center; }
+        .logo { font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
+        .hero { padding: 0; position: relative; background: #111827; }
+        .hero img { width: 100%; display: block; border-bottom: 1px solid #e5e7eb; }
+        .content { padding: 40px 40px 20px; }
+        .footer { background: #f3f4f6; padding: 30px 40px; text-align: center; font-size: 13px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+        h1 { font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 24px; line-height: 1.2; }
+        p { margin-bottom: 24px; font-size: 16px; color: #4b5563; }
+        .highlight { color: #ef4444; font-weight: 700; }
+        .cta-container { text-align: center; margin-top: 40px; margin-bottom: 40px; }
+        .cta { background: #ef4444; color: #ffffff !important; padding: 18px 36px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block; font-size: 16px; transition: transform 0.2s ease; }
+        .signature { margin-top: 40px; color: #111827; border-top: 1px solid #f3f4f6; padding-top: 20px; line-height: 1.5; }
+        .social-proof { background: #fff7ed; padding: 20px; border-radius: 8px; border: 1px solid #ffedd5; margin-bottom: 24px; }
+        .social-proof-text { color: #9a3412; font-size: 14px; margin: 0; font-weight: 500; }
+        
+        @media only screen and (max-width: 600px) {
+            .container { margin-top: 0; border-radius: 0; }
+            .content { padding: 30px 20px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo & Header -->
+        <div class="header">
+            <div class="logo">INCIDENX</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <h1>{{SALUTATION}}</h1>
+            
+            <p>{{BODY_TEXT_1}}</p>
+            
+            <div class="social-proof">
+                <p class="social-proof-text">💡 <strong>Le saviez-vous ?</strong> {{STAT_KEY}}</p>
+            </div>
+
+            <p>{{BODY_TEXT_2}}</p>
+
+            <p>J'ai préparé une analyse complète pour <strong>{{COMPANY_NAME}}</strong> que vous pouvez consulter ici :</p>
+
+            <div class="cta-container">
+                <a href="{{CTA_LINK}}" class="cta">Consulter mon diagnostic →</a>
+            </div>
+
+            <p>{{BODY_TEXT_3}}</p>
+
+            <div class="signature">
+                {{SIGNATURE}}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="margin-bottom: 5px;"><strong>Jean-Marc DANSI</strong> · Consultant en Visibilité Digitale</p>
+            <p style="margin-bottom: 10px;"><a href="https://incidenx.com" style="color: #6b7280; text-decoration: none;">incidenx.com</a></p>
+            <p style="font-size: 11px; opacity: 0.8;">&copy; 2026 Incidenx. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+</html>

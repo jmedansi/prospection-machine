@@ -45,6 +45,23 @@
     </div>
 </div>
 
+<!-- Barre Campagne (v2 : sélection dans la barre du haut — ici, résumé + actions de la campagne active) -->
+<div class="leads-objbar" id="ul-objbar">
+    <span class="objbar-label" id="obj-label-current">Campagne : —</span>
+    <button class="leads-btn" onclick="CampagnesModule.openCreate()" title="Créer une nouvelle campagne (les futurs leads y seront rattachés via ses listes)">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style="vertical-align:-1px;margin-right:4px">
+            <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Nouvelle campagne
+    </button>
+    <span id="obj-stats" class="objbar-stats" style="display:none"></span>
+    <span id="obj-actions" style="display:none">
+        <button class="leads-btn" onclick="CampagnesModule.sendNow()" title="Déclencher l'envoi initial maintenant (fonctionne même si l'auto-envoi est coupé)">▶ Envoyer</button>
+        <button class="leads-btn" onclick="CampagnesModule.openSequence()" title="Gérer les templates de la séquence (initial + relances, délais)">Séquence</button>
+        <button class="leads-btn" onclick="CampagnesModule.openManage()" title="Renommer / archiver / supprimer la campagne">✏️</button>
+    </span>
+</div>
+
 <!-- Panneau Actions (caché par défaut) -->
 <div id="ul-section-actions" class="leads-section-collapse">
     <div class="leads-actions">
@@ -55,7 +72,12 @@
             </svg>
             Nouveau scraping
         </button>
-        <button class="leads-btn" onclick="launchSelectedAudits()">Auditer</button>
+        <button class="leads-btn" onclick="ulOpenImportDialog()" title="Importer des leads depuis un fichier CSV (choix campagne + liste de destination)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v3h16v-3"/>
+            </svg>
+            Importer CSV
+        </button>
         <button class="leads-btn" onclick="window.ActionsModule.launchSelectedEmailSearch()">Trouver emails</button>
         <button class="leads-btn" onclick="window.ActionsModule.generateSelectedEmailsImpl()">Générer emails</button>
         <button class="leads-btn" onclick="window.ActionsModule.sendApprovedEmailsImpl()">Envoyer</button>
@@ -64,8 +86,18 @@
         <button class="leads-btn" onclick="checkSniperResponses()" title="Vérifier les réponses par email (IMAP)">Vérifier réponses</button>
         <button class="leads-btn bp1" onclick="sendSniperStep1()" title="Envoyer le premier contact Sniper">Envoyer Step 1</button>
         <div class="leads-divider"></div>
-        <button class="leads-btn" onclick="retryFailedAudits()">Relancer</button>
+        <!-- Actions IA ⇄ Dashboard (sélection) -->
+        <button class="leads-btn ai" title="IA : prépare la qualification des leads cochés (Opportunite/Score/Signaux)" onclick="IaActions.qualifySelected()">✦ Qualifier</button>
+        <button class="leads-btn ai" title="IA : prépare les maquettes (index.html/capture.png) des leads cochés 'web'" onclick="IaActions.maquetteSelected()">✦ Maquette</button>
+        <button class="leads-btn ai" title="IA : prépare la rédaction d'emails des leads cochés (EmailObjet/EmailCorps)" onclick="IaActions.redactSelected()">✦ Rédiger mail</button>
+        <button class="leads-btn ai bp1" title="IA : relit le CSV complété et réintègre (qualification + emails, jamais l'envoi)" onclick="IaActions.scanSelected()">⟳ Actualiser IA</button>
+        <div class="leads-divider"></div>
         <button class="leads-btn" onclick="exportFilteredLeads()">CSV</button>
+        <!-- Classement / flag bulk -->
+        <div class="leads-divider"></div>
+        <button class="leads-btn" onclick="ulToggleAllObjectif()" title="Bascule l'objectif de la sélection (Web ↔ Général)">Web ⇄ Général</button>
+        <button class="leads-btn" onclick="ulEcarterSelection()" title="Écarter la sélection des flux d'envoi">🚫 Écarter sélection</button>
+        <button class="leads-btn" onclick="ulDesinscrireSelection()" title="Marquer la sélection comme désinscrite">✋ Désinscrire sélection</button>
         <!-- Bouton Ajouter à une liste -->
         <div class="lists-add-dropdown" id="lists-add-dropdown" style="position:relative">
             <button class="leads-btn" onclick="ListsModule.toggleAddDropdown()" title="Ajouter la sélection à une liste">
@@ -166,6 +198,15 @@
             <option value="with">Avec site</option>
             <option value="without">Sans site</option>
         </select>
+        <select id="ul-filter-objectif" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="tous">Objectif: Tous</option>
+            <option value="web">Sites Web</option>
+            <option value="general">Général</option>
+        </select>
+        <select id="ul-filter-flagged" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
+            <option value="false">Masquer écartés/désin.</option>
+            <option value="true">Afficher écartés/désin.</option>
+        </select>
         <select id="ul-filter-email" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
             <option value="">Email</option>
             <option value="with">Avec email</option>
@@ -199,27 +240,33 @@
         <table class="leads-table">
             <colgroup>
                 <col class="col-check">
+                <col class="col-id">
                 <col class="col-prospect">
                 <col class="col-source">
                 <col class="col-contact">
+                <col class="col-objectif">
                 <col class="col-score">
+                <col class="col-avis">
                 <col class="col-statut">
                 <col class="col-actions">
             </colgroup>
             <thead>
                 <tr>
-                    <th class="col-check"><input type="checkbox" id="ul-cb-all" onchange="ulToggleAll(this)"></th>
+                    <th class="col-check" aria-label="Tout sélectionner"><input type="checkbox" id="ul-cb-all" title="Tout sélectionner" onchange="ulToggleAll(this)"></th>
+                    <th class="col-id">ID</th>
                     <th class="col-prospect">Prospect</th>
                     <th class="col-source">Ville</th>
                     <th class="col-contact">Contact</th>
+                    <th class="col-objectif">Campagne</th>
                     <th class="col-score">Score</th>
+                    <th class="col-avis">Avis</th>
                     <th class="col-statut">Statut</th>
-                    <th class="col-actions"></th>
+                    <th class="col-actions">Actions</th>
                 </tr>
             </thead>
             <tbody id="ul-tbody">
                 <tr>
-                    <td colspan="7" style="text-align:center;padding:32px;color:var(--ink3);font-size:13px">Chargement…
+                    <td colspan="10" style="text-align:center;padding:32px;color:var(--ink3);font-size:13px">Chargement…
                     </td>
                 </tr>
             </tbody>
@@ -324,6 +371,148 @@
                 <button class="btn bg1 sm" onclick="closeModal('modal-ul-edit')">Annuler</button>
                 <button class="btn bp1 sm" onclick="unifiedLeadsSave()">Enregistrer</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal création de campagne -->
+<div id="modal-obj-create" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="width:460px">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Nouvelle campagne</div>
+                <div style="font-size:11px;color:var(--ink3)">Les listes (et leurs prospects) rattachées ci-après appartiendront à cette campagne.</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-obj-create')">✕</button>
+        </div>
+        <div class="mb">
+            <div class="form-grp"><label>Nom de la campagne</label>
+                <input type="text" id="obj-create-nom" class="inp" placeholder="Ex. « Refonte site web », « Application scolaire »"></div>
+            <div class="form-grp"><label>Description (optionnel)</label>
+                <textarea id="obj-create-desc" class="inp" style="resize:vertical;height:64px"
+                    placeholder="Contexte : à quel type de prospects vise-t-on ?"></textarea></div>
+        </div>
+        <div class="mf">
+            <button class="btn bg1 sm" onclick="closeModal('modal-obj-create')">Annuler</button>
+            <button class="btn bp1 sm" onclick="CampagnesModule.create()">Créer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal gestion de campagne (renommer / archiver / supprimer) -->
+<div id="modal-obj-manage" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="width:460px">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Gérer la campagne</div>
+                <div id="obj-manage-name" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-obj-manage')">✕</button>
+        </div>
+        <div class="mb">
+            <div class="form-grp"><label>Nom</label>
+                <input type="text" id="obj-manage-nom" class="inp"></div>
+            <div class="form-grp"><label>Description</label>
+                <textarea id="obj-manage-desc" class="inp" style="resize:vertical;height:64px"></textarea></div>
+            <div class="form-grp" style="margin-top:8px">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
+                    <input type="checkbox" id="obj-manage-envoi-auto" style="cursor:pointer">
+                    Envoi automatique (scheduler)
+                </label>
+                <div style="font-size:11px;color:var(--ink3);margin-top:2px">Coché = le scheduler envoie seul les nouveaux leads. Décoché = déclenchement manuel via « ▶ Envoyer » (validez vos aspects avant).</div>
+            </div>
+            <div class="g2" style="margin-top:10px">
+                <button class="btn bd sm" onclick="CampagnesModule.deleteCurrent()" title="Supprime la campagne ET ses listes/prospects (action irréversible)">
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:4px">
+                        <path d="M2 3.5h10M5.5 3.5V2h3v1.5M3.5 3.5l.7 8h5.6l.7-8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Supprimer la campagne
+                </button>
+            </div>
+        </div>
+        <div class="mf">
+            <button class="btn bg1 sm" onclick="closeModal('modal-obj-manage')">Annuler</button>
+            <button class="btn bp1 sm" onclick="CampagnesModule.saveManage()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Séquence & relances : templates position 0..3 (objet, corps, délai, actif) -->
+<div id="modal-obj-sequence" class="modal-overlay" style="display:none">
+    <div class="modal-content" style="width:780px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mh">
+            <div>
+                <div class="mh-t">Séquence &amp; relances</div>
+                <div id="obj-seq-name" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-obj-sequence')">✕</button>
+        </div>
+        <div class="mb" style="overflow:auto">
+            <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;line-height:1.5">
+                Position <b>0</b> = email initial · <b>1 → 3</b> = relances.
+                <b>Délai</b> = jours après la touche précédente avant relance.
+                Variables : <code>{{prenom}}</code> <code>{{entreprise}}</code> <code>{{secteur}}</code>
+                <code>{{site_web}}</code> <code>{{ville}}</code> <code>{{offre}}</code>.
+                Un modèle « générique (défaut) » sert de secours s'il n'existe pas d'étape dédiée à cette même campagne.
+            </div>
+            <div id="obj-sequence-list" style="display:flex;flex-direction:column;gap:8px"></div>
+            <div style="border-top:1px solid var(--border);margin:14px 0 0;padding-top:12px">
+                <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--ink)">Ajouter une étape dédiée</div>
+                <div class="g2">
+                    <div class="form-grp"><label>Position</label>
+                        <select id="seq-add-pos" class="inp">
+                            <option value="1">1 — relance 1</option>
+                            <option value="2">2 — relance 2</option>
+                            <option value="3">3 — relance 3</option>
+                        </select></div>
+                    <div class="form-grp"><label>Délai (jours)</label>
+                        <input type="number" id="seq-add-delai" class="inp" value="3" min="0" step="1"></div>
+                </div>
+                <div class="form-grp"><label>Objet</label>
+                    <input type="text" id="seq-add-objet" class="inp" placeholder="Re : {{prenom}} — un dernier point 😊"></div>
+                <div class="form-grp"><label>Corps</label>
+                    <textarea id="seq-add-corps" class="inp" style="resize:vertical;height:74px" placeholder="Bonjour {{prenom}}, j'espère que mon précédent message vous est bien parvenu. ..."></textarea></div>
+                <div style="margin-top:8px;text-align:right">
+                    <button class="btn bp1 sm" onclick="CampagnesModule.seqAdd()">Ajouter l'étape</button>
+                </div>
+            </div>
+        </div>
+        <div class="mf">
+            <button class="btn bg1 sm" onclick="closeModal('modal-obj-sequence')">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal détail prospect (file humaine) : snippet réponse + historique + actions rapides -->
+<div id="modal-ul-detail" class="modal-overlay">
+    <div class="modal-content" style="width:720px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mh">
+            <div>
+                <div class="mh-t" id="ul-detail-title">Prospect</div>
+                <div id="ul-detail-sub" style="font-size:11px;color:var(--ink3)">—</div>
+            </div>
+            <button class="btn bg0" onclick="closeModal('modal-ul-detail')">✕</button>
+        </div>
+        <div class="mb" style="overflow:auto">
+            <div id="ul-detail-reply" style="display:none">
+                <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em;margin-bottom:6px">DERNIÈRE RÉPONSE</div>
+                <div style="background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+                    <div id="ul-detail-reply-head" class="inl"></div>
+                    <div id="ul-detail-reply-body" style="font-size:12.5px;line-height:1.55;color:var(--ink2);white-space:pre-wrap"></div>
+                </div>
+            </div>
+            <div style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:.04em;margin-bottom:6px">HISTORIQUE</div>
+            <div id="ul-detail-timeline" class="tbl"></div>
+        </div>
+        <div class="mf" style="flex-wrap:wrap;gap:6px">
+            <button class="btn bp1 sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'rdv_obtenu');closeModal('modal-ul-detail')"
+                    title="Clôture : le prospect devient un RDV">✅ RDV obtenu</button>
+            <button class="btn bg1 sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'pas_interesse');closeModal('modal-ul-detail')">✖ Pas intéressé</button>
+            <button class="btn bg1 sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'a_relancer_plus_tard');closeModal('modal-ul-detail')">⏳ À relancer + tard</button>
+            <button class="btn bd sm" onclick="unifiedLeadsChangeStatut(_ul.detailId,'ne_plus_contacter');closeModal('modal-ul-detail')"
+                    title="Liste de suppression globale">🚫 Ne plus contacter</button>
+            <div style="flex:1"></div>
+            <button class="btn bg0 sm" onclick="closeModal('modal-ul-detail')">Fermer</button>
         </div>
     </div>
 </div>

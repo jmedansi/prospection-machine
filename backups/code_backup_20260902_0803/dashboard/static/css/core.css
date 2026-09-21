@@ -1,0 +1,110 @@
+/* 
+    dashboard/static/css/core.css
+    Système de Design Incidenx v5
+    Basé sur le Manifeste Technique (Step 2)
+*/
+
+:root {
+    /* Palette Primaire - Propre, Moderne, Premium */
+    --accent: #10b981;        /* Emeraude Incidenx */
+    --accent-hover: #059669;
+    --accent-soft: rgba(16, 185, 129, 0.1);
+    
+    --blue: #3b82f6;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+
+    /* Neutres - Light Mode (Default) */
+    --bg-app: #f8fafc;
+    --surface: #ffffff;
+    --surface2: #f1f5f9;
+    --border: #e2e8f0;
+    
+    --ink: #0f172a;           /* Titres */
+    --ink2: #475569;          /* Texte standard */
+    --ink3: #94a3b8;          /* Texte secondaire / Icons */
+
+    /* Typography */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --text-2xs: 0.65rem;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+
+    /* Transitions & Shadow */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --radius-md: 12px;
+    --radius-lg: 16px;
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] {
+    --bg-app: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --border: #334155;
+    
+    --ink: #f8fafc;
+    --ink2: #cbd5e1;
+    --ink3: #64748b;
+    
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4);
+}
+
+/* Base Styles */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { 
+    margin: 0; 
+    padding: 0; 
+    font-family: var(--font-sans); 
+    background: var(--bg-app); 
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar Style */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-app); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink3); }
+
+/* Utilities */
+.glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .glass {
+    background: rgba(30, 41, 59, 0.7);
+}
+
+/* Status Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+}
+.badge-pending { background: var(--surface2); color: var(--ink2); }
+.badge-success { background: var(--accent-soft); color: var(--accent); }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--orange); }
+.badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--red); }
+
+/* Mobile/Desktop separation — mobile elements hidden on desktop by default */
+.mobile-app { display: none; }
+.m-sheet { display: none; }
+
+/* Modal styles moved to components/modals.css */

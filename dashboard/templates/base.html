@@ -4,58 +4,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light dark">
     <title>{% block title %}Incidenx - Prospection Machine{% endblock %}</title>
+    <meta name="description" content="Incidenx Prospection Machine — SaaS de prospection B2B automatisée">
 
-    <!-- PWA / Web App capabilities -->
+    <!-- PWA / Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Incidenx">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#ffffff" id="meta-theme-color">
 
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
 
-    <!-- Fonts -->
+    <!-- Fonts — Outfit (titres) + Inter (corps) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- V4 Bridge CSS -->
-    <link rel="stylesheet" href="/static/css/style.css?v=6">
+    <!-- CSS Design System -->
+<link rel="stylesheet" href="/static/css/style.css?v=8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/core.css') }}?v=14">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/animations.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/layout.css') }}?v=13">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/modals.css') }}?v=13">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/templates.css') }}?v=13">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/cockpit.css') }}?v=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/mobile.css') }}?v=14">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/saas-redesign.css') }}?v=15">
 
-    <!-- Core CSS (System Design) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/core.css') }}?v=12">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/layout.css') }}?v=12">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/modals.css') }}?v=12">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/templates.css') }}?v=12">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/mobile.css') }}?v=13">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/saas-redesign.css') }}?v=12">
-
-    <!-- External Libs (Phase 4) -->
+    <!-- External Libs -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
     {% block extra_css %}{% endblock %}
+
+    <!-- Theme init (prevent flash) -->
+    <script>
+    (function() {
+        var saved = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        var mc = document.getElementById('meta-theme-color');
+        if (mc) mc.content = theme === 'dark' ? '#080808' : '#ffffff';
+    })();
+    </script>
 </head>
 
 <body>
-    <!-- Mobile App Container -->
+    <!-- Mobile App Container (legacy, hidden) -->
     {% block mobile_app %}
-    <div class="mobile-app" id="mobile-app">
-        <!-- Will be populated by mobile views or components -->
-    </div>
+    <div class="mobile-app" id="mobile-app"></div>
     {% endblock %}
 
-    <!-- Desktop App Container -->
+    <!-- Main App Container -->
     {% block desktop_app %}
-    <div class="app">
+    <div class="app" id="main-app">
         {% block sidebar %}{% endblock %}
 
         <main class="mn">
             {% block topbar %}{% endblock %}
 
-            <div class="ct">
+            <div class="ct" id="main-content">
                 {% block content %}{% endblock %}
             </div>
         </main>
@@ -64,16 +75,30 @@
     </div>
     {% endblock %}
 
-    <!-- Modals Overlay Container -->
+    <!-- Modals Overlay -->
     <div id="modal-container">
         {% block modals %}{% endblock %}
     </div>
 
-    <!-- Sidebar overlay (tablet / small laptop) -->
-    <div class="sb-overlay" onclick="toggleSidebar()"></div>
+    <!-- Notifications Panel -->
+    <div class="notif-panel" id="notif-panel">
+        <div class="notif-panel-header">
+            <span class="notif-panel-title">Notifications</span>
+            <button onclick="closeNotifPanel()" style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:20px;line-height:1;padding:2px 6px">&times;</button>
+        </div>
+        <div class="notif-panel-body" id="notif-panel-body">
+            <div style="text-align:center;padding:2rem;color:var(--ink3);font-size:13px">
+                <div style="font-size:2rem;margin-bottom:8px">🔔</div>
+                Aucune notification
+            </div>
+        </div>
+    </div>
+    <div class="sb-overlay" id="notif-overlay" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);z-index:799"></div>
 
-    <!-- UI Feedback -->
-    <div id="toast-container" class="toast-container"></div>
+    <!-- Sidebar overlay (tablet) -->
+    <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Panel overlay -->
     <div id="panel-overlay" onclick="closeSidePanel()"
         style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.01)"></div>
 
@@ -82,24 +107,160 @@
     <script src="{{ url_for('static', filename='js/core/cmd_k.js') }}?v=1"></script>
     <script src="{{ url_for('static', filename='js/core/email_streaming.js') }}?v=1"></script>
 
-    <!-- Socket.IO Client -->
+    <!-- Socket.IO -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <script>
-        // Initialisation globale de Socket.IO
         const socket = io();
-        socket.on('connect', () => console.log('[Socket.IO] Connecté au serveur'));
-        socket.on('disconnect', () => console.log('[Socket.IO] Déconnecté du serveur'));
+        socket.on('connect', () => console.log('[Socket.IO] Connected'));
+        socket.on('disconnect', () => console.log('[Socket.IO] Disconnected'));
+    </script>
+
+    <!-- Theme & Sidebar State Manager (v6) -->
+    <script>
+    // ── Theme Manager ─────────────────────────────────────
+    function toggleTheme() {
+        var current = document.documentElement.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        var mc = document.getElementById('meta-theme-color');
+        if (mc) mc.content = next === 'dark' ? '#080808' : '#ffffff';
+        // Update icon
+        var icon = document.getElementById('TI');
+        if (icon) updateThemeIcon(next);
+    }
+
+    function updateThemeIcon(theme) {
+        var icon = document.getElementById('TI');
+        if (!icon) return;
+        if (theme === 'dark') {
+            icon.innerHTML = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.4" fill="none"/>';
+        } else {
+            icon.innerHTML = '<circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.1 3.1l1.1 1.1M11.8 11.8l1.1 1.1M3.1 12.9l1.1-1.1M11.8 4.2l1.1-1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>';
+        }
+    }
+
+    // Listen for OS theme change
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        if (!localStorage.getItem('theme')) {
+            var t = e.matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        }
+    });
+
+    // ── Sidebar Collapse Manager ───────────────────────────
+    function initSidebar() {
+        var sb = document.querySelector('.sb');
+        if (!sb) return;
+        var collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (collapsed) sb.classList.add('collapsed');
+
+        // Add collapse button
+        var btn = document.createElement('button');
+        btn.className = 'sb-collapse-btn';
+        btn.title = 'Réduire la sidebar';
+        btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        btn.onclick = toggleSidebarCollapse;
+        sb.appendChild(btn);
+    }
+
+    function toggleSidebarCollapse() {
+        var sb = document.querySelector('.sb');
+        if (!sb) return;
+        sb.classList.toggle('collapsed');
+        localStorage.setItem('sidebarCollapsed', sb.classList.contains('collapsed'));
+    }
+
+    function openSidebar() {
+        var sb = document.querySelector('.sb');
+        var overlay = document.getElementById('sb-overlay');
+        if (sb) sb.classList.add('open');
+        if (overlay) { overlay.style.display = 'block'; overlay.classList.add('active'); }
+    }
+
+    function closeSidebar() {
+        var sb = document.querySelector('.sb');
+        var overlay = document.getElementById('sb-overlay');
+        if (sb) sb.classList.remove('open');
+        if (overlay) { overlay.style.display = 'none'; overlay.classList.remove('active'); }
+    }
+
+    function toggleSidebar() {
+        var sb = document.querySelector('.sb');
+        if (!sb) return;
+        if (sb.classList.contains('open')) closeSidebar();
+        else openSidebar();
+    }
+
+    // ── Notification Panel ─────────────────────────────────
+    var _notifs = [];
+
+    function showNotifications() {
+        var panel = document.getElementById('notif-panel');
+        var overlay = document.getElementById('notif-overlay');
+        if (!panel) return;
+        panel.classList.add('open');
+        if (overlay) overlay.style.display = 'block';
+        // Clear badge
+        var badge = document.getElementById('notification-badge');
+        if (badge) badge.style.display = 'none';
+    }
+
+    function closeNotifPanel() {
+        var panel = document.getElementById('notif-panel');
+        var overlay = document.getElementById('notif-overlay');
+        if (panel) panel.classList.remove('open');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    function addNotification(type, title, sub) {
+        var icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
+        var item = { type: type, title: title, sub: sub, time: new Date() };
+        _notifs.unshift(item);
+        if (_notifs.length > 30) _notifs.pop();
+
+        // Show badge
+        var badge = document.getElementById('notification-badge');
+        if (badge) badge.style.display = 'block';
+
+        // Render
+        var body = document.getElementById('notif-panel-body');
+        if (!body) return;
+        var timeStr = item.time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        var html = '<div class="notif-item anim-fade-up">'
+            + '<div class="notif-item-icon ' + type + '">' + (icons[type] || 'ℹ️') + '</div>'
+            + '<div class="notif-item-body">'
+            + '<div class="notif-item-title">' + title + '</div>'
+            + '<div class="notif-item-sub">' + (sub || '') + '</div>'
+            + '</div>'
+            + '<div class="notif-item-time">' + timeStr + '</div>'
+            + '</div>';
+        // Remove empty state
+        if (body.querySelector('[style*="text-align:center"]')) body.innerHTML = '';
+        body.insertAdjacentHTML('afterbegin', html);
+    }
+
+    // Expose globally
+    window.addNotification = addNotification;
+
+    // ── Init on DOM ready ──────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        initSidebar();
+        // Update theme icon to match current theme
+        var theme = document.documentElement.getAttribute('data-theme');
+        updateThemeIcon(theme);
+    });
     </script>
 
     <!-- PWA Registration -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('[PWA] Service Worker registered scope:', reg.scope))
-                    .catch(err => console.error('[PWA] Service Worker registration failed:', err));
-            });
-        }
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js')
+                .then(function(reg) { console.log('[PWA] SW registered:', reg.scope); })
+                .catch(function(err) { console.error('[PWA] SW failed:', err); });
+        });
+    }
     </script>
 
     {% block extra_js %}{% endblock %}

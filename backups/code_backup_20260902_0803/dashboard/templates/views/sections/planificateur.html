@@ -1,0 +1,202 @@
+<div id="section-planificateur" class="v-section">
+    <!-- Header avec quota du jour -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+        <h2>Planificateur de campagnes</h2>
+        <div id="quota-bar" style="display:flex;align-items:center;gap:1rem">
+            <span style="font-size:13px;color:var(--ink3)">Emails aujourd'hui :</span>
+            <div style="position:relative;width:200px;height:8px;background:var(--surface2);border-radius:4px">
+                <div id="quota-progress"
+                    style="height:100%;background:var(--green);border-radius:4px;width:0%;transition:width .3s"></div>
+            </div>
+            <span id="quota-text" style="font-size:13px;font-weight:600">0 / 100</span>
+        </div>
+    </div>
+
+    <!-- Formulaire d'ajout rapide -->
+    <div class="card" style="margin-bottom:1.5rem">
+        <div class="ct2" style="margin-bottom:1rem">Ajouter une campagne à la file</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:120px">
+                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Source</label>
+                <select id="plan-source" onchange="onPlanSourceChange(this)"
+                    style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                    <option value="maps">Maps</option>
+                    <option value="sniper_ads">Ads</option>
+                    <option value="sniper_fb">FB Ads</option>
+                    <option value="sniper_ecom">E-com</option>
+                </select>
+            </div>
+            <div id="plan-sector-wrapper" style="display:flex;flex-direction:column;gap:4px;min-width:180px">
+                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Secteur</label>
+                <select id="plan-sector" onchange="onPlanSectorChange(this)"
+                    style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+                    <option value="" data-kw="">-- Choisir une niche --</option>
+                    <optgroup label="⚒ Artisans / BTP">
+                        <option value="Plombier" data-kw="plombier">Plombier</option>
+                        <option value="Électricien" data-kw="électricien">Électricien</option>
+                        <option value="Menuisier" data-kw="menuisier">Menuisier</option>
+                        <option value="Peintre" data-kw="peintre bâtiment">Peintre en bâtiment</option>
+                        <option value="Maçon" data-kw="maçon">Maçon</option>
+                        <option value="Couvreur" data-kw="couvreur">Couvreur</option>
+                        <option value="Carreleur" data-kw="carreleur">Carreleur</option>
+                        <option value="Chauffagiste" data-kw="chauffagiste">Chauffagiste</option>
+                        <option value="Serrurier" data-kw="serrurier">Serrurier</option>
+                        <option value="Architecte" data-kw="architecte">Architecte</option>
+                        <option value="Paysagiste" data-kw="paysagiste">Paysagiste / Jardinier</option>
+                        <option value="Climatisation" data-kw="climatisation installation">Climatisation / Froid
+                        </option>
+                    </optgroup>
+                    <optgroup label="🏥 Santé / Bien-être">
+                        <option value="Kinésithérapeute" data-kw="kinésithérapeute">Kinésithérapeute</option>
+                        <option value="Ostéopathe" data-kw="ostéopathe">Ostéopathe</option>
+                        <option value="Naturopathe" data-kw="naturopathe">Naturopathe</option>
+                        <option value="Psychologue" data-kw="psychologue">Psychologue</option>
+                        <option value="Dentiste" data-kw="dentiste">Dentiste</option>
+                        <option value="Infirmier" data-kw="infirmier libéral">Infirmier libéral</option>
+                        <option value="Médecin" data-kw="médecin généraliste">Médecin généraliste</option>
+                        <option value="Podologue" data-kw="podologue">Podologue</option>
+                    </optgroup>
+                    <optgroup label="💅 Beauté / Coiffure">
+                        <option value="Coiffeur" data-kw="coiffeur">Coiffeur / Salon de coiffure</option>
+                        <option value="Esthéticienne" data-kw="esthéticienne">Esthéticienne</option>
+                        <option value="Massage" data-kw="salon massage">Salon de massage</option>
+                        <option value="Onglerie" data-kw="onglerie nail art">Onglerie</option>
+                        <option value="Barbier" data-kw="barbier">Barbier</option>
+                    </optgroup>
+                    <optgroup label="⚖️ Professions libérales">
+                        <option value="Avocat" data-kw="avocat">Avocat</option>
+                        <option value="Expert-comptable" data-kw="expert-comptable">Expert-comptable</option>
+                        <option value="Notaire" data-kw="notaire">Notaire</option>
+                        <option value="Huissier" data-kw="huissier de justice">Huissier de justice</option>
+                        <option value="Conseiller financier" data-kw="conseiller financier">Conseiller financier
+                        </option>
+                    </optgroup>
+                    <optgroup label="📣 Services aux entreprises">
+                        <option value="Agence communication" data-kw="agence communication">Agence de communication
+                        </option>
+                        <option value="Agence immobilière" data-kw="agence immobilière">Agence immobilière</option>
+                        <option value="Consultant" data-kw="consultant">Consultant</option>
+                        <option value="Coach" data-kw="coach professionnel">Coach</option>
+                        <option value="Formation" data-kw="centre de formation">Organisme de formation</option>
+                        <option value="Traducteur" data-kw="traducteur interprète">Traducteur</option>
+                        <option value="Comptable" data-kw="cabinet comptable">Cabinet comptable</option>
+                    </optgroup>
+                    <optgroup label="🚗 Auto / Transport">
+                        <option value="Garagiste" data-kw="garage automobile">Garagiste</option>
+                        <option value="Carrossier" data-kw="carrosserie auto">Carrossier</option>
+                        <option value="Auto-école" data-kw="auto-école">Auto-école</option>
+                        <option value="Déménageur" data-kw="déménageur">Déménageur</option>
+                        <option value="Taxi" data-kw="taxi vtc">Taxi / VTC</option>
+                    </optgroup>
+                    <optgroup label="📸 Numérique / Créatif">
+                        <option value="Photographe" data-kw="photographe">Photographe</option>
+                        <option value="Vidéaste" data-kw="vidéaste">Vidéaste</option>
+                        <option value="Graphiste" data-kw="graphiste">Graphiste</option>
+                        <option value="Web designer" data-kw="web designer">Web designer</option>
+                    </optgroup>
+                    <optgroup label="🎓 Éducation / Sport">
+                        <option value="Auto-école" data-kw="auto-école">Auto-école</option>
+                        <option value="Soutien scolaire" data-kw="soutien scolaire">Soutien scolaire</option>
+                        <option value="Salle de sport" data-kw="salle de sport fitness">Salle de sport / Fitness
+                        </option>
+                        <option value="Coach sportif" data-kw="coach sportif">Coach sportif</option>
+                        <option value="Yoga" data-kw="yoga pilates">Yoga / Pilates</option>
+                        <option value="École de danse" data-kw="école de danse">École de danse</option>
+                    </optgroup>
+                    <optgroup label="🛒 Commerce local">
+                        <option value="Fleuriste" data-kw="fleuriste">Fleuriste</option>
+                        <option value="Bijouterie" data-kw="bijouterie">Bijouterie</option>
+                        <option value="Boulangerie" data-kw="boulangerie pâtisserie">Boulangerie / Pâtisserie</option>
+                        <option value="Traiteur" data-kw="traiteur">Traiteur</option>
+                        <option value="Opticien" data-kw="opticien">Opticien</option>
+                        <option value="Librairie" data-kw="librairie">Librairie</option>
+                    </optgroup>
+                    <optgroup label="➕ Autre">
+                        <option value="Autre" data-kw="">Autre (saisir manuellement)</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:160px">
+                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Mot-clé</label>
+                <input type="text" id="plan-keyword" placeholder="plombier, avocat..."
+                    style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px">
+                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Ville</label>
+                <input type="text" id="plan-city" placeholder="Paris, Lyon..."
+                    style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;width:90px">
+                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Leads</label>
+                <input type="number" id="plan-leads" value="50" min="1" max="500"
+                    style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px">
+                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Date</label>
+                <input type="date" id="plan-date"
+                    style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;width:100px">
+                <label style="font-size:11px;font-weight:600;color:var(--ink3)">Heure</label>
+                <input type="time" id="plan-heure" value="09:00"
+                    style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface)">
+            </div>
+            <button class="btn bp1" onclick="addPlannedCampaign()" style="align-self:flex-end;white-space:nowrap">
+                + Ajouter à la file
+            </button>
+        </div>
+    </div>
+
+    <!-- File d'attente -->
+    <div class="card" style="margin-bottom:1.5rem">
+        <div class="ch" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+            <div class="ct2">File d'attente</div>
+            <button class="btn bg1 sm" onclick="loadPlanning()">Rafraîchir</button>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="tbl" style="width:100%">
+                <thead>
+                    <tr>
+                        <th style="width:32px">#</th>
+                        <th>Secteur</th>
+                        <th>Mot-clé</th>
+                        <th>Ville</th>
+                        <th>Leads</th>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Statut</th>
+                        <th style="text-align:right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-planning">
+                    <tr>
+                        <td colspan="9" style="text-align:center;padding:2rem;color:var(--ink3)">Chargement...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Stats par niche -->
+    <div class="card">
+        <div class="ct2" style="margin-bottom:1rem">Statistiques par niche</div>
+        <div style="overflow-x:auto">
+            <table class="tbl" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Niche</th>
+                        <th>Campagnes</th>
+                        <th>Leads scrappés</th>
+                        <th>Emails envoyés</th>
+                        <th>Taux réponse</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-niche-stats">
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:1.5rem;color:var(--ink3)">Chargement...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

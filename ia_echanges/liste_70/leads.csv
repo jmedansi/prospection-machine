@@ -1,0 +1,51 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+7239,Garage Des Pins,"
+147 Av. Lacassagne, 69003 Lyon, France",Lyon,concessionnaires_auto,http://www.garagedespinslyon.fr/,+33478549679,,0,concessionnaires_auto,web,1,15,pas_https(+15),,,
+7240,Garage Minasi,"
+18 Rue Jean Chevailler, 69008 Lyon, France",Lyon,concessionnaires_auto,,+33478759833,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7241,Garage municipal,"
+41 Rue Bataille, 69008 Lyon, France",Lyon,concessionnaires_auto,,,,0,concessionnaires_auto,web,2,,"Aucun site, aucun contact — à vérifier (GMB)",a_verifier,,
+7242,Garage Auto Alliance,"
+106 Rue André Bollier, 69007 Lyon, France",Lyon,concessionnaires_auto,,+33472718631,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7243,CASTING AUTOMOBILES PARIS 16 - MURAT,"
+58 Bd Murat, 75016 Paris, France",Paris,concessionnaires_auto,http://castingautomobiles.com/,+33146511000,,0,concessionnaires_auto,web,2,,403 + erreur connexion (anti-bot) — non analysable,a_verifier,,
+7244,CHOPELIN,"
+15 Rue de la Rize, 69003 Lyon, France",Lyon,concessionnaires_auto,https://www.garage-premier.fr/rendez-vous/?rdv=CUST-IN0546&mtm_campaign=rdv-google&mtm_kwd=garage-premier,+33478953930,,0,concessionnaires_auto,web,35,,garage-premier.fr = réseau — grand compte,a_verifier,,
+7245,RENAULT,"
+4-5 Rue Saint-Simon, 69009 Lyon, France",Lyon,concessionnaires_auto,https://www.retail-renault-group.fr/services-apres-vente/prenez-votre-rendez-vous-en-ligne?utm_source=google&utm_medium=gmb-organic&utm_campaign=google-gmb-organic-local-lyon-rrg-renault-lyon-nord-apv&utm_content=gmb-booking&partner=google-gmb-organic-local-lyon-rrg-renault-lyon-nord-apv-gmb-booking,+33472207220,,0,concessionnaires_auto,web,35,,retail-renault-group.fr = réseau Renault — grand compte,a_verifier,,
+7246,SKODA BYmyCAR Lyon,"
+65 Rue du Souvenir, 69009 Lyon, France",Lyon,concessionnaires_auto,https://www.bymycar.fr/concessions/skoda-lyon-vaise-bymycar?utm_campaign=bouton&utm_medium=organic&utm_source=GMB,+33437641670,,0,concessionnaires_auto,web,35,,bymycar.fr = groupe BYmyCAR — grand compte,a_verifier,,
+7247,Euromaster Lyon Berthelot,"
+190 Av. Berthelot, 69007 Lyon, France",Lyon,concessionnaires_auto,https://www.euromaster.fr/prendre-rdv?fitterId=3205&utm_source=Google&utm_medium=organic&utm_campaign=Reserve_GMB&utm_term=3205&utm_content=I&rwg_token=AFd1xnH8Vo-K75xxPsUJz9UDAXPTE_Qupf3KS4lUeu6HjFxA4Y7lSFuUOzlkuO59TRlKV0RS_Jwiqo5EiW4Mkf4_MftU0pcb0Q%3D%3D,+33478724176,,0,concessionnaires_auto,web,35,,euromaster.fr = réseau Euromaster — grand compte,a_verifier,,
+7248,Euromaster Lyon Vaise,"
+48 Rue de Bourgogne, 69009 Lyon, France",Lyon,concessionnaires_auto,https://www.euromaster.fr/prendre-rdv?fitterId=3208&utm_source=Google&utm_medium=organic&utm_campaign=Reserve_GMB&utm_term=3208&utm_content=I&rwg_token=AFd1xnEs80NV1ZvpW9zgvT_5yXi9bL45WWs7aKfNbsVOB0Hsqh2kdFpZEYyT7L6gXijd7PphqIfiu-6bCQRIEDY1cO4IAwQ3AA%3D%3D,+33478837776,,0,concessionnaires_auto,web,35,,euromaster.fr = réseau Euromaster — grand compte,a_verifier,,
+7249,Station Meca Voltaire,"
+42 Bd Voltaire, 75011 Paris, France",Paris,concessionnaires_auto,,+33147006165,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7250,MAURICE S AUTOMOBILES,"
+38 Av. Claude Vellefaux, 75010 Paris, France",Paris,concessionnaires_auto,http://www.maurices-automobiles.fr/index.php?p=listing,+33142812021,,0,concessionnaires_auto,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+7251,ARNAUD,"
+28 Rue Baraban, 69003 Lyon, France",Lyon,concessionnaires_auto,https://www.garage-arnaud-sports.com/,+33472369005,,0,concessionnaires_auto,web,1,5,no_og(+5),,,
+7252,Garage Des Roses,"
+23 Rue des Roses, 75018 Paris, France",Paris,concessionnaires_auto,,+33146071117,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7253,Garage Paris Shweyangyan,"
+85 Rue Hoche, 94200 Ivry-sur-Seine, France",Paris,concessionnaires_auto,,+33156200805,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7254,AUTOMOBILES,"
+42 Rue Laugier, 75017 Paris, France",Paris,concessionnaires_auto,https://www.laugierautomobiles.com/,+33145775667,contact@laugierautomobiles.com,0,concessionnaires_auto,web,1,5,no_og(+5),,,
+7255,Garage L'Automobile,"
+6 Av. Leclerc, 69007 Lyon, France",Lyon,concessionnaires_auto,,+33478586261,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7256,FORD BYmyCAR Lyon Sud,"
+10 All. des Savoies, 69200 Vénissieux, France",Lyon,concessionnaires_auto,https://www.bymycar.fr/services/ford?utm_source=GMB&utm_medium=organic&utm_campaign=lien-apv,+33478783030,,0,concessionnaires_auto,web,35,,bymycar.fr = groupe BYmyCAR — grand compte,a_verifier,,
+7257,RENAULT,"
+27 Av. de l'Aqueduc de Beaunant, 69110 Sainte-Foy-lès-Lyon, France",Lyon,concessionnaires_auto,https://www.retail-renault-group.fr/services-apres-vente/prenez-votre-rendez-vous-en-ligne,+33472397676,,0,concessionnaires_auto,web,35,,retail-renault-group.fr = réseau Renault — grand compte,a_verifier,,
+7258,RENAULT,"
+203 Rue Championnet, 75018 Paris, France",Paris,concessionnaires_auto,https://www.retail-renault-group.fr/services-apres-vente/prenez-votre-rendez-vous-en-ligne?utm_source=google&utm_medium=gmb-organic&utm_campaign=google-gmb-organic-local-paris-rrg-renault-paris-championnet-apv&utm_content=gmb-booking&partner=google-gmb-organic-local-paris-rrg-renault-paris-championnet-apv-gmb-booking,+33142283636,,0,concessionnaires_auto,web,35,,retail-renault-group.fr = réseau Renault — grand compte,a_verifier,,
+7259,Garage Claude Porte Doree.,"
+4 Rue de l'Essai, 75005 Paris, France",Paris,concessionnaires_auto,,+33780993294,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7260,Garage Jarrier,"
+6 Pl. Puvis de Chavannes, 69006 Lyon, France",Lyon,concessionnaires_auto,,+33478932194,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7261,Garage Saint-Antoine,"
+51 Rue Saint-Antoine, 69003 Lyon, France",Lyon,concessionnaires_auto,,+33660666969,,0,concessionnaires_auto,web,5,,Aucun site — création,a_contacter,,
+7262,GARIBALDI,"
+3 Rue de l'Abbé-Boisard, 69007 Lyon, France",Lyon,concessionnaires_auto,https://www.prestigegaribaldi.fr/,+33478611350,prestigegaribaldi@gmail.com,0,concessionnaires_auto,web,1,0,Site moderne,,,
+7263,Volkswagen Paris 15 - VGRF Grand Paris,"
+40 ter Av. de Suffren, 75015 Paris, France",Paris,concessionnaires_auto,https://rdv-atelier.sonauto.fr/bookingonce/services?country=FR&dealer=2678&locale=&site=1&tenant=standalonebookingonce,+33153581000,,0,concessionnaires_auto,web,35,,sonauto.fr = réseau VGRF/Sonauto — grand compte,a_verifier,,

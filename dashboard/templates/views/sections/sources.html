@@ -39,6 +39,12 @@
             <input type="number" id="src-quota-ecom" class="source-quota-input" value="20"
                 onchange="sourcesSaveQuota('ecom', this.value)" title="Quota journalier E-commerce">
         </div>
+
+        <!-- Import CSV -->
+        <button class="leads-btn" onclick="ulOpenImportDialog()" title="Importer des leads depuis un fichier CSV (choix campagne + liste de destination)"
+            style="display:flex;align-items:center;gap:6px;white-space:nowrap">
+            ⬆️ Importer CSV
+        </button>
     </div>
 </div>
 
@@ -188,6 +194,86 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- ─── Sniper B2B (contrôles email + statut live) ─────────────────────────── -->
+<div class="card" style="margin-bottom:2rem;padding:16px 18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+            <div>
+                <div style="font-weight:700;font-size:.95rem">Sniper B2B</div>
+                <div style="font-size:11px;color:var(--ink3)">Génération d'emails, step 1 et statut du pipeline</div>
+            </div>
+            <span id="sniper-running-badge" style="display:none;align-items:center;gap:5px;background:rgba(251,191,36,0.15);color:#f59e0b;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px">
+                <span style="width:6px;height:6px;background:#f59e0b;border-radius:50%;animation:pulse 1.2s infinite"></span>
+                En cours
+            </span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer" title="Lance automatiquement le scraping Google Ads chaque jour à 9h">
+                <input type="checkbox" id="sniper-auto-scrape-toggle" onchange="sniperToggleAutoScrape(this.checked)" style="width:14px;height:14px">Ads 9h
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer" title="Lance automatiquement le scraping E-com chaque jour à 9h30">
+                <input type="checkbox" id="sniper-ecom-scrape-toggle" onchange="sniperToggleEcomScrape(this.checked)" style="width:14px;height:14px">E-com 9h30
+            </label>
+            <button class="btn bg2 sm" onclick="sniperPollImap()">Vérifier réponses</button>
+            <button class="btn bg1 sm" onclick="sniperGenerateEmails()">Générer emails</button>
+            <button class="btn bg1 sm" onclick="sniperSendStep1()">Envoyer step 1</button>
+            <button class="btn bg2 sm" onclick="sniperLoadStatus()">Rafraîchir statut</button>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px">
+        <div class="mc"><div class="ml">Leads comptés</div><div class="mv" id="sniper-stat-leads">—</div></div>
+        <div class="mc"><div class="ml">Emails générés</div><div class="mv" id="sniper-stat-emails">—</div></div>
+        <div class="mc"><div class="ml">Step 1 envoyés</div><div class="mv" id="sniper-stat-envoyes">—</div></div>
+        <div class="mc"><div class="ml">Réponses</div><div class="mv" id="sniper-stat-reponses">—</div></div>
+        <div class="mc"><div class="ml">Rapports step 2</div><div class="mv" id="sniper-stat-step2">—</div></div>
+        <div class="mc" style="cursor:pointer" onclick="sniperSetQuota()" title="Ajuster le quota Sniper">
+            <div class="ml">Quota du jour</div>
+            <div class="mv" id="sniper-stat-quota">—</div>
+        </div>
+    </div>
+
+    <!-- Compteurs live + log -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <div id="sniper-live-counters" style="display:none;gap:16px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--ink3)">Mot-clé : <strong id="sniper-live-kw" style="color:var(--ink)">—</strong></span>
+            <span style="font-size:11px;color:var(--ink3)">Extraits : <strong id="sniper-live-total" style="color:var(--accent)">0</strong></span>
+            <span style="font-size:11px;color:var(--ink3)">Qualifiés : <strong id="sniper-live-accepted" style="color:#10b981">0</strong></span>
+            <span style="font-size:11px;color:var(--ink3)">Emails : <strong id="sniper-live-emails" style="color:#3b82f6">0</strong></span>
+            <span style="font-size:11px;background:rgba(251,191,36,0.15);color:#f59e0b;padding:2px 8px;border-radius:10px;font-weight:600" id="sniper-live-phase">—</span>
+        </div>
+    </div>
+    <div id="sniper-log" class="src-log" style="max-height:200px">En attente de lancement…</div>
+</div>
+
+<!-- ─── Actions IA ⇄ Dashboard (sur une liste) ───────────────────────────────── -->
+<div class="card" style="margin-bottom:2rem;padding:16px 18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+        <div>
+            <div style="font-weight:700;font-size:.95rem">✦ Actions IA ⇄ Dashboard</div>
+            <div style="font-size:11px;color:var(--ink3)">Qualifier / maquettes / rédaction d'emails — ciblez une liste et l'objectif, puis lancez la préparation. L'IA complète les fichiers, vous relancez le scan.</div>
+        </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px">
+        <select id="ia-strip-liste" class="source-quota-input" title="Liste à traiter">
+            <option value="">⚠ Sélectionner une liste</option>
+        </select>
+        <select id="ia-strip-objectif" class="source-quota-input" title="Objectif">
+            <option value="tous">Objectif : Tous</option>
+            <option value="web">Web</option>
+            <option value="general">Général</option>
+        </select>
+        <span style="font-size:11px;color:var(--ink3)" id="ia-strip-count"></span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" id="ia-strip-qualify" onclick="iaStripAction('qualify')">✦ Qualifier</button>
+        <button class="btn sm" id="ia-strip-maquette" onclick="iaStripAction('maquette')">✦ Maquette</button>
+        <button class="btn sm" id="ia-strip-redact" onclick="iaStripAction('redact')">✦ Rédiger mail</button>
+        <button class="btn bp1 sm" id="ia-strip-scan" onclick="iaStripAction('scan')">⟳ Actualiser IA</button>
+    </div>
+    <div id="ia-strip-msg" style="font-size:12px;color:var(--ink3);margin-top:10px"></div>
 </div>
 
 <!-- ─── Panneau slide-in (partagé entre toutes les sources) ─────────────────── -->

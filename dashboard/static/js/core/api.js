@@ -30,6 +30,8 @@ export class API {
      */
     static async getStats(filters = {}) {
         const params = new URLSearchParams(filters);
+        const oid = window._ul && (window._ul.v2CampagneId ?? window._ul.v2ObjectifId);
+        if (oid) params.set('objectif_id', oid);
         params.set('v', '5'); // Always use V5 mapping
         return await this.request(`/api/stats?${params.toString()}`);
     }

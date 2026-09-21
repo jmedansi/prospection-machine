@@ -49,7 +49,95 @@ async function loadSettings() {
                 console.warn(`  [Settings] Element #${id} not found in DOM`);
             }
         }
+
+        // Onglet « Boîtes » : quotas quotidiens des boîtes d'expédition
+        loadMailboxes();
     } catch (e) { console.error('loadSettings:', e); }
+}
+
+// ── Boîtes d'expédition (mailboxes) ────────────────────────────────────
+const _escM = s => (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+async function loadMailboxes() {
+    const tbody = document.getElementById('mailboxes-tbody');
+    if (!tbody) return;
+    try {
+        const r = await fetch('/api/mailboxes?_t=' + Date.now());
+        const d = await r.json();
+        if (!d.success) {
+            tbody.innerHTML = `<tr><td colspan="7" style="padding:1rem;color:var(--red);font-size:12px">${_escM(d.error || 'Erreur')}</td></tr>`;
+            return;
+        }
+        const boxes = d.boites || [];
+        if (!boxes.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="padding:1rem;color:var(--ink3);font-size:12px">Aucune boîte configurée.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = boxes.map(b => {
+            const exhausted = (b.usage_jour || 0) >= (b.quota_jour || 0);
+            return `
+            <tr style="border-top:1px solid var(--border)">
+                <td style="padding:10px 8px;font-size:13px;font-weight:600;color:var(--ink)">${_escM(b.label)}</td>
+                <td style="padding:10px 8px;font-size:12px;color:var(--ink2)">${_escM(b.email)}</td>
+                <td style="padding:10px 8px;font-size:12px;color:var(--ink3)">${_escM(b.backend)}</td>
+                <td style="padding:10px 8px">
+                    <select class="inp sm" style="padding:5px 6px;font-size:12px" onchange="setMailboxActif(${b.id}, this.value)">
+                        ${b.actif ? '<option value="1" selected>Oui</option><option value="0">Non</option>' : '<option value="1">Oui</option><option value="0" selected>Non</option>'}
+                    </select>
+                </td>
+                <td style="padding:10px 8px"><input type="number" id="mb-quota-${b.id}" class="inp sm" style="width:70px;padding:5px 6px" min="0" value="${b.quota_jour}"></td>
+                <td style="padding:10px 8px;font-size:12px;color:${exhausted ? 'var(--red)' : 'var(--ink2)'}">${b.usage_jour || 0} / ${b.quota_jour || 0}${exhausted ? ' — épuisé' : ''}</td>
+                <td style="padding:10px 8px">
+                    <button class="btn bp1 sm" style="padding:5px 10px;font-size:11px" onclick="saveMailbox(${b.id})">Sauver</button>
+                    <button class="btn bg1 sm" style="padding:5px 10px;font-size:11px" onclick="resetMailboxUsage(${b.id})">Reset usage</button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="padding:1rem;color:var(--red);font-size:12px">Erreur réseau : ${_escM(e.message)}</td></tr>`;
+    }
+}
+
+async function saveMailbox(id) {
+    const quotaEl = document.getElementById('mb-quota-' + id);
+    if (!quotaEl) return;
+    const quota = parseInt(quotaEl.value, 10);
+    if (isNaN(quota) || quota < 0) { showToast('Quota invalide : nombre ≥ 0 requis', 'error'); return; }
+    try {
+        const r = await fetch('/api/mailboxes/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quota_jour: quota }),
+        });
+        const d = await r.json();
+        if (!d.success) { showToast(d.error || 'Erreur', 'error'); return; }
+        showToast('Quota mis à jour', 'success');
+        loadMailboxes();
+    } catch (e) { showToast('Erreur réseau', 'error'); }
+}
+
+async function setMailboxActif(id, val) {
+    try {
+        const r = await fetch('/api/mailboxes/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actif: val === '1' }),
+        });
+        const d = await r.json();
+        showToast(d.success ? ('Boîte ' + (val === '1' ? 'activée' : 'désactivée')) : (d.error || 'Erreur'), d.success ? 'success' : 'error');
+        loadMailboxes();
+    } catch (e) { showToast('Erreur réseau', 'error'); }
+}
+
+async function resetMailboxUsage(id) {
+    if (!await showConfirm('Remettre le compteur « utilisé » (usage_jour) de cette boîte à 0 ?', { title: 'Reset quota', confirmText: 'Reset' })) return;
+    try {
+        const r = await fetch('/api/mailboxes/' + id + '/reset', { method: 'POST' });
+        const d = await r.json();
+        if (!d.success) { showToast(d.error || 'Erreur', 'error'); return; }
+        showToast('Compteur remis à 0', 'success');
+        loadMailboxes();
+    } catch (e) { showToast('Erreur réseau', 'error'); }
 }
 
 async function saveSettings() {

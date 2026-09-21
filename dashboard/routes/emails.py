@@ -13,6 +13,7 @@ from agents.expediteur import expediteur_agent
 from agents.tracker    import tracker_agent
 from database import get_conn
 from database.repos import audits_repo, leads_repo
+from database.prospects import get_thread_for_lead
 
 emails_bp = Blueprint("emails", __name__)
 
@@ -53,6 +54,21 @@ def api_email_cancel():
 @emails_bp.route("/api/email/status")
 def api_email_status():
     return jsonify(expediteur_agent.status())
+
+
+@emails_bp.route("/api/email/thread/<int:lead_id>")
+def api_email_thread(lead_id):
+    """Fil de conversation RFC 2822 d'un prospect (lead_id = prospect_id v2).
+
+    Sortant (initial, relance_*) + entrant (reponse, ndr, auto_reply) en
+    ordre chronologique, avec message_id / in_reply_to / references /
+    thread_id pour reconstruire la conversation côté UI.
+    """
+    try:
+        thread = get_thread_for_lead(lead_id)
+        return jsonify({"lead_id": lead_id, "thread": thread, "total": len(thread)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @emails_bp.route("/api/email/test", methods=["POST"])

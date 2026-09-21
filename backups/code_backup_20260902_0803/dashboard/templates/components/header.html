@@ -1,0 +1,127 @@
+<!--
+    dashboard/templates/components/header.html
+    Topbar v6 — Hamburger, breadcrumb animé, search, notifs
+-->
+<div class="tb" id="main-topbar">
+    <!-- Left: Hamburger + Brand + Breadcrumb -->
+    <div class="topbar-left" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+        <!-- Hamburger (tablet/mobile) -->
+        <button class="topbar-hamburger" id="topbar-hamburger" onclick="toggleSidebar()" title="Menu" aria-label="Ouvrir la navigation">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+
+        <!-- Brand (tablet/mobile only) -->
+        <div class="tb-brand" style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+            <div style="background:var(--accent);color:white;width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">I</div>
+            <span class="tb-brand-name" style="font-weight:700;font-size:15px;letter-spacing:-0.4px">Incidenx</span>
+        </div>
+
+        <div style="width:1px;height:18px;background:var(--border);flex-shrink:0" class="tb-sep"></div>
+
+        <!-- Breadcrumb -->
+        <div class="topbar-breadcrumb">
+            <span class="topbar-breadcrumb-label" id="PT">Cockpit</span>
+        </div>
+    </div>
+
+    <!-- Center: Filters (desktop) -->
+    <div class="tr" style="flex-shrink:0;gap:8px">
+        <!-- Sector filter -->
+        <div class="tb-sector-group" style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11px;font-weight:600;color:var(--ink3);white-space:nowrap">Secteur</span>
+            <select id="global-sector-select" class="inp sm" style="width:130px" onchange="loadCampaignsForSector(this.value)">
+                <option value="">Tous</option>
+            </select>
+        </div>
+
+        <div style="width:1px;height:18px;background:var(--border)" class="tb-sep"></div>
+
+        <!-- Campaign filter -->
+        <div class="tb-campaign-group" style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11px;font-weight:600;color:var(--ink3);white-space:nowrap">Campagne</span>
+            <select id="global-campaign-select" class="inp sm" style="width:180px" onchange="changeGlobalCampaign(this.value)">
+                <option value="">Toutes</option>
+            </select>
+        </div>
+
+        <div style="width:1px;height:18px;background:var(--border)" class="tb-sep"></div>
+
+        <!-- Date range picker -->
+        <div class="tb-date-picker" style="position:relative">
+            <input type="hidden" id="global-date-start">
+            <input type="hidden" id="global-date-end">
+            <button id="drp-trigger" onclick="_drpToggle()"
+                style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--ink);font-size:11px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .15s"
+                onmouseover="this.style.borderColor='var(--accent)'"
+                onmouseout="this.style.borderColor='var(--border)'">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M1 6h14M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                <span id="drp-label" style="color:var(--ink3)">Période</span>
+                <span id="drp-clear" onclick="event.stopPropagation();clearGlobalDate()"
+                    style="display:none;color:var(--ink3);font-size:14px;line-height:1;margin-left:2px">&times;</span>
+            </button>
+            <div id="drp-popup"
+                style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.18);z-index:10000;padding:16px;width:268px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <button onclick="_drpPrevMonth()" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--ink3);width:28px;height:28px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">&#8249;</button>
+                    <span id="drp-month-label" style="font-size:13px;font-weight:700;color:var(--ink)"></span>
+                    <button onclick="_drpNextMonth()" style="background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--ink3);width:28px;height:28px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">&#8250;</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px">
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Lu</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Ma</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Me</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Je</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Ve</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Sa</div>
+                    <div style="text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:3px">Di</div>
+                </div>
+                <div id="drp-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+                    <span id="drp-footer" style="font-size:11px;color:var(--ink3)">Choisissez la date de début</span>
+                    <button onclick="_drpReset();_drpRender()" style="background:none;border:none;font-size:11px;color:var(--ink3);cursor:pointer;padding:0;text-decoration:underline">Effacer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right controls -->
+        <div style="width:1px;height:18px;background:var(--border)" class="tb-sep"></div>
+
+        <!-- Status pill -->
+        <div class="sp" id="status-provider" style="background:var(--surface2);color:var(--ink3);border-color:var(--border)">
+            <span class="pls" style="background:var(--ink3)"></span>
+            <span id="status-provider-text">Chargement...</span>
+        </div>
+
+        <!-- Refresh -->
+        <button class="btn bg1 sm" onclick="refreshAll()" title="Rafraîchir">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+                <path d="M14 8A6 6 0 102 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M14 4v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Rafraîchir
+        </button>
+
+        <!-- Theme toggle -->
+        <button class="tt" onclick="toggleTheme()" title="Changer le thème" id="theme-toggle-btn">
+            <svg id="TI" width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.4" />
+                <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.1 3.1l1.1 1.1M11.8 11.8l1.1 1.1M3.1 12.9l1.1-1.1M11.8 4.2l1.1-1.1"
+                    stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            </svg>
+        </button>
+
+        <!-- Notification bell -->
+        <button class="tt" id="notification-bell" onclick="showNotifications()" title="Notifications" style="position:relative">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2a4 4 0 00-4 4v3l-1 2h10l-1-2V6a4 4 0 00-4-4z" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M6.5 13a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <span id="notification-badge" style="display:none;position:absolute;top:-3px;right:-3px;width:8px;height:8px;background:#ef4444;border-radius:50%;border:2px solid var(--surface)"></span>
+        </button>
+    </div>
+</div>

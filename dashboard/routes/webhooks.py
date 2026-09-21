@@ -3,13 +3,70 @@
 dashboard/routes/webhooks.py
 Réception des webhooks (Resend, Brevo, etc.) pour le suivi des interactions.
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, redirect
 from datetime import datetime
 from database.repos.emails_repo import emails_repo
+from database import emails as emails_db
+from urllib.parse import urlparse, unquote
 import logging
 
 logger = logging.getLogger(__name__)
 webhooks_bp = Blueprint('webhooks', __name__, url_prefix='/api/webhooks')
+
+# ── Tracking maison SMTP : pixel d'ouverture 1x1 (voir envoi/track_links.py) ─────
+_PIXEL_GIF = (
+    b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00'
+    b'\xff\xff\xff\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00'
+    b'\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
+)
+
+
+@webhooks_bp.route('/track/pixel/<path:message_id>', methods=['GET'])
+def track_pixel(message_id):
+    """Pixel d'ouverture : marque l'email comme ouvert puis renvoie un GIF 1x1."""
+    try:
+        mid = unquote(message_id)
+        if mid:
+            emails_db.update_email_tracking(mid, {
+                'ouvert': 1,
+                'date_ouverture': datetime.now().isoformat(),
+            })
+            from database.db_manager import get_conn
+            with get_conn() as conn:
+                conn.execute(
+                    "UPDATE emails_envoyes SET nb_ouvertures = nb_ouvertures + 1 "
+                    "WHERE message_id_resend = ? OR message_id_brevo = ?",
+                    (mid, mid))
+                conn.commit()
+    except Exception as e:
+        logger.error(f"[TRACK] pixel {message_id}: {e}")
+    return _PIXEL_GIF, 200, {'Content-Type': 'image/gif', 'Cache-Control': 'no-store'}
+
+
+@webhooks_bp.route('/track/click/<path:message_id>', methods=['GET'])
+def track_click(message_id):
+    """Wrapper de clic : enregistre le clic puis redirige vers l'URL d'origine."""
+    msg = request.args.get('u') or ''
+    parsed = urlparse(msg)
+    if not parsed.scheme or parsed.scheme not in ('http', 'https'):
+        return jsonify({"status": "error", "reason": "url invalide"}), 400
+    try:
+        mid = unquote(message_id)
+        if mid:
+            emails_db.update_email_tracking(mid, {
+                'clique': 1,
+                'date_clic': datetime.now().isoformat(),
+            })
+            from database.db_manager import get_conn
+            with get_conn() as conn:
+                conn.execute(
+                    "UPDATE emails_envoyes SET nb_clics = nb_clics + 1, "
+                    "date_dernier_clic = ? WHERE message_id_resend = ? OR message_id_brevo = ?",
+                    (datetime.now().isoformat(), mid, mid))
+                conn.commit()
+    except Exception as e:
+        logger.error(f"[TRACK] click {message_id}: {e}")
+    return redirect(msg, code=302)
 
 @webhooks_bp.route('/resend', methods=['POST'])
 def resend_webhook():

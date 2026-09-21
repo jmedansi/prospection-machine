@@ -1,0 +1,3 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+7394,simulations.cyberpret.com,,Paris,courtage,https://simulations.cyberpret.com,,,50,courtage,general,55,25,stack_obsolete(+20); pas_og(+5),a_verifier,,
+7395,RÉCLAMATION,,Paris,courtage,https://empruntis.com,,,50,courtage,general,55,30,stack_obsolete(+20); pas_favicon(+5); img_non_webp(+5),a_verifier,,

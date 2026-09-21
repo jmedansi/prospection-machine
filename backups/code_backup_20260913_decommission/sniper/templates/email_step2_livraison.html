@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rapport d'audit — {{SITE}}</title>
+  <style>
+    body { margin: 0; padding: 0; background: #f4f4f4; font-family: Arial, Helvetica, sans-serif; }
+    .wrapper { max-width: 580px; margin: 0 auto; background: #ffffff; }
+    .header { background: #1a1a2e; padding: 28px 32px; }
+    .header h1 { color: #ffffff; font-size: 18px; margin: 0; font-weight: 700; }
+    .header p  { color: #a0aec0; font-size: 13px; margin: 6px 0 0; }
+    .body { padding: 32px; }
+    .body p { color: #374151; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
+    .cta-block { background: #f0f4ff; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 20px 24px; margin: 28px 0; }
+    .cta-block p { margin: 0 0 16px; font-size: 15px; color: #1e3a5f; font-weight: 600; }
+    .btn { display: inline-block; background: #2563eb; color: #ffffff !important; text-decoration: none; padding: 13px 28px; border-radius: 6px; font-size: 15px; font-weight: 700; }
+    .calendly-block { margin-top: 28px; padding: 20px 24px; border: 1px solid #e5e7eb; border-radius: 6px; }
+    .calendly-block p { margin: 0 0 14px; font-size: 14px; color: #6b7280; }
+    .calendly-link { color: #2563eb; font-size: 14px; }
+    .footer { padding: 24px 32px; border-top: 1px solid #e5e7eb; }
+    .footer p { font-size: 12px; color: #9ca3af; margin: 0 0 4px; }
+    .footer strong { color: #374151; font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <h1>Rapport d'audit — {{SITE}}</h1>
+    <p>Analyse performance &amp; infrastructure — incidenx.com</p>
+  </div>
+
+  <div class="body">
+
+    <p>Bonjour {{NOM}},</p>
+
+    <p>
+      Merci pour votre retour. Comme promis, voici le rapport complet
+      que j'avais préparé pour {{SITE}}.
+    </p>
+
+    <p>
+      Il détaille les points précis que je vous avais mentionnés,
+      avec les chiffres exacts et les recommandations prioritaires
+      pour votre cas.
+    </p>
+
+    <div class="cta-block">
+      <p>Accéder au rapport d'audit complet :</p>
+      <a href="{{LIEN_RAPPORT}}" class="btn">Voir mon rapport &rarr;</a>
+    </div>
+
+    <p>
+      Si vous souhaitez qu'on en discute de vive voix — 20 minutes suffisent
+      pour identifier ensemble ce qui impacte le plus vos conversions —
+      vous pouvez réserver un créneau ici :
+    </p>
+
+    <div class="calendly-block">
+      <p>Réserver un appel de 20 min (sans engagement) :</p>
+      <a href="{{LIEN_CALENDLY}}" class="calendly-link">{{LIEN_CALENDLY}}</a>
+    </div>
+
+    <p>À bientôt,</p>
+
+  </div>
+
+  <div class="footer">
+    <strong>Jean-Marc DANSI</strong>
+    <p>Expert performance web &amp; infrastructure — incidenx.com</p>
+    <p>contact@incidenx.com</p>
+  </div>
+
+</div>
+</body>
+</html>

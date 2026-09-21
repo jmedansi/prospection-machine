@@ -13,7 +13,7 @@
 
         static async poll() {
             try {
-                const UI = window.UI;
+                const UI = window.UI || { toast: () => {}, alert: () => {} };
 
                 // 1. Poll Audit Status
                 const auditResp = await fetch('/api/audit/status').then(r => r.json());

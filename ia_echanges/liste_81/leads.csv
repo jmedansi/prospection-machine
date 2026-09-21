@@ -1,0 +1,26 @@
+﻿Id,Nom,Adresse,Ville,Secteur,Site,Tel,Email,ScoreActuel,Categorie,Objectif,Opportunite,Score,Signaux,Reco,EmailObjet,EmailCorps
+7471,ESRP EPNAK LYON,"
+37 Rue Challemel-Lacour, 69007 Lyon, France",Lyon,ecoles_formation,https://formation.epnak.org/lyon/,+33478726356,,0,ecoles_formation,web,35,,epnak.org = réseau national — grand compte,a_verifier,,
+7472,Pro SAP Formations Lyon,"
+9 Rue des Tuiliers, 69003 Lyon, France",Lyon,ecoles_formation,http://www.pro-sap.fr/pro-sap-formations-lyon/,+33687851129,,0,ecoles_formation,web,2,20,pas_https(+15); no_og(+5),a_verifier,,
+7473,Aprentiv' | Conseil et Formation Professionnelle,"
+47 Rue Vivienne, 75002 Paris, France",Paris,ecoles_formation,https://www.aprentiv.com/,+33140419271,,0,ecoles_formation,web,2,,"403 anti-bot (site réel, non analysable)",a_verifier,,
+7474,CFAI LYON,"
+10 Bd Edmond Michelet, 69008 Lyon, France",Lyon,ecoles_formation,https://www.iri-lyon.com/,+33478770500,s.rodel@uimmlyon.com,0,ecoles_formation,web,35,,iri-lyon.com = réseau UIMM — grand compte,a_verifier,,
+7475,PONS,"
+59 Rue Planchat, 75020 Paris, France",Paris,ecoles_formation,https://cfpp.org/,+33143563030,it@cfpp.org,0,ecoles_formation,web,1,5,no_favicon(+5),,,
+7476,GRETA CFA Lyon Métropole,"
+41 Rue Antoine Lumière, 69008 Lyon, France",Lyon,ecoles_formation,https://greta-cfa.ac-lyon.fr/greta/greta-cfa-lyon-metropole,+33478788484,gretacfa.webmaster@ac-lyon.fr,0,ecoles_formation,web,35,,greta-cfa.ac-lyon.fr = réseau public — grand compte,a_verifier,,
+7477,ifocop - Centre de Paris 13,"
+58A Rue du Dessous des Berges, 75013 Paris, France",Paris,ecoles_formation,https://www.ifocop.fr/centre-formations/paris-xiii/?utm_source=seo&utm_medium=gmb&utm_campaign=gmb%20paris13,+33145838129,,0,ecoles_formation,web,35,,ifocop.fr = réseau national — grand compte,a_verifier,,
+7478,EXÉCUTIF,"
+3 Rue Pierre Dupont, 75010 Paris, France",Paris,ecoles_formation,https://www.ciefa.com/,+33180974700,,0,ecoles_formation,web,1,5,no_favicon(+5),,,
+7479,SEPR l'École des métiers,"
+46 Rue Professeur Rochaix, 69003 Lyon, France",Lyon,ecoles_formation,https://www.sepr.edu/,+33472832727,accueil@sepr.edu,0,ecoles_formation,web,1,0,Site moderne,,,
+7480,BENZAKKI,"
+9 Rue Pelée 7 et, 75011 Paris, France",Paris,ecoles_formation,http://apepsup.com/,+33178940685,contact@apepsup.com,0,ecoles_formation,web,2,30,pas_https(+15); no_favicon(+5); no_og(+5); no_webp(+5),a_verifier,,
+7481,roussel,,Paris,ecoles_formation,https://ieseg.fr,0320545892,,50,ecoles_formation,web,35,,ieseg.fr = grande école — grand compte,a_verifier,,
+7482,Coaching Ways,,Paris,ecoles_formation,https://coachingways.fr,,,50,ecoles_formation,web,3,50,non_responsive(+40); no_favicon(+5); no_og(+5),a_contacter,,
+7483,manceau,,Paris,ecoles_formation,https://neoma-bs.fr,,labmanager@neoma-bs.fr,50,ecoles_formation,web,35,,neoma-bs.fr = grande école — grand compte,a_verifier,,
+7484,PHYSIQUE,10 rue Émile landrin 75020 paris Mail,Paris,ecoles_formation,https://crisisbrg.com,0140337688,contact@beresilientgroup.com,50,ecoles_formation,web,1,5,no_favicon(+5),,,
+7485,hagege,,Paris,ecoles_formation,https://iticparis.com,0143732040,contact@iticparis.com,50,ecoles_formation,web,35,,iticparis.com = réseau national — grand compte,a_verifier,,
