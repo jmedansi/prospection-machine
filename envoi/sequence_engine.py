@@ -183,9 +183,12 @@ def _perform_send(campagne_id, prospect, objet, corps, *, template_id=None,
         return {'success': True, 'statut': 'dry_run', 'step': step,
                 'message': f"dry_run â†’ {prospect['email']}", 'id': None}
 
-    transition_prospect(prospect['id'], to_statut, reason=f'{step} envoyÃ©')
+    transition_prospect(prospect['id'], to_statut, reason=f'{step} envoyé')
     payload = {
         'step': step,
+        'objet': objet,
+        'corps': corps,
+        'snippet': (corps or '')[:250],
         'template_id': template_id,
         'humanise': was_humanized,
         'backend': mailbox.get('backend'),
@@ -221,6 +224,10 @@ def _perform_send(campagne_id, prospect, objet, corps, *, template_id=None,
              objet, corps),
         )
         conn.commit()
+
+    # Canal de contact : un email émis = moyen "mail" activé automatiquement
+    prospects_repo.update_prospect(prospect['id'], data_extra={'contact_mail': 1})
+
     logger.info("[sequence] %s envoyÃ©e prospect #%s objectif #%s (mailbox=%s, message_id=%s)",
                 step, prospect['id'], campagne_id, mailbox.get('email'), resp.get('message_id'))
     return {'success': True, 'statut': 'envoye', 'step': step,
@@ -279,6 +286,7 @@ def send_initial(campagne_id, prospect_id, *, force=False, humanize_on=True,
     if not prep['ok']:
         return {'success': False, 'statut': prep['raison'], 'message': f"verrou: {prep['raison']}", 'id': None}
 
+    template_id = prep['template'].get('id') if prep['template'] else None
     prospect = prep['prospect']
     obj = prep['campagne']
 
@@ -308,19 +316,19 @@ def send_initial(campagne_id, prospect_id, *, force=False, humanize_on=True,
                                                to_statut='en_sequence',
                                                step_label='Envoi initial',
                                                humanise=prep['humanise'],
-                                               template_id=prep['template'].get('id'))
+                                               template_id=template_id)
             if not req_ok:
                 return {'success': False, 'statut': 'telegram_injoignable',
                         'message': 'Envoi Telegram impossible', 'callback_id': cb, 'id': None}
             return {'success': False, 'statut': 'attente_approbation',
                     'message': 'Validation Telegram en attente de âœ…', 'callback_id': cb, 'id': None}
         return _perform_send(campagne_id, prospect, prep['objet'], prep['corps'],
-                             template_id=prep['template'].get('id'),
+                             template_id=template_id,
                              was_humanized=prep['humanise'],
                              dry_run=dry_run)
 
     return _perform_send(campagne_id, prospect, prep['objet'], prep['corps'],
-                         template_id=prep['template'].get('id'),
+                         template_id=template_id,
                          was_humanized=prep['humanise'],
                          dry_run=dry_run)
 
@@ -359,6 +367,7 @@ def send_relance(campagne_id, prospect_id, *, force=False, humanize_on=True,
         return {'success': False, 'statut': prep['raison'], 'message': f"verrou: {prep['raison']}", 'id': None}
     # Threading : une relance reprend le fil → objet préfixé "Re:"
     prep['objet'] = threading.ensure_re(prep['objet'])
+    template_id = prep['template'].get('id') if prep['template'] else None
 
     to_statut = POSITION_STATUT[position]
     step = f'relance_{position}'
@@ -390,20 +399,20 @@ def send_relance(campagne_id, prospect_id, *, force=False, humanize_on=True,
                                                prep['corps'], step=step, to_statut=to_statut,
                                                step_label=f'Relance {position}',
                                                humanise=prep['humanise'],
-                                               template_id=prep['template'].get('id'))
+                                               template_id=template_id)
             if not req_ok:
                 return {'success': False, 'statut': 'telegram_injoignable',
                         'message': 'Envoi Telegram impossible', 'callback_id': cb, 'id': None}
             return {'success': False, 'statut': 'attente_approbation',
                     'message': 'Validation Telegram en attente de âœ…', 'callback_id': cb, 'id': None}
         return _perform_send(campagne_id, prospect, prep['objet'], prep['corps'],
-                             template_id=prep['template'].get('id'),
+                             template_id=template_id,
                              was_humanized=prep['humanise'],
                              dry_run=dry_run,
                              expected_statut=prospect.get('statut'), to_statut=to_statut, step=step)
 
     return _perform_send(campagne_id, prospect, prep['objet'], prep['corps'],
-                         template_id=prep['template'].get('id'),
+                         template_id=template_id,
                          was_humanized=prep['humanise'],
                          dry_run=dry_run,
                          expected_statut=prospect.get('statut'), to_statut=to_statut, step=step)

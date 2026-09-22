@@ -1,0 +1,13 @@
+============================================================
+VERIF FINALE V2 — py_compile arbre actif + import dashboard.pipeline
+ts=20260922_145114
+============================================================
+
+py_compile : 2027/2029 OK | 2 en erreur
+   ERREUR : _scan_ponts_readonly.py  ->  Sorry: IndentationError: unexpected indent (_scan_ponts_readonly.py, line 21)
+   ERREUR : sniper\enrichment\ceo_finder.py  ->  Sorry: IndentationError: unexpected indent (ceo_finder.py, line 277)
+
+--- import package (témoin ImportError éventuel) ---
+   import dashboard.pipeline  ->  ERREUR : SyntaxError: unterminated string literal (detected at line 1)
+   import dashboard  ->  ERREUR : SyntaxError: unterminated string literal (detected at line 1)
+   import core.orchestration  ->  ERREUR : SyntaxError: unterminated string literal (detected at line 1)

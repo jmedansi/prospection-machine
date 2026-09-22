@@ -224,22 +224,55 @@ def init_scheduler(_app=None):
 
     _scheduler.add_job(_run_v2_send_initial, IntervalTrigger(minutes=5), id='v2_send_initial')
 
-    # v2 — Relances dues (positions > 0, delai_jours) — mêmes règles global/objectif
+    # v2 — Relances dues (positions > 0, delai_jours) — mêmes règles global/objectif.
+    # Campagnes `validation_relances=1` : un seul ✅ Telegram par liste (lot) demandé
+    # par `ensure_batch_requests` ; l'envoi réel est déclenché par le poller
+    # `v2_batch_poll` après approbation (`consume_approvals`).
     def _run_v2_send_relances():
         try:
-            from core.orchestration import run_relances
-            res = run_relances()
-            if res.get('runs'):
+            from core import orchestration, relance_batch_validator
+            batch_camps = orchestration.enabled_campagnes()
+            batch_ids = {c['id'] for c in batch_camps if c.get('validation_relances')}
+            if batch_ids:
+                res = relance_batch_validator.ensure_batch_requests()
                 logger.info(
-                    "[v2-relances] %s objectif(s), %s relance(s) tentée(s) (mode: %s)",
-                    len(res['runs']), res.get('total'), res.get('quoted', 'run'),
+                    "[v2-relances] %s lot(s) validé(s) Telegram demandé(s) (success=%s)",
+                    len(res.get('requests', [])), res.get('success'),
                 )
+            for camp in orchestration.enabled_campagnes():
+                if camp['id'] in batch_ids:
+                    continue  # envoi après ✅ du lot, pas d'auto-send
+                res = orchestration.run_relances(camp['id'])
+                if res.get('runs'):
+                    logger.info(
+                        "[v2-relances] campagne %s : %s relance(s) tentée(s)",
+                        camp['id'], res.get('total'),
+                    )
         except Exception as e:
             logger.error(f"[v2-relances] erreur : {e}")
             import traceback
             logger.error(traceback.format_exc())
 
     _scheduler.add_job(_run_v2_send_relances, IntervalTrigger(minutes=10), id='v2_send_relances')
+
+    # v2 — Consommation des réponses ✅/❌ des LOTS de relances (campagnes
+    # validation_relances=1) : ✅ → run_relances(liste, approval='auto'), ❌ → refuse.
+    def _run_v2_batch_poll():
+        try:
+            from core.relance_batch_validator import consume_approvals
+            res = consume_approvals()
+            if res.get('consumed'):
+                logger.info(
+                    "[v2-batch-poll] %s lot(s) traité(s) : %s",
+                    len(res['consumed']),
+                    ", ".join(f"{c['callback_id']}→{c['statut']}" for c in res['consumed']),
+                )
+        except Exception as e:
+            logger.error(f"[v2-batch-poll] erreur : {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+
+    _scheduler.add_job(_run_v2_batch_poll, IntervalTrigger(minutes=1), id='v2_batch_poll')
 
     # v2 — Remise à zéro quotidienne des quotas boîtes (usage_jour), 00:05
     def _reset_daily_quotas():
@@ -304,51 +337,8 @@ def init_scheduler(_app=None):
 
     # _scheduler.add_job(_run_sniper_ecom_daily, CronTrigger(hour=8, minute=0), id='sniper_ecom_daily')
 
-    # CEO — Retry enrichissement pour les leads sans CEO (toutes les 2h)
-    def _run_ceo_retry():
-        try:
-            with get_conn() as conn:
-                rows = conn.execute("""
-                    SELECT lb.id, lb.nom, lb.site_web, lb.pays
-                    FROM leads_bruts lb
-                    JOIN leads_audites la ON la.lead_id = lb.id
-                    WHERE la.ceo_source = 'quota_error'
-                      AND lb.statut NOT IN ('archive', 'bounced', 'desabonne')
-                      AND lb.site_web IS NOT NULL AND lb.site_web != ''
-                    LIMIT 20
-                """).fetchall()
-
-            if not rows:
-                return
-
-            logger.info(f"[scheduler] ceo_retry — {len(rows)} leads à ré-enrichir")
-
-            from sniper.enrichment.ceo_finder import find_ceo
-            import re as _re
-
-            for row in rows:
-                lead_id = row["id"]
-                domain_raw = row["site_web"] or ""
-                domain = _re.sub(r"^https?://(www\.)?", "", domain_raw).rstrip("/").split("/")[0]
-                ceo = find_ceo(row["nom"] or "", domain, row["site_web"], pays=row.get("pays", "fr"))
-
-                if ceo.get("ceo_prenom"):
-                    with get_conn() as conn:
-                        conn.execute("""
-                            UPDATE leads_audites
-                            SET ceo_prenom = ?, ceo_nom = ?, ceo_source = ?
-                            WHERE lead_id = ?
-                        """, (ceo["ceo_prenom"], ceo["ceo_nom"], ceo["ceo_source"], lead_id))
-                        conn.commit()
-                    logger.info(
-                        f"[scheduler] ceo_retry lead #{lead_id} → "
-                        f"{ceo['ceo_prenom']} {ceo['ceo_nom']} ({ceo['ceo_source']})"
-                    )
-
-        except Exception as e:
-            logger.error(f"[scheduler] ceo_retry erreur : {e}")
-
-    _scheduler.add_job(_run_ceo_retry, IntervalTrigger(hours=2), id='ceo_retry')
+    # CEO — Retry enrichissement pour les leads sans CEO — DÉCOMMISSIONNÉ (pipeline v1)
+    # (lisait leads_bruts / leads_audites, table legacy v1)
 
     # Sauvegarde DB locale toutes les 5 heures
     def _run_db_backup_local():
@@ -370,53 +360,8 @@ def init_scheduler(_app=None):
 
     _scheduler.add_job(_run_daily_git_backup, CronTrigger(hour=22, minute=0), id='daily_git_backup')
 
-    # ─── Rappels Telegram pour listes contactées (J+3 / J+7 / J+14) ───
-    def check_list_followups():
-        """Vérifie les listes contactées et envoie des rappels Telegram quotidiens."""
-        try:
-            from datetime import datetime as _dt, timedelta
-            with get_conn() as conn:
-                conn.row_factory = None
-                lists = conn.execute("""
-                    SELECT id, nom, contacted_at, relance_j3, relance_j7, relance_j14
-                    FROM lead_lists
-                    WHERE contactee = 1 AND archived = 0 AND contacted_at IS NOT NULL
-                """).fetchall()
-
-                now = _dt.now()
-                for lst in lists:
-                    list_id, nom, contacted_at, rj3, rj7, rj14 = lst
-                    try:
-                        contacted = _dt.fromisoformat(contacted_at)
-                    except Exception:
-                        continue
-                    days = (now - contacted).days
-
-                    # Déterminer quelle étape est en cours
-                    current_step = None
-                    if not rj3:
-                        current_step = ('J+3', 3)
-                    elif not rj7:
-                        current_step = ('J+7', 7)
-                    elif not rj14:
-                        current_step = ('J+14', 14)
-
-                    if current_step and days >= current_step[1]:
-                        try:
-                            from core.telegram_adapter import notify
-                            notify(
-                                f"Relance {current_step[0]}",
-                                f"📋 *Relance {current_step[0]} — Liste \"{nom}\"*\n\n"
-                                f"Liste contactée il y a {days} jours.\n"
-                                f"Étape en cours : {current_step[0]}\n\n"
-                                f"👉 Cochez la case \"{current_step[0]}\" dans l'onglet Listes quand c'est fait"
-                            )
-                        except Exception as e:
-                            logger.error(f"[SCHEDULER] Telegram followup failed for list {list_id}: {e}")
-        except Exception as e:
-            logger.error(f"[SCHEDULER] check_list_followups: {e}")
-
-    _scheduler.add_job(check_list_followups, IntervalTrigger(hours=1), id='list_followups')
+    # ─── Rappels Telegram pour listes contactées (J+3 / J+7 / J+14) — DÉCOMMISSIONNÉ
+    # (lisait lead_lists, table legacy v1 ; modèle v2 = listes/prospects par campagne)
 
     _scheduler.start()
     

@@ -94,108 +94,20 @@ export class UI {
      * Custom alert / info modal
      */
     static alert(message, options = {}) {
-        const { title = 'Information', buttonText = 'OK' } = options;
-        return new Promise(resolve => {
-            let modal = document.getElementById('_alert-modal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = '_alert-modal';
-                modal.className = 'modal-backdrop';
-                modal.innerHTML = `
-                    <div class="modal-content" style="max-width:480px">
-                        <div class="mh">
-                            <div class="mh-t" id="_alert-title"></div>
-                        </div>
-                        <div class="mb">
-                            <div id="_alert-msg" style="color:var(--ink2); font-size:14px; line-height:1.6"></div>
-                        </div>
-                        <div class="mf">
-                            <button id="_alert-ok" class="btn btn-primary"></button>
-                        </div>
-                    </div>`;
-                document.body.appendChild(modal);
-            }
-
-            modal.querySelector('#_alert-title').textContent = title;
-            modal.querySelector('#_alert-msg').innerHTML = message;
-            
-            const okBtn = modal.querySelector('#_alert-ok');
-            okBtn.textContent = buttonText;
-
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('active'), 10);
-
-            const onOk = () => {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 300);
-                okBtn.removeEventListener('click', onOk);
-                resolve();
-            };
-
-            okBtn.addEventListener('click', onOk);
-        });
+        if (typeof showAlert === 'function') {
+            return showAlert(message, options);
+        }
+        return Promise.resolve();
     }
 
     /**
      * Custom confirm dialog
      */
     static confirm(message, options = {}) {
-        const {
-            title = 'Confirmation',
-            confirmText = 'Confirmer',
-            cancelText = 'Annuler',
-            danger = false
-        } = options;
-
-        return new Promise(resolve => {
-            let modal = document.getElementById('_confirm-modal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = '_confirm-modal';
-                modal.className = 'modal-backdrop';
-                modal.innerHTML = `
-                    <div class="modal-content" style="max-width:440px">
-                        <div class="mh">
-                            <div class="mh-t" id="_confirm-title"></div>
-                        </div>
-                        <div class="mb">
-                            <p id="_confirm-msg" style="color:var(--ink2); font-size:14px; line-height:1.6"></p>
-                        </div>
-                        <div class="mf">
-                            <button id="_confirm-cancel" class="btn btn-ghost"></button>
-                            <button id="_confirm-ok" class="btn"></button>
-                        </div>
-                    </div>`;
-                document.body.appendChild(modal);
-            }
-
-            modal.querySelector('#_confirm-title').textContent = title;
-            modal.querySelector('#_confirm-msg').textContent = message;
-            
-            const cancelBtn = modal.querySelector('#_confirm-cancel');
-            const okBtn = modal.querySelector('#_confirm-ok');
-            
-            cancelBtn.textContent = cancelText;
-            okBtn.textContent = confirmText;
-            okBtn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
-
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('active'), 10);
-
-            const handleClose = (result) => {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 300);
-                okBtn.removeEventListener('click', onOk);
-                cancelBtn.removeEventListener('click', onCancel);
-                resolve(result);
-            };
-
-            const onOk = () => handleClose(true);
-            const onCancel = () => handleClose(false);
-
-            okBtn.addEventListener('click', onOk);
-            cancelBtn.addEventListener('click', onCancel);
-        });
+        if (typeof showConfirm === 'function') {
+            return showConfirm(message, options);
+        }
+        return Promise.resolve(window.confirm(message));
     }
 }
 

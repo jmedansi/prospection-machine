@@ -511,6 +511,7 @@ def migrate_v2_schema():
         except Exception:
             pass
         _migrate_campagnes_cols(conn)
+        _migrate_relance_validation(conn)
         _migrate_listes_cols(conn)
         _migrate_prospects_note(conn)
         _backfill_listes(conn)
@@ -782,6 +783,36 @@ def _migrate_campagnes_cols(conn):
             print("  [MIGRATION] Colonne ajoutée: campagnes.envoi_auto")
         except Exception:
             pass
+
+
+def _migrate_relance_validation(conn):
+    """Validation Telegram PAR LOT des relances (validation_relances + relance_batches).
+
+    - campagnes.validation_relances : 0 = relances auto, 1 = confirmation Telegram
+      par lot (1 message par liste) avant envoi.
+    - relance_batches : état persistant des lots (pending | sent | refuse).
+    Idempotent : colonne ajoutée si absente, table créée le cas échéant.
+    """
+    if 'campagnes' in _table_names(conn):
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(campagnes)").fetchall()]
+        if 'validation_relances' not in cols:
+            try:
+                conn.execute("ALTER TABLE campagnes ADD COLUMN validation_relances INTEGER DEFAULT 0")
+                print("  [MIGRATION] Colonne ajoutée: campagnes.validation_relances")
+            except Exception:
+                pass
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS relance_batches (
+            callback_id TEXT PRIMARY KEY,
+            campagne_id INTEGER NOT NULL,
+            liste_id    INTEGER NOT NULL,
+            position    INTEGER DEFAULT 1,
+            count       INTEGER DEFAULT 0,
+            statut      TEXT DEFAULT 'pending',        -- pending | sent | refuse
+            created_at  TEXT DEFAULT (datetime('now')),
+            updated_at  TEXT
+        )"""
+    )
 
 
 def _migrate_listes_cols(conn):

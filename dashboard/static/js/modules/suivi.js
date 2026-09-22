@@ -200,7 +200,8 @@
                 const { label, color } = labelFor(ev);
                 const nom = [ev.prospect_nom, ev.prenom].filter(Boolean).join(' ') || 'Prospect #' + ev.prospect_id;
                 const detail = detailFor(ev);
-                return `<tr style="vertical-align:middle">
+                const clickAttr = ev.prospect_id ? `onclick="if(window.openLeadPanel) window.openLeadPanel(${ev.prospect_id}, 'suivi')" style="cursor:pointer;vertical-align:middle"` : 'style="vertical-align:middle"';
+                return `<tr ${clickAttr} title="Cliquer pour voir l'historique et répondre">
                     <td style="padding:10px 12px;font-size:12px;color:var(--ink3);white-space:nowrap">${fmtDateTime(ev.created_at)}</td>
                     <td style="padding:10px 12px">
                         <div style="font-weight:600;color:var(--ink);font-size:13px">${esc(nom)}</div>

@@ -1,0 +1,197 @@
+### RAPPORT ?TAT R?EL ? purge V1 (g?n?r? proprement) ###
+
+=== A. Modules V1 cibles (existence) ===
+   [OK existe ] services\email_generator.py
+   [absent   ] services\email_generation.py
+   [OK existe ] envoi\email_builder.py
+   [absent   ] envoi\email_builder_service.py
+   [OK existe ] dashboard\pipeline\email_generation.py
+   [absent   ] envoi\email_profil_builder.py
+
+=== B. Occurrences generate_email_for_lead / build_premium_email ===
+   sniper_full_regen.py : L89 : from sniper.email_generator import generate_sniper_email_for_lead
+   auditeur\main.py : L282 : from services.email_generator import generate_email_for_lead
+   auditeur\main.py : L283 : if generate_email_for_lead(lead_id):
+   auditeur\main.py : L289 : logger.error(f"Erreur email_generator pour {nom}: {e}")
+   auditeur\agents\business_copywriter.py : L9 : envoi/email_builder.py → build_premium_email(lead_data)
+   backups\code_backup_20260902_0803\agents\redacteur\agent.py : L34 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260902_0803\agents\redacteur\agent.py : L40 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260902_0803\auditeur\main.py : L282 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260902_0803\auditeur\main.py : L283 : if generate_email_for_lead(lead_id):
+   backups\code_backup_20260902_0803\auditeur\main.py : L289 : logger.error(f"Erreur email_generator pour {nom}: {e}")
+   backups\code_backup_20260902_0803\auditeur\agents\business_copywriter.py : L9 : envoi/email_builder.py → build_premium_email(lead_data)
+   backups\code_backup_20260902_0803\copywriter\main.py : L6 : et retourner le profil email correspondant pour email_builder.
+   backups\code_backup_20260902_0803\copywriter\main.py : L9 : L'email HTML est généré exclusivement par envoi/email_builder.py
+   backups\code_backup_20260902_0803\copywriter\main.py : L12 : Mapping situation → profil email_builder (défini dans dashboard/pipeline.py) :
+   backups\code_backup_20260902_0803\copywriter\main.py : L125 : # L'email HTML est généré par envoi/email_builder.py + templates/emails/
+   backups\code_backup_20260902_0803\copywriter\main.py : L152 : Ces champs sont produits par envoi/email_builder.py via les templates HTML.
+   backups\code_backup_20260902_0803\dashboard\scheduler.py : L263 : from sniper.email_generator import generate_sniper_emails_batch
+   backups\code_backup_20260902_0803\dashboard\scheduler.py : L264 : generate_sniper_emails_batch(limit=100)
+   backups\code_backup_20260902_0803\dashboard\pipeline\email_generation.py : L12 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260902_0803\dashboard\pipeline\email_generation.py : L32 : def generate_email_for_lead(lead_id: int) -> bool:
+   backups\code_backup_20260902_0803\dashboard\pipeline\email_generation.py : L105 : email_corps = build_premium_email(builder_data, verify_link=False)
+   backups\code_backup_20260902_0803\dashboard\pipeline\email_generation.py : L137 : logger.error(f"[PIPELINE-Email] generate_email_for_lead #{lead_id}: {e}")
+   backups\code_backup_20260902_0803\dashboard\pipeline\report_publishing.py : L95 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260902_0803\dashboard\pipeline\report_publishing.py : L96 : generate_email_for_lead(lid)
+   backups\code_backup_20260902_0803\dashboard\pipeline\report_publishing.py : L172 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260902_0803\dashboard\pipeline\report_publishing.py : L173 : generate_email_for_lead(lead_id)
+   backups\code_backup_20260902_0803\dashboard\pipeline\__init__.py : L9 : from .email_generation import generate_email_for_lead
+   backups\code_backup_20260902_0803\dashboard\pipeline\__init__.py : L16 : 'generate_email_for_lead'
+   backups\code_backup_20260902_0803\dashboard\routes\leads.py : L367 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260902_0803\dashboard\routes\leads.py : L372 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260902_0803\dashboard\routes\templates.py : L151 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260902_0803\dashboard\routes\templates.py : L210 : html = build_premium_email(builder_data, verify_link=False)
+   backups\code_backup_20260902_0803\envoi\email_builder.py : L3 : Module envoi/email_builder.py
+   backups\code_backup_20260902_0803\envoi\email_builder.py : L224 : def build_premium_email(lead_data, verify_link: bool = True):
+   backups\code_backup_20260902_0803\envoi\email_builder.py : L255 : f"email_builder: profil non mappé (template_used='{template_used}', "
+   backups\code_backup_20260902_0803\envoi\resend_sender.py : L123 : # Si le corps contient déjà de l'HTML (via email_builder), on l'utilise tel quel
+   backups\code_backup_20260902_0803\envoi\test_premium_send.py : L11 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260902_0803\envoi\test_premium_send.py : L25 : html_content = build_premium_email({
+   backups\code_backup_20260902_0803\scraper\sniper\pipeline.py : L562 : from sniper.email_generator import generate_sniper_emails_batch
+   backups\code_backup_20260902_0803\scraper\sniper\pipeline.py : L563 : result = generate_sniper_emails_batch(campaign_id=campaign_id, limit=500)
+   backups\code_backup_20260902_0803\scripts\runners\sniper_full_regen.py : L89 : from sniper.email_generator import generate_sniper_email_for_lead
+   backups\code_backup_20260902_0803\services\email_generator.py : L3 : services/email_generator.py
+   backups\code_backup_20260902_0803\services\email_generator.py : L14 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260902_0803\services\email_generator.py : L209 : def generate_email_for_lead(lead_id: int) -> bool:
+   backups\code_backup_20260902_0803\services\email_generator.py : L212 : Redirige vers sniper/email_generator pour les leads Sniper.
+   backups\code_backup_20260902_0803\services\email_generator.py : L224 : from sniper.email_generator import generate_sniper_email_for_lead
+   backups\code_backup_20260902_0803\services\email_generator.py : L275 : # SAUF pour les leads maps sans site (maquette) — utiliser build_premium_email
+   backups\code_backup_20260902_0803\services\email_generator.py : L286 : # Profil A : email template directement via build_premium_email
+   backups\code_backup_20260902_0803\services\email_generator.py : L287 : html_content = build_premium_email(audit_dict, verify_link=False)
+   backups\code_backup_20260902_0803\services\email_generator.py : L311 : # Immobilier : ne JAMAIS fallback sur build_premium_email
+   backups\code_backup_20260902_0803\services\email_generator.py : L316 : html_content = build_premium_email(audit_dict, verify_link=False)
+   backups\code_backup_20260902_0803\services\email_generator.py : L331 : logger.error(f"Erreur generate_email_for_lead({lead_id}): {e}")
+   backups\code_backup_20260902_0803\services\job_launcher.py : L99 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260902_0803\services\job_launcher.py : L116 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260902_0803\services\tasks.py : L83 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260902_0803\services\tasks.py : L84 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260902_0803\services\task_worker.py : L90 : from sniper.email_generator import generate_sniper_emails_batch
+   backups\code_backup_20260902_0803\services\task_worker.py : L91 : return generate_sniper_emails_batch(campaign_id=campaign_id, limit=limit)
+   backups\code_backup_20260902_0803\sniper\email_generator.py : L3 : sniper/email_generator.py — Génération et stockage des emails Sniper
+   backups\code_backup_20260902_0803\sniper\email_generator.py : L18 : Dans services/email_generator.py, ajouter :
+   backups\code_backup_20260902_0803\sniper\email_generator.py : L20 : from sniper.email_generator import generate_sniper_email_for_lead
+   backups\code_backup_20260902_0803\sniper\email_generator.py : L359 : def generate_sniper_emails_batch(
+   backups\code_backup_20260902_0803\sniper\email_generator.py : L395 : logger.error(f"generate_sniper_emails_batch: lecture leads → {e}")
+   backups\code_backup_20260902_0803\sniper\email_generator.py : L419 : generate_sniper_emails = generate_sniper_emails_batch
+   backups\code_backup_20260902_0803\tests\test_email_builder_mapping.py : L5 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260902_0803\tests\test_email_builder_mapping.py : L74 : html = build_premium_email(builder_data, verify_link=False)
+   backups\code_backup_20260913_decommission\agents\redacteur\agent.py : L34 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260913_decommission\agents\redacteur\agent.py : L40 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260913_decommission\auditeur\main.py : L282 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260913_decommission\auditeur\main.py : L283 : if generate_email_for_lead(lead_id):
+   backups\code_backup_20260913_decommission\auditeur\main.py : L289 : logger.error(f"Erreur email_generator pour {nom}: {e}")
+   backups\code_backup_20260913_decommission\auditeur\agents\business_copywriter.py : L9 : envoi/email_builder.py → build_premium_email(lead_data)
+   backups\code_backup_20260913_decommission\copywriter\main.py : L6 : et retourner le profil email correspondant pour email_builder.
+   backups\code_backup_20260913_decommission\copywriter\main.py : L9 : L'email HTML est généré exclusivement par envoi/email_builder.py
+   backups\code_backup_20260913_decommission\copywriter\main.py : L12 : Mapping situation → profil email_builder (défini dans dashboard/pipeline.py) :
+   backups\code_backup_20260913_decommission\copywriter\main.py : L125 : # L'email HTML est généré par envoi/email_builder.py + templates/emails/
+   backups\code_backup_20260913_decommission\copywriter\main.py : L152 : Ces champs sont produits par envoi/email_builder.py via les templates HTML.
+   backups\code_backup_20260913_decommission\dashboard\scheduler.py : L348 : from sniper.email_generator import generate_sniper_emails_batch
+   backups\code_backup_20260913_decommission\dashboard\scheduler.py : L349 : generate_sniper_emails_batch(limit=100)
+   backups\code_backup_20260913_decommission\dashboard\pipeline\email_generation.py : L12 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260913_decommission\dashboard\pipeline\email_generation.py : L32 : def generate_email_for_lead(lead_id: int) -> bool:
+   backups\code_backup_20260913_decommission\dashboard\pipeline\email_generation.py : L105 : email_corps = build_premium_email(builder_data, verify_link=False)
+   backups\code_backup_20260913_decommission\dashboard\pipeline\email_generation.py : L137 : logger.error(f"[PIPELINE-Email] generate_email_for_lead #{lead_id}: {e}")
+   backups\code_backup_20260913_decommission\dashboard\pipeline\report_publishing.py : L95 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260913_decommission\dashboard\pipeline\report_publishing.py : L96 : generate_email_for_lead(lid)
+   backups\code_backup_20260913_decommission\dashboard\pipeline\report_publishing.py : L172 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260913_decommission\dashboard\pipeline\report_publishing.py : L173 : generate_email_for_lead(lead_id)
+   backups\code_backup_20260913_decommission\dashboard\pipeline\__init__.py : L9 : from .email_generation import generate_email_for_lead
+   backups\code_backup_20260913_decommission\dashboard\pipeline\__init__.py : L16 : 'generate_email_for_lead'
+   backups\code_backup_20260913_decommission\dashboard\routes\leads.py : L479 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260913_decommission\dashboard\routes\leads.py : L484 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260913_decommission\dashboard\routes\templates.py : L151 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260913_decommission\dashboard\routes\templates.py : L210 : html = build_premium_email(builder_data, verify_link=False)
+   backups\code_backup_20260913_decommission\envoi\email_builder.py : L3 : Module envoi/email_builder.py
+   backups\code_backup_20260913_decommission\envoi\email_builder.py : L224 : def build_premium_email(lead_data, verify_link: bool = True):
+   backups\code_backup_20260913_decommission\envoi\email_builder.py : L255 : f"email_builder: profil non mappé (template_used='{template_used}', "
+   backups\code_backup_20260913_decommission\envoi\resend_sender.py : L123 : # Si le corps contient déjà de l'HTML (via email_builder), on l'utilise tel quel
+   backups\code_backup_20260913_decommission\envoi\test_premium_send.py : L11 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260913_decommission\envoi\test_premium_send.py : L25 : html_content = build_premium_email({
+   backups\code_backup_20260913_decommission\scraper\sniper\pipeline.py : L562 : from sniper.email_generator import generate_sniper_emails_batch
+   backups\code_backup_20260913_decommission\scraper\sniper\pipeline.py : L563 : result = generate_sniper_emails_batch(campaign_id=campaign_id, limit=500)
+   backups\code_backup_20260913_decommission\scripts\runners\sniper_full_regen.py : L89 : from sniper.email_generator import generate_sniper_email_for_lead
+   backups\code_backup_20260913_decommission\services\email_generator.py : L3 : services/email_generator.py
+   backups\code_backup_20260913_decommission\services\email_generator.py : L14 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260913_decommission\services\email_generator.py : L209 : def generate_email_for_lead(lead_id: int) -> bool:
+   backups\code_backup_20260913_decommission\services\email_generator.py : L212 : Redirige vers sniper/email_generator pour les leads Sniper.
+   backups\code_backup_20260913_decommission\services\email_generator.py : L224 : from sniper.email_generator import generate_sniper_email_for_lead
+   backups\code_backup_20260913_decommission\services\email_generator.py : L275 : # SAUF pour les leads maps sans site (maquette) — utiliser build_premium_email
+   backups\code_backup_20260913_decommission\services\email_generator.py : L286 : # Profil A : email template directement via build_premium_email
+   backups\code_backup_20260913_decommission\services\email_generator.py : L287 : html_content = build_premium_email(audit_dict, verify_link=False)
+   backups\code_backup_20260913_decommission\services\email_generator.py : L311 : # Immobilier : ne JAMAIS fallback sur build_premium_email
+   backups\code_backup_20260913_decommission\services\email_generator.py : L316 : html_content = build_premium_email(audit_dict, verify_link=False)
+   backups\code_backup_20260913_decommission\services\email_generator.py : L331 : logger.error(f"Erreur generate_email_for_lead({lead_id}): {e}")
+   backups\code_backup_20260913_decommission\services\job_launcher.py : L99 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260913_decommission\services\job_launcher.py : L116 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260913_decommission\services\tasks.py : L83 : from services.email_generator import generate_email_for_lead
+   backups\code_backup_20260913_decommission\services\tasks.py : L84 : ok = generate_email_for_lead(lead_id)
+   backups\code_backup_20260913_decommission\services\task_worker.py : L90 : from sniper.email_generator import generate_sniper_emails_batch
+   backups\code_backup_20260913_decommission\services\task_worker.py : L91 : return generate_sniper_emails_batch(campaign_id=campaign_id, limit=limit)
+   backups\code_backup_20260913_decommission\sniper\email_generator.py : L3 : sniper/email_generator.py — Génération et stockage des emails Sniper
+   backups\code_backup_20260913_decommission\sniper\email_generator.py : L18 : Dans services/email_generator.py, ajouter :
+   backups\code_backup_20260913_decommission\sniper\email_generator.py : L20 : from sniper.email_generator import generate_sniper_email_for_lead
+   backups\code_backup_20260913_decommission\sniper\email_generator.py : L359 : def generate_sniper_emails_batch(
+   backups\code_backup_20260913_decommission\sniper\email_generator.py : L395 : logger.error(f"generate_sniper_emails_batch: lecture leads → {e}")
+   backups\code_backup_20260913_decommission\sniper\email_generator.py : L419 : generate_sniper_emails = generate_sniper_emails_batch
+   backups\code_backup_20260913_decommission\tests\test_email_builder_mapping.py : L5 : from envoi.email_builder import build_premium_email
+   backups\code_backup_20260913_decommission\tests\test_email_builder_mapping.py : L74 : html = build_premium_email(builder_data, verify_link=False)
+   copywriter\main.py : L6 : et retourner le profil email correspondant pour email_builder.
+   copywriter\main.py : L9 : L'email HTML est généré exclusivement par envoi/email_builder.py
+   copywriter\main.py : L12 : Mapping situation → profil email_builder (défini dans dashboard/pipeline.py) :
+   copywriter\main.py : L125 : # L'email HTML est généré par envoi/email_builder.py + templates/emails/
+   copywriter\main.py : L152 : Ces champs sont produits par envoi/email_builder.py via les templates HTML.
+   dashboard\pipeline\email_generation.py : L12 : from envoi.email_builder import build_premium_email
+   dashboard\pipeline\email_generation.py : L32 : def generate_email_for_lead(lead_id: int) -> bool:
+   dashboard\pipeline\email_generation.py : L105 : email_corps = build_premium_email(builder_data, verify_link=False)
+   dashboard\pipeline\email_generation.py : L137 : logger.error(f"[PIPELINE-Email] generate_email_for_lead #{lead_id}: {e}")
+   dashboard\pipeline\report_publishing.py : L95 : from services.email_generator import generate_email_for_lead
+   dashboard\pipeline\report_publishing.py : L96 : generate_email_for_lead(lid)
+   dashboard\pipeline\report_publishing.py : L172 : from services.email_generator import generate_email_for_lead
+   dashboard\pipeline\report_publishing.py : L173 : generate_email_for_lead(lead_id)
+   dashboard\pipeline\__init__.py : L9 : from .email_generation import generate_email_for_lead
+   dashboard\pipeline\__init__.py : L16 : 'generate_email_for_lead'
+   dashboard\routes\leads.py : L479 : from services.email_generator import generate_email_for_lead
+   dashboard\routes\leads.py : L484 : ok = generate_email_for_lead(lead_id)
+   dashboard\routes\templates.py : L151 : from envoi.email_builder import build_premium_email
+   dashboard\routes\templates.py : L210 : html = build_premium_email(builder_data, verify_link=False)
+   dashboard\routes\v1_disabled.py : L5 : email_builder / V5 archive). Toute route V1-PUR (consommée uniquement par la V5)
+   envoi\email_builder.py : L3 : Module envoi/email_builder.py
+   envoi\email_builder.py : L224 : def build_premium_email(lead_data, verify_link: bool = True):
+   envoi\email_builder.py : L255 : f"email_builder: profil non mappé (template_used='{template_used}', "
+   envoi\resend_sender.py : L132 : # Si le corps contient déjà de l'HTML (via email_builder), on l'utilise tel quel
+   envoi\test_premium_send.py : L11 : from envoi.email_builder import build_premium_email
+   envoi\test_premium_send.py : L25 : html_content = build_premium_email({
+   scraper\sniper\pipeline.py : L562 : from sniper.email_generator import generate_sniper_emails_batch
+   scraper\sniper\pipeline.py : L563 : result = generate_sniper_emails_batch(campaign_id=campaign_id, limit=500)
+   scratch\generate_emails_for_existing.py : L11 : from sniper.email_generator import generate_sniper_emails_batch
+   scratch\generate_emails_for_existing.py : L20 : res = generate_sniper_emails_batch(limit=100)
+   scratch\generate_emails_for_final_5.py : L17 : from sniper.email_generator import generate_sniper_email_for_lead
+   scripts\runners\sniper_full_regen.py : L89 : from sniper.email_generator import generate_sniper_email_for_lead
+   services\email_generator.py : L3 : services/email_generator.py
+   services\email_generator.py : L14 : from envoi.email_builder import build_premium_email
+   services\email_generator.py : L209 : def generate_email_for_lead(lead_id: int) -> bool:
+   services\email_generator.py : L212 : Redirige vers sniper/email_generator pour les leads Sniper.
+   services\email_generator.py : L224 : from sniper.email_generator import generate_sniper_email_for_lead
+   services\email_generator.py : L275 : # SAUF pour les leads maps sans site (maquette) — utiliser build_premium_email
+   services\email_generator.py : L286 : # Profil A : email template directement via build_premium_email
+   services\email_generator.py : L287 : html_content = build_premium_email(audit_dict, verify_link=False)
+   services\email_generator.py : L311 : # Immobilier : ne JAMAIS fallback sur build_premium_email
+   services\email_generator.py : L316 : html_content = build_premium_email(audit_dict, verify_link=False)
+   services\email_generator.py : L331 : logger.error(f"Erreur generate_email_for_lead({lead_id}): {e}")
+   services\job_launcher.py : L99 : from services.email_generator import generate_email_for_lead
+   services\job_launcher.py : L116 : ok = generate_email_for_lead(lead_id)
+   services\tasks.py : L83 : from services.email_generator import generate_email_for_lead
+   services\tasks.py : L84 : ok = generate_email_for_lead(lead_id)
+   services\task_worker.py : L90 : from sniper.email_generator import generate_sniper_emails_batch
+   services\task_worker.py : L91 : return generate_sniper_emails_batch(campaign_id=campaign_id, limit=limit)
+   sniper\email_generator.py : L3 : sniper/email_generator.py — Génération et stockage des emails Sniper
+   sniper\email_generator.py : L18 : Dans services/email_generator.py, ajouter :
+   sniper\email_generator.py : L20 : from sniper.email_generator import generate_sniper_email_for_lead
+   sniper\email_generator.py : L359 : def generate_sniper_emails_batch(
+   sniper\email_generator.py : L395 : logger.error(f"generate_sniper_emails_batch: lecture leads → {e}")
+   sniper\email_generator.py : L419 : generate_sniper_emails = generate_sniper_emails_batch
+   tests\test_email_builder_mapping.py : L5 : from envoi.email_builder import build_premium_email
+   tests\test_email_builder_mapping.py : L74 : html = build_premium_email(builder_data, verify_link=False)
+   tools\audit_pending_ads_leads.py : L38 : from sniper.email_generator import generate_sniper_email_for_lead
+   (total: 185)

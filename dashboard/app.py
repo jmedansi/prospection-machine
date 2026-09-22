@@ -89,7 +89,11 @@ def create_app():
     app.register_blueprint(listes_bp)
     app.register_blueprint(replies_bp)
     app.register_blueprint(mailboxes_bp)
-    
+
+    # Barrière de décommissionnement du pipeline v1 (routes V1-PUR → 410 Gone)
+    from dashboard.routes.v1_disabled import disable_v1
+    disable_v1(app)
+
     # Discovery of child modules (Phase 4.2)
     def _discover_modules():
         modules_dir = os.path.join(ROOT, 'modules')

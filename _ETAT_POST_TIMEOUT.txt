@@ -1,0 +1,27 @@
+=== 1. Dossiers Archives pr?sents ===
+   Archives  (108 fichiers)
+
+=== 2. Modules V1 : encore pr?sents dans l'arbre actif ? ===
+   [PRESENT] services\email_sender_service.py
+   [PRESENT] services\email_sequence_service.py
+   [PRESENT] services\smtp_email_sender_service.py
+   [PRESENT] envoi\email_shell.py
+   [PRESENT] envoi\email_tracking_service.py
+   [PRESENT] envoi\sequence_emails.py
+
+=== 3. Ponts : marqueurs restants dans les 8 fichiers actifs ===
+   [PROPRE] agents\redacteur\agent.py  ->  AUCUN
+   [PONTS] auditeur\main.py  ->  L289:email_generator
+   [PONTS] dashboard\pipeline\report_publishing.py  ->  L96:generate_email_for_lead,L173:generate_email_for_lead
+   [PROPRE] dashboard\routes\leads.py  ->  AUCUN
+   [PONTS] dashboard\routes\templates.py  ->  L210:build_premium_email
+   [ABSENT ] services\email_generator.py
+   [PROPRE] services\job_launcher.py  ->  AUCUN
+   [PROPRE] services\tasks.py  ->  AUCUN
+
+=== 4. .bak / rapports r?siduels ===
+   D:\prospection-machine\_purge_v1_final.py
+   D:\prospection-machine\_purge_v1_finale.py
+   D:\prospection-machine\_purge_v1_run.py
+   D:\prospection-machine\_RAPPORT_SCAN_PONTS.txt
+   D:\prospection-machine\_scan_ponts_readonly.py

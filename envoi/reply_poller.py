@@ -113,6 +113,54 @@ def parse_reply(raw: bytes) -> dict:
     }
 
 
+def _html_to_plain_text(html: str) -> str:
+    if not html:
+        return ''
+    import html as html_module
+    text = re.sub(r'(?is)<style.*?>.*?</style>', '', html)
+    text = re.sub(r'(?is)<script.*?>.*?</script>', '', text)
+    text = re.sub(r'(?is)<head.*?>.*?</head>', '', text)
+    text = re.sub(r'(?i)<br\s*/?>', '\n', text)
+    text = re.sub(r'(?i)</?(?:p|div|tr|h[1-6]|li)[^>]*>', '\n', text)
+    text = re.sub(r'<[^>]+>', '', text)
+    text = html_module.unescape(text)
+    lines = [line.strip() for line in text.split('\n')]
+    return '\n'.join(lines).strip()
+
+
+def clean_email_reply(text: str) -> dict:
+    """Isole le message réel du prospect en supprimant les en-têtes et citations d'anciens mails."""
+    if not text:
+        return {'clean': '', 'quote': ''}
+
+    quote_patterns = [
+        r'(?i)(?:\r?\n|^|\s+)(?:Le\s+[\s\S]+?\s+a\s+[eé\xe9\xc3\xa9]crit\s*:)',
+        r'(?i)(?:\r?\n|^|\s+)(?:On\s+[\s\S]+?\s+wrote\s*:)',
+        r'(?i)(?:\r?\n|^|\s+)[-]{2,}\s*(?:Original Message|Message d\'origine|Forwarded message)\s*[-]{2,}',
+        r'(?i)(?:\r?\n|^|\s+)(?:De\s*:[^\n]+(?:\r?\n|\s+)Envoy[eé\xe9\xc3\xa9]\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:From\s*:[^\n]+(?:\r?\n|\s+)Sent\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:De\s*:[^\n]+(?:\r?\n|\s+)Date\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:From\s*:[^\n]+(?:\r?\n|\s+)Date\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:Begin forwarded message:)',
+        r'(?:\r?\n|^)\s*>[^\n]*',
+    ]
+
+    split_pos = len(text)
+    for pat in quote_patterns:
+        m = re.search(pat, text)
+        if m and m.start() < split_pos:
+            split_pos = m.start()
+
+    clean_part = text[:split_pos].strip()
+    quote_part = text[split_pos:].strip()
+
+    # Nettoyage des signatures mobiles automatiques
+    clean_part = re.sub(r'(?i)(?:\r?\n|^)\s*--\s*[\r\n].*$', '', clean_part)
+    clean_part = re.sub(r'(?i)(?:\r?\n|^)\s*(?:Envoy[eé\xe9\xc3\xa9]\s+(?:de\s+mon|depuis\s+mon)|Sent\s+from\s+my|Get\s+Outlook\s+for)\s+.*$', '', clean_part)
+
+    return {'clean': clean_part.strip(), 'quote': quote_part.strip()}
+
+
 def _body_text(msg) -> str:
     if msg.is_multipart():
         parts = [p for p in msg.walk()]
@@ -123,8 +171,10 @@ def _body_text(msg) -> str:
                 return p.get_payload() or ''
         for p in parts:
             if p.get_content_type() == 'text/html':
-                return re.sub(r'<[^>]+>', ' ', p.get_content() or '')
+                return _html_to_plain_text(p.get_content() or '')
         return ''
+    if msg.get_content_type() == 'text/html':
+        return _html_to_plain_text(msg.get_content() or '')
     return msg.get_content() or ''
 
 
@@ -247,7 +297,11 @@ def handle_reply(parsed: dict, prospect: dict, kind: str = 'reponse',
         kind = 'reponse'
     pid = prospect['id']
     cid = prospect.get('campagne_id')
-    snippet = re.sub(r'\s+', ' ', (parsed.get('body') or '')).strip()[:220]
+    raw_body = parsed.get('body') or ''
+    cleaned = clean_email_reply(raw_body)
+    clean_body = cleaned['clean'] or raw_body
+    quote = cleaned['quote'] or ''
+    snippet = re.sub(r'\s+', ' ', clean_body).strip()[:220]
 
     transition = None
     if kind == 'reponse':
@@ -265,6 +319,10 @@ def handle_reply(parsed: dict, prospect: dict, kind: str = 'reponse',
         'message_id': parsed.get('message_id') or '',
         'in_reply_to': parsed.get('in_reply_to') or '',
         'references': parsed.get('references') or '',
+        'corps': clean_body,
+        'clean_body': clean_body,
+        'quote': quote,
+        'raw_body': raw_body,
         'snippet': snippet,
         'mailbox_email': mailbox_email,
     }

@@ -1,0 +1,45 @@
+============================================================
+PURGE DERNIERS ORPHELINS V1   (ts=20260922_150245)
+============================================================
+
+--- 1. Tests V1 orphelins (importent envoi.email_builder ABSENT) ---
+   ARCHIVE  : envoi\test_premium_send.py
+   ARCHIVE  : tests\test_email_builder_mapping.py
+
+--- 2. Fichiers .bak hors Archives ---
+   .bak supprimes/archives : 0
+
+--- 3. py_compile arbre actif (hors Archives/backups) ---
+   compile OK : 2027   en erreur : 2
+      ERREUR : _scan_ponts_readonly.py -> Sorry: IndentationError: unexpected indent (_scan_ponts_readonly.py, line 21)
+      ERREUR : sniper\enrichment\ceo_finder.py -> Sorry: IndentationError: unexpected indent (ceo_finder.py, line 277)
+
+--- 4. Imports V1 residuels (source de verite finale) ---
+   PONT   : _coupe_pont_reportpublishing.py L6 : 2. Supprimer toutes les lignes : `from services.email_generator import generate_email_for_lead`
+   PONT   : _coupe_pont_reportpublishing.py L38 : src2, removed_import = re.subn(r"(?m)^[ \t]*from services\.email_generator import generate_email_for
+   PONT   : _purge_orphelins_v1_fin.py L4 : Archive : envoi\test_premium_send.py + tests\test_email_builder_mapping.py
+   PONT   : _purge_orphelins_v1_fin.py L5 : (2 tests V1 qui importent envoi.email_builder ABSENT -> ImportError si jetes en CI,
+   PONT   : _purge_orphelins_v1_fin.py L7 : Puis : py_compile arbre actif (hors Archives) + verif aucun import email_builder/email_generator.
+   PONT   : _purge_orphelins_v1_fin.py L30 : log("--- 1. Tests V1 orphelins (importent envoi.email_builder ABSENT) ---")
+   PONT   : _purge_orphelins_v1_fin.py L31 : for rel in ["envoi\\test_premium_send.py", "tests\\test_email_builder_mapping.py"]:
+   PONT   : _purge_orphelins_v1_fin.py L67 : token = re.compile(r"from envoi.email_builder|from services.email_generator|from services.email_gene
+   PONT   : _purge_v1_final.py L5 : Ne touche JAMAIS au V2 (sequence_engine, template_registry, envoi/email_builder N'EST PAS
+   PONT   : _purge_v1_final.py L6 : touché — seul le worker dashboard/pipeline/email_generation + services/email_generator le sont).
+   PONT   : _purge_v1_final.py L41 : ("services.email_generator", None),
+   PONT   : _purge_v1_final.py L43 : ("email_builder", None),
+   PONT   : _purge_v1_final.py L44 : ("email_generation", None),
+   PONT   : _purge_v1_final.py L65 : if "test" in rel.lower() and pat == "email_builder":
+   PONT   : _purge_v1_final.py L79 : r"services\email_generator.py",
+   PONT   : _purge_v1_final.py L80 : r"dashboard\pipeline\email_generation.py",
+   PONT   : _purge_v1_final.py L95 : w(f"   [ARCHIVÉ] services\\email_generator.py → Archives/purge_v1_{TS}/modules_v1")
+   PONT   : _purge_v1_final.py L107 : ("""        from services.email_generator import generate_email_for_lead
+   PONT   : _purge_v1_run.py L9 : envoi/email_shell.py, sequence_engine, sniper.email_generator (propre au v2 sniper).
+   PONT   : _purge_v1_run.py L106 : if st.startswith("from services.email_generator import") or st.startswith("import services.email_gen
+   PONT   : _purge_v1_run.py L138 : "services\\email_generator.py",
+   PONT   : _purge_v1_run.py L139 : "envoi\\email_builder.py",
+   PONT   : _purge_v1_run.py L140 : "dashboard\\pipeline\\email_generation.py",
+   PONT   : _scan_maintenant.py L13 : "from services.email_generator", "from envoi.email_builder",
+   PONT   : _scan_maintenant.py L14 : "email_generation", "email_generator", "email_builder"]
+   PONT   : _scan_ponts_readonly.py L6 : email_generation | email_builder | template_profil
+   PONT   : _scan_ponts_readonly.py L21 : "from services.email_generator", "from envoi.email_builder",
+   PONT   : _scan_ponts_readonly.py L22 : "email_generation", "email_builder", "template_profil"]

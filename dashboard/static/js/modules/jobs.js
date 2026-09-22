@@ -113,7 +113,7 @@
                 html += `</ul></div>`;
             }
 
-            window.UI.alert(html, { title: 'Récapitulatif Recherche Emails' });
+            window.UI.alert(html, { title: 'Récapitulatif Recherche Emails', html: true });
         }
 
         static async showAuditRecap(data) {
@@ -169,7 +169,7 @@
                 `;
             }
 
-            window.UI.alert(html, { title: 'Récapitulatif Audit' });
+            window.UI.alert(html, { title: 'Récapitulatif Audit', html: true });
         }
 
         static stop() {

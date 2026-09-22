@@ -1,0 +1,158 @@
+######################################################################
+# SCAN PONTS V1 — état exact (session purge-v1)
+######################################################################
+
+Fichiers concernés  : 21
+Total lignes à pont  : 110
+
+### _purge_v1_final.py
+   L5 : [email_builder] Ne touche JAMAIS au V2 (sequence_engine, template_registry, envoi/email_builder N'EST PAS
+   L6 : [email_generation] touché — seul le worker dashboard/pipeline/email_generation + services/email_generator le 
+   L37 : [generate_email_for_lead] w("### A. OCCURRENCES RESIDUELLES 'generate_email_for_lead' / 'email_generator' / 'build_p
+   L40 : [generate_email_for_lead] ("generate_email_for_lead", None),
+   L42 : [build_premium_email] ("build_premium_email", None),
+   L43 : [email_builder] ("email_builder", None),
+   L44 : [email_generation] ("email_generation", None),
+   L65 : [email_builder] if "test" in rel.lower() and pat == "email_builder":
+   L80 : [email_generation] r"dashboard\pipeline\email_generation.py",
+   L82 : [email_builder] # envoi\email_builder.py : NE PAS SUPPRIMER (encore importé par le worker + routes ?)
+   L107 : [generate_email_for_lead] ("""        from services.email_generator import generate_email_for_lead
+   L113 : [generate_email_for_lead] ok = generate_email_for_lead(lead_id)
+   L192 : [build_premium_email] w("### F. VERIFICATION FINALE (imports services.email_generator / build_premium_email V1)"
+   L197 : [build_premium_email] if "services.email_generator" in s or "from envoi.email_builder import build_premium_email
+
+### _purge_v1_finale.py
+   L5 : [generate_email_for_lead] 1. Scan des ponts V1 (generate_email_for_lead / build_premium_email) dans le code actif.
+   L47 : [email_builder] r"^\s*from envoi\.email_builder import\s.*$",
+   L48 : [email_builder] r"^\s*from envoi import email_builder\s*$",
+   L49 : [email_builder] r"^\s*import envoi\.email_builder\s*$",
+   L50 : [email_generation] r"^\s*from dashboard\.pipeline\.email_generation import\s.*$",
+   L51 : [email_generation] r"^\s*from dashboard\.pipeline import email_generation\s*$",
+   L57 : [generate_email_for_lead] (r"^\s*ok = generate_email_for_lead\([^)]*\)\s*#?.*$", "ok = self._has_manual_draft(lead_i
+   L58 : [generate_email_for_lead] (r"^\s*ok\s*=\s*generate_email_for_lead\([^)]*\)\s*$", "ok = self._has_manual_draft(lead_i
+   L59 : [generate_email_for_lead] (r"^\s*ok = generate_email_for_lead\(([^)]*)\)$", "ok = self._has_manual_draft(\\1)"),
+   L77 : [generate_email_for_lead] if "generate_email_for_lead" in ln or "build_premium_email" in ln or "email_generator" in 
+   L113 : [generate_email_for_lead] if "generate_email_for_lead" in ln:
+   L114 : [generate_email_for_lead] m = re.match(r"^\s*(.*?)\s*=\s*generate_email_for_lead\(([^)]*)\)\s*$", ln)
+   L123 : [generate_email_for_lead] # si generate_email_for_lead est appele en expression (ex: if ...)
+   L124 : [generate_email_for_lead] m2 = re.match(r"^\s*if generate_email_for_lead\(([^)]*)\):\s*$", ln)
+   L130 : [build_premium_email] if "build_premium_email" in ln:
+   L131 : [build_premium_email] # build_premium_email n'est invoqué nulle part hors envoi V1 -> on saute la ligne
+   L133 : [build_premium_email] out.append(ind + "# build_premium_email : générateur V1 supprimé - CONTRAT V2 rédaction ma
+   L159 : [email_builder] r"envoi\email_builder.py",
+   L160 : [email_generation] r"dashboard\pipeline\email_generation.py",
+
+### _purge_v1_run.py
+   L30 : [generate_email_for_lead] #    appellent generate_email_for_lead (remplacement par commentaire manuel).
+   L44 : [generate_email_for_lead] CALL = re.compile(r"generate_email_for_lead")
+   L106 : [from services.email_generator] if st.startswith("from services.email_generator import") or st.startswith("import services
+   L120 : [generate_email_for_lead] ("agents\\redacteur\\agent.py",      "generate_email_for_lead"),
+   L121 : [generate_email_for_lead] ("auditeur\\main.py",                "generate_email_for_lead"),
+   L122 : [generate_email_for_lead] ("dashboard\\pipeline\\report_publishing.py", "generate_email_for_lead"),
+   L123 : [generate_email_for_lead] ("dashboard\\routes\\leads.py",      "generate_email_for_lead"),
+   L124 : [build_premium_email] ("dashboard\\routes\\templates.py",  "build_premium_email"),
+   L125 : [build_premium_email] ("envoi\\test_premium_send.py",      "build_premium_email"),
+   L126 : [build_premium_email] ("tests\\test_email_builder_mapping.py", "build_premium_email"),
+   L139 : [email_builder] "envoi\\email_builder.py",
+   L140 : [email_generation] "dashboard\\pipeline\\email_generation.py",
+   L197 : [generate_email_for_lead] BAD1 = re.compile(r"from services\.email_generator import|from envoi\.email_builder import
+
+### _scan_ponts_readonly.py
+   L5 : [generate_email_for_lead] Tokens scannés : generate_email_for_lead | build_premium_email | email_generator |
+   L6 : [email_generation] email_generation | email_builder | template_profil
+   L20 : [generate_email_for_lead] TOKENS = ["generate_email_for_lead", "build_premium_email",
+   L21 : [from services.email_generator] "from services.email_generator", "from envoi.email_builder",
+   L22 : [email_generation] "email_generation", "email_builder", "template_profil"]
+
+### auditeur\agents\business_copywriter.py
+   L9 : [build_premium_email] envoi/email_builder.py → build_premium_email(lead_data)
+
+### auditeur\main.py
+   L282 : [generate_email_for_lead] from services.email_generator import generate_email_for_lead
+   L283 : [generate_email_for_lead] if generate_email_for_lead(lead_id):
+
+### copywriter\main.py
+   L6 : [email_builder] et retourner le profil email correspondant pour email_builder.
+   L9 : [email_builder] L'email HTML est généré exclusivement par envoi/email_builder.py
+   L10 : [template_profil] en utilisant les templates dans templates/emails/template_profil_{a,b,c,d}.html.
+   L12 : [email_builder] Mapping situation → profil email_builder (défini dans dashboard/pipeline.py) :
+   L125 : [email_builder] # L'email HTML est généré par envoi/email_builder.py + templates/emails/
+   L152 : [email_builder] Ces champs sont produits par envoi/email_builder.py via les templates HTML.
+
+### dashboard\pipeline\__init__.py
+   L9 : [generate_email_for_lead] from .email_generation import generate_email_for_lead
+   L16 : [generate_email_for_lead] 'generate_email_for_lead'
+
+### dashboard\pipeline\email_generation.py
+   L3 : [email_generation] dashboard/pipeline/email_generation.py
+   L12 : [build_premium_email] from envoi.email_builder import build_premium_email
+   L32 : [generate_email_for_lead] def generate_email_for_lead(lead_id: int) -> bool:
+   L105 : [build_premium_email] email_corps = build_premium_email(builder_data, verify_link=False)
+   L137 : [generate_email_for_lead] logger.error(f"[PIPELINE-Email] generate_email_for_lead #{lead_id}: {e}")
+
+### dashboard\pipeline\report_publishing.py
+   L95 : [generate_email_for_lead] from services.email_generator import generate_email_for_lead
+   L96 : [generate_email_for_lead] generate_email_for_lead(lid)
+   L172 : [generate_email_for_lead] from services.email_generator import generate_email_for_lead
+   L173 : [generate_email_for_lead] generate_email_for_lead(lead_id)
+
+### dashboard\routes\leads.py
+   L479 : [generate_email_for_lead] from services.email_generator import generate_email_for_lead
+   L484 : [generate_email_for_lead] ok = generate_email_for_lead(lead_id)
+
+### dashboard\routes\tasks.py
+   L40 : [email_generation] Actions supportées: 'audit_batch', 'email_generation', 'bodacc_scan'
+   L43 : [email_generation] launch_batch_audit, launch_batch_email_generation, launch_bodacc_scan
+   L52 : [email_generation] elif action == 'email_generation':
+   L53 : [email_generation] task_id = launch_batch_email_generation(limit=limit)
+
+### dashboard\routes\templates.py
+   L21 : [template_profil] 'template_profil_a.html',
+   L22 : [template_profil] 'template_profil_b.html',
+   L23 : [template_profil] 'template_profil_c.html',
+   L24 : [template_profil] 'template_profil_d.html',
+   L61 : [template_profil] 'label': f.replace('template_profil_', 'Profil ').replace('.html', '').replace('_', ' ').t
+   L150 : [email_generation] from dashboard.pipeline.email_generation import SITUATION_TO_PROFILE
+   L151 : [build_premium_email] from envoi.email_builder import build_premium_email
+   L210 : [build_premium_email] html = build_premium_email(builder_data, verify_link=False)
+
+### dashboard\routes\v1_disabled.py
+   L5 : [email_builder] email_builder / V5 archive). Toute route V1-PUR (consommée uniquement par la V5)
+
+### envoi\email_builder.py
+   L3 : [email_builder] Module envoi/email_builder.py
+   L224 : [build_premium_email] def build_premium_email(lead_data, verify_link: bool = True):
+   L255 : [email_builder] f"email_builder: profil non mappé (template_used='{template_used}', "
+   L310 : [template_profil] candidate = os.path.join(template_dir, f"template_profil_{profile.lower()}{suffix}.html")
+
+### envoi\resend_sender.py
+   L132 : [email_builder] # Si le corps contient déjà de l'HTML (via email_builder), on l'utilise tel quel
+
+### envoi\test_premium_send.py
+   L11 : [build_premium_email] from envoi.email_builder import build_premium_email
+   L25 : [build_premium_email] html_content = build_premium_email({
+
+### services\email_generator.py
+   L14 : [build_premium_email] from envoi.email_builder import build_premium_email
+   L209 : [generate_email_for_lead] def generate_email_for_lead(lead_id: int) -> bool:
+   L275 : [build_premium_email] # SAUF pour les leads maps sans site (maquette) — utiliser build_premium_email
+   L286 : [build_premium_email] # Profil A : email template directement via build_premium_email
+   L287 : [build_premium_email] html_content = build_premium_email(audit_dict, verify_link=False)
+   L311 : [build_premium_email] # Immobilier : ne JAMAIS fallback sur build_premium_email
+   L316 : [build_premium_email] html_content = build_premium_email(audit_dict, verify_link=False)
+   L331 : [generate_email_for_lead] logger.error(f"Erreur generate_email_for_lead({lead_id}): {e}")
+
+### services\job_launcher.py
+   L99 : [generate_email_for_lead] from services.email_generator import generate_email_for_lead
+   L116 : [generate_email_for_lead] ok = generate_email_for_lead(lead_id)
+   L160 : [email_generation] def launch_batch_email_generation(limit: int = 50) -> str:
+   L163 : [email_generation] task_type="email_generation",
+
+### services\tasks.py
+   L83 : [generate_email_for_lead] from services.email_generator import generate_email_for_lead
+   L84 : [generate_email_for_lead] ok = generate_email_for_lead(lead_id)
+
+### tests\test_email_builder_mapping.py
+   L4 : [email_generation] from dashboard.pipeline.email_generation import SITUATION_TO_PROFILE
+   L5 : [build_premium_email] from envoi.email_builder import build_premium_email
+   L74 : [build_premium_email] html = build_premium_email(builder_data, verify_link=False)

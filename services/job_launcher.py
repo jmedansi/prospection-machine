@@ -96,7 +96,7 @@ def run_batch_email_gen_worker(task_id: str, limit: int = 50) -> Dict[str, Any]:
     TaskEngine.log(task_id, f"{total} leads prêts pour la génération de copy.")
     TaskEngine.update_progress(task_id, processed_items=0, total_items=total, current_item_label="Démarrage")
 
-    from services.email_generator import generate_email_for_lead
+    # CONTRAT V2 : redaction MANUELLE - pont V1 coupe
 
     gen_count = 0
     errors_count = 0
@@ -113,7 +113,7 @@ def run_batch_email_gen_worker(task_id: str, limit: int = 50) -> Dict[str, Any]:
         TaskEngine.log(task_id, f"[{i}/{total}] Génération email pour : {nom}")
 
         try:
-            ok = generate_email_for_lead(lead_id)
+            ok = self._has_manual_draft(lead_id)  # CONTRAT V2
             if ok:
                 gen_count += 1
                 TaskEngine.log(task_id, f"[{i}/{total}] Email généré : {nom}", level="info")

@@ -65,6 +65,18 @@ def _to_en_sequence(pid, oid, days_ago=0):
         c.commit()
 
 
+def _to_en_sequence_at(pid, oid, ts):
+    """Idem avec un horodatage explicite (tests jours ouvrés)."""
+    from core.state_machine import transition_prospect
+    transition_prospect(pid, 'en_sequence', reason='initial (test)')
+    from database.connection import get_conn
+    with get_conn() as c:
+        c.execute("UPDATE prospects SET updated_at=? WHERE id=?", (ts, pid))
+        c.execute("INSERT INTO prospect_events (prospect_id, campagne_id, event_type, payload, created_at) VALUES (?,?,?,?,?)",
+                  (pid, oid, 'initial', '{}', ts))
+        c.commit()
+
+
 @pytest.fixture
 def fake_gateway(monkeypatch):
     calls = []
@@ -224,3 +236,54 @@ def test_template_update_et_inactif_retire_des_dues(tmp_db, fake_gateway):
     assert template_registry.update(99999, actif=True)['success'] is False
     # update sans champ → erreur
     assert template_registry.update(tid)['success'] is False
+
+
+def _relances_due_at(oid, now):
+    from core.orchestration import relances_due
+    return {d['id'] for d in relances_due(oid, now=now)}
+
+
+def test_relances_due_exclut_weekend(tmp_db, fake_gateway):
+    """Samedi/dimanche : aucune relance retenue, même si l'échéance est dépassée."""
+    from datetime import datetime
+    oid = _objectif(validation_telegram=0)
+    _seed_template_step(oid, 1, delai_jours=0)
+    pid = _prospect(oid)
+    # touche initiale lundi 21/09/2026 09:00 → relance due dès lundi (delai 0)
+    _to_en_sequence_at(pid, oid, '2026-09-21 09:00:00')
+    sat = datetime(2026, 9, 19, 10, 0, 0)   # samedi
+    sun = datetime(2026, 9, 20, 10, 0, 0)   # dimanche
+    assert _relances_due_at(oid, sat) == set()
+    assert _relances_due_at(oid, sun) == set()
+    # weekdays suivants (lundi) : de nouveau éligible
+    mon = datetime(2026, 9, 21, 11, 0, 0)
+    assert pid in _relances_due_at(oid, mon)
+
+
+def test_relances_due_echance_weekend_reportee_lundi(tmp_db, fake_gateway):
+    """Échéance qui tombe samedi/dimanche → reportée au lundi suivant."""
+    from datetime import datetime
+    oid = _objectif(validation_telegram=0)
+    _seed_template_step(oid, 1, delai_jours=2)
+    pid = _prospect(oid)
+    # touche jeudi 17/09 + 2 jours → échéance samedi 19/09 → effective lundi 21/09
+    _to_en_sequence_at(pid, oid, '2026-09-17 09:00:00')
+    fri = datetime(2026, 9, 18, 23, 0, 0)   # vendredi soir : pas encore (échéance w-e)
+    assert _relances_due_at(oid, fri) == set()
+    sat = datetime(2026, 9, 19, 10, 0, 0)
+    assert _relances_due_at(oid, sat) == set()
+    mon = datetime(2026, 9, 21, 10, 30, 0)  # lundi après report → due
+    assert pid in _relances_due_at(oid, mon)
+
+
+def test_relances_due_weekday_nominal_inchange(tmp_db, fake_gateway):
+    """Régression : un délai purement ouvré reste éligible au jour prévu."""
+    from datetime import datetime
+    oid = _objectif(validation_telegram=0)
+    _seed_template_step(oid, 1, delai_jours=2)
+    pid = _prospect(oid)
+    _to_en_sequence_at(pid, oid, '2026-09-21 09:00:00')  # lundi
+    wed = datetime(2026, 9, 23, 10, 0, 0)   # mercredi 23/09 : 2 jours → due
+    assert pid in _relances_due_at(oid, wed)
+    tue = datetime(2026, 9, 22, 10, 0, 0)   # mardi : pas encore
+    assert _relances_due_at(oid, tue) == set()

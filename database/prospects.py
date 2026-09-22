@@ -3,6 +3,7 @@
 database/prospects.py — Repo v2 des prospects, rattachés à une liste (campagne).
 """
 import json
+import re
 from datetime import datetime
 from email.utils import parseaddr
 
@@ -427,21 +428,74 @@ def get_prospect(prospect_id: int) -> dict | None:
             d.setdefault('is_replied', 1 if (dee.get('repondu') or 0) else 0)
             if dee.get('email_objet_ee') and not d.get('email_objet'):
                 d['email_objet'] = dee.get('email_objet_ee')
+
+        # ── Fil complet des emails (touches sortantes + réponses entrantes)
+        d['thread'] = get_thread_for_lead(prospect_id)
         return d
 
 
-def get_thread_for_lead(lead_id: int) -> list[dict]:
-    """Fil de conversation email d'un prospect v2 (lead_id = prospect_id).
+def clean_email_reply(text: str) -> dict:
+    """Isole le message réel du prospect en supprimant les en-têtes et citations d'anciens mails."""
+    if not text:
+        return {'clean': '', 'quote': ''}
 
-    Mélange les touches sortantes (initial, relance_*) et les événements
-    entrants (reponse, ndr, auto_reply) rattachés au même fil, en ordre
-    chronologique. Colonnes RFC 2822 : message_id, in_reply_to,
-    references_header, parent_event_id, thread_id, direction.
+    quote_patterns = [
+        r'(?i)(?:\r?\n|^|\s+)(?:Le\s+[\s\S]+?\s+a\s+[eé\xe9\xc3\xa9]crit\s*:)',
+        r'(?i)(?:\r?\n|^|\s+)(?:On\s+[\s\S]+?\s+wrote\s*:)',
+        r'(?i)(?:\r?\n|^|\s+)[-]{2,}\s*(?:Original Message|Message d\'origine|Forwarded message)\s*[-]{2,}',
+        r'(?i)(?:\r?\n|^|\s+)(?:De\s*:[^\n]+(?:\r?\n|\s+)Envoy[eé\xe9\xc3\xa9]\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:From\s*:[^\n]+(?:\r?\n|\s+)Sent\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:De\s*:[^\n]+(?:\r?\n|\s+)Date\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:From\s*:[^\n]+(?:\r?\n|\s+)Date\s*:[^\n]+)',
+        r'(?i)(?:\r?\n|^|\s+)(?:Begin forwarded message:)',
+        r'(?:\r?\n|^)\s*>[^\n]*',
+    ]
+
+    split_pos = len(text)
+    for pat in quote_patterns:
+        m = re.search(pat, text)
+        if m and m.start() < split_pos:
+            split_pos = m.start()
+
+    clean_part = text[:split_pos].strip()
+    quote_part = text[split_pos:].strip()
+
+    # Nettoyage des signatures mobiles automatiques
+    clean_part = re.sub(r'(?i)(?:\r?\n|^)\s*--\s*[\r\n].*$', '', clean_part)
+    clean_part = re.sub(r'(?i)(?:\r?\n|^)\s*(?:Envoy[eé\xe9\xc3\xa9]\s+(?:de\s+mon|depuis\s+mon)|Sent\s+from\s+my|Get\s+Outlook\s+for)\s+.*$', '', clean_part)
+
+    return {'clean': clean_part.strip(), 'quote': quote_part.strip()}
+
+
+def get_thread_for_lead(lead_id: int) -> list[dict]:
+    """Fil de conversation email complet d'un prospect (lead_id = prospect_id).
+
+    Mélange les touches sortantes (initial, relances, réponses manuelles) et les
+    événements entrants (réponses du prospect) en ordre chronologique avec
+    résolution automatique des contenus (template fallback, custom drafts, emails_envoyes).
     """
-    email_events = ('initial', 'relance_1', 'relance_2', 'relance_3',
-                    'reponse', 'ndr', 'auto_reply')
+    STEP_LABELS = {
+        'initial': 'Premier contact',
+        'relance_1': 'Relance 1 (J+3)',
+        'relance_2': 'Relance 2 (J+7)',
+        'relance_3': 'Relance 3 (J+14)',
+        'relance_special': 'Dernière relance',
+        'reponse': 'Réponse du prospect',
+        'reponse_manuelle': 'Réponse envoyée',
+        'ndr': 'Rebond (NDR)',
+        'auto_reply': 'Répondeur automatique',
+    }
+
+    email_events = ('initial', 'relance_1', 'relance_2', 'relance_3', 'relance_special',
+                    'reponse', 'reponse_manuelle', 'ndr', 'auto_reply')
     ph = ','.join('?' for _ in email_events)
+    
     with get_conn() as conn:
+        lead_row = conn.execute(
+            "SELECT id, email, nom, data_extra FROM prospects WHERE id = ?",
+            (lead_id,),
+        ).fetchone()
+
         rows = conn.execute(
             f"""SELECT id, prospect_id, campagne_id, event_type, payload,
                        mailbox_id, message_id, in_reply_to, references_header,
@@ -451,38 +505,126 @@ def get_thread_for_lead(lead_id: int) -> list[dict]:
                 ORDER BY created_at ASC, id ASC""",
             (lead_id, *email_events),
         ).fetchall()
+
+        # Également récupérer les lignes d'emails_envoyes pour ce lead (par lead_id, legacy_id ou email)
+        legacy_id = None
+        lead_email = ''
+        if lead_row:
+            lead_email = lead_row['email'] or ''
+            try:
+                extra = json.loads(lead_row['data_extra'] or '{}') if isinstance(lead_row['data_extra'], str) else (lead_row['data_extra'] or {})
+                legacy_id = extra.get('legacy_id')
+            except Exception:
+                pass
+
+        query_ee = """SELECT id, lead_id, message_id_resend, message_id_brevo, date_envoi,
+                             email_destinataire, email_objet, email_corps, statut_envoi,
+                             ouvert, date_ouverture, nb_ouvertures, clique, date_clic,
+                             repondu, date_reponse, bounce, spam
+                      FROM emails_envoyes
+                      WHERE lead_id = ?"""
+        ee_params = [lead_id]
+        if legacy_id:
+            query_ee += " OR lead_id = ?"
+            ee_params.append(legacy_id)
+        if lead_email:
+            query_ee += " OR email_destinataire = ?"
+            ee_params.append(lead_email)
+        query_ee += " ORDER BY COALESCE(date_envoi, id) ASC"
+
+        ee_rows = conn.execute(query_ee, ee_params).fetchall()
+
+        # Cache des sequence_templates pour fallback
+        templates = {
+            r['id']: dict(r)
+            for r in conn.execute("SELECT id, nom, objet, corps FROM sequence_templates").fetchall()
+        }
+
     out = []
+    seen_msg_ids = set()
+
     for r in rows:
         d = dict(r)
         try:
-            d['payload'] = json.loads(d['payload'] or '{}')
+            p = json.loads(d['payload'] or '{}') if isinstance(d['payload'], str) else (d['payload'] or {})
         except Exception:
-            d['payload'] = {}
-        # Sujet / corps / backend / tracking, depuis le payload de l'event
-        # (les touches sortantes stockent step + rfc_message_id) et emails_envoyes.
-        if d['direction'] == 'out':
-            ev = conn.execute(
-                """SELECT email_objet, email_corps, date_envoi, statut_envoi,
-                          ouvert, date_ouverture, nb_ouvertures, clique, date_clic,
-                          repondu, date_reponse, bounce, spam, message_id_brevo, message_id_resend
-                   FROM emails_envoyes WHERE lead_id = ?
-                   ORDER BY COALESCE(date_envoi, id) DESC LIMIT 1""",
-                (lead_id,),
-            ).fetchone()
-            eev = dict(ev) if ev else {}
+            p = {}
+        d['payload'] = p
+        
+        mid = d.get('message_id') or p.get('rfc_message_id') or ''
+        if mid:
+            seen_msg_ids.add(mid)
+
+        is_inbound = (d.get('direction') == 'in' or d.get('event_type') == 'reponse')
+        d['direction'] = 'in' if is_inbound else 'out'
+        d['step_label'] = STEP_LABELS.get(d['event_type'], d['event_type'].replace('_', ' ').capitalize())
+
+        # Trouver la ligne de tracking correspondante dans emails_envoyes
+        matching_ee = None
+        for ee in ee_rows:
+            e_mid = ee['message_id_resend'] or ee['message_id_brevo'] or ''
+            if mid and e_mid and mid in e_mid:
+                matching_ee = dict(ee)
+                break
+        if not matching_ee and ee_rows:
+            # Match par ordre si un seul envoi
+            if len(ee_rows) == 1 and len(rows) == 1:
+                matching_ee = dict(ee_rows[0])
+
+        tpl = templates.get(p.get('template_id')) if p.get('template_id') else None
+
+        raw_corps = p.get('corps') or p.get('clean_body') or p.get('body') or (matching_ee.get('email_corps') if matching_ee else '') or (tpl.get('corps') if tpl else '') or ''
+        quote_text = p.get('quote') or ''
+
+        # Pour les réponses entrantes, nettoyer les en-têtes et citations imbriquées
+        if is_inbound:
+            cleaned = clean_email_reply(raw_corps or p.get('snippet') or '')
+            d['corps'] = cleaned['clean'] or raw_corps
+            d['quote'] = quote_text or cleaned['quote']
+            d['snippet'] = (d['corps'][:250] if d['corps'] else '')
         else:
-            eev = {}
-        d['subject'] = d['payload'].get('objet') or (eev or {}).get('email_objet') or ''
+            d['corps'] = raw_corps
+            d['quote'] = quote_text
+            d['snippet'] = p.get('snippet') or (d['corps'][:250] if d['corps'] else '')
+
+        d['subject'] = p.get('objet') or p.get('subject') or (matching_ee.get('email_objet') if matching_ee else '') or (tpl.get('objet') if tpl else '') or ''
         d['sujet'] = d['subject']
-        d['corps'] = d['payload'].get('corps') or ''
-        d['backend'] = d['payload'].get('backend') or ''
-        d['sent_at'] = eev.get('date_envoi') if d['direction'] == 'out' else d.get('created_at')
-        d['is_opened'] = 1 if eev.get('ouvert') else 0
-        d['opened_at'] = eev.get('date_ouverture')
-        d['is_clicked'] = 1 if eev.get('clique') else 0
-        d['is_replied'] = 1 if eev.get('repondu') else 0
-        d['email_status'] = eev.get('statut_envoi') or ''
+        d['sent_at'] = (matching_ee.get('date_envoi') if matching_ee else None) or d.get('created_at')
+        d['is_opened'] = 1 if (matching_ee and matching_ee.get('ouvert')) else 0
+        d['opened_at'] = matching_ee.get('date_ouverture') if matching_ee else None
+        d['is_clicked'] = 1 if (matching_ee and matching_ee.get('clique')) else 0
+        d['is_replied'] = 1 if (is_inbound or (matching_ee and matching_ee.get('repondu'))) else 0
+        d['email_status'] = (matching_ee.get('statut_envoi') if matching_ee else None) or ('recu' if is_inbound else 'envoye')
+        d['from_addr'] = p.get('from_addr') or p.get('mailbox_email') or ''
+        d['from_name'] = p.get('from_name') or ''
         out.append(d)
+
+    # Si certains emails_envoyes n'avaient pas d'événement correspondant, on les ajoute
+    for ee in ee_rows:
+        dee = dict(ee)
+        e_mid = dee.get('message_id_resend') or dee.get('message_id_brevo') or str(dee['id'])
+        if e_mid in seen_msg_ids:
+            continue
+        out.append({
+            'id': f"ee_{dee['id']}",
+            'prospect_id': lead_id,
+            'event_type': 'email_envoye',
+            'direction': 'out',
+            'step_label': dee.get('statut_envoi') or 'Email envoyé',
+            'subject': dee.get('email_objet') or '',
+            'sujet': dee.get('email_objet') or '',
+            'corps': dee.get('email_corps') or '',
+            'snippet': (dee.get('email_corps') or '')[:250],
+            'sent_at': dee.get('date_envoi'),
+            'is_opened': 1 if dee.get('ouvert') else 0,
+            'opened_at': dee.get('date_ouverture'),
+            'is_clicked': 1 if dee.get('clique') else 0,
+            'is_replied': 1 if dee.get('repondu') else 0,
+            'email_status': dee.get('statut_envoi') or 'envoye',
+            'created_at': dee.get('date_envoi'),
+        })
+
+    out.sort(key=lambda x: x.get('sent_at') or x.get('created_at') or '')
     return out
 
 

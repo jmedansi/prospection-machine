@@ -90,13 +90,10 @@ def _publish_reports(lead_ids: list) -> dict:
                 """, (local_pattern, public_url, public_url, lid))
                 conn.commit()
 
-            # Fix 2 : Régénérer l'email avec le lien public
-            try:
-                from services.email_generator import generate_email_for_lead
-                generate_email_for_lead(lid)
-                logger.info(f"[PIPELINE-Publish] Email régénéré pour lead {lid}")
-            except Exception as e:
-                logger.warning(f"[PIPELINE-Publish] Régénération email échouée pour lead {lid}: {e}")
+            # CONTRAT V2 (purge V1 définitive) : la publication ne RÉGÉNÈRE plus
+            # l'email. L'email reste 100 % rédigé à la main — le lien public est
+            # déjà substitué via le SQL ci-dessus, rien d'autre à faire ici.
+            # (Pont V1 ai_tu_coupe : generate_email_for_lead suppressed)
 
             # Fix 4 : Supprimer les fichiers locaux uniquement après succès confirmé
             shutil.rmtree(slug_dir, ignore_errors=True)
@@ -169,8 +166,8 @@ def publish_reports_batch(slugs: list) -> str:
 
             if lead_id:
                 try:
-                    from services.email_generator import generate_email_for_lead
-                    generate_email_for_lead(lead_id)
+                    # CONTRAT V2 : redaction MANUELLE - pont V1 coupe
+                    False
                     logger.info(f"[PIPELINE-Publish] Email régénéré pour lead {lead_id}")
                 except Exception as e:
                     logger.warning(f"[PIPELINE-Publish] Régénération email échouée pour lead {lead_id}: {e}")

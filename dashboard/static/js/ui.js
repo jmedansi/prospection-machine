@@ -152,58 +152,188 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// --- Confirm Dialog (remplace window.confirm natif) ---
-function showConfirm(message, { title = 'Confirmation', confirmText = 'Confirmer', cancelText = 'Annuler', danger = false } = {}) {
+// --- Alert & Popup Dialogs (remplace window.alert natif par de vrais popups modernes) ---
+const _popupIcons = {
+    info: 'ℹ️',
+    success: '✅',
+    warning: '⚠️',
+    error: '❌',
+    danger: '🚨'
+};
+
+const _popupColors = {
+    info: 'var(--accent, #3b82f6)',
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    danger: '#ef4444'
+};
+
+function _popupEnsureAnimStyle() {
+    if (!document.getElementById('_popup-anim-style')) {
+        const s = document.createElement('style');
+        s.id = '_popup-anim-style';
+        s.textContent = '@keyframes _popfade{from{opacity:0;transform:scale(.92) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}';
+        document.head.appendChild(s);
+    }
+}
+
+function _popupReplayAnimation(box) {
+    const anim = box.style.animation;
+    box.style.animation = 'none';
+    void box.offsetWidth;
+    box.style.animation = anim || '';
+}
+
+function _popupClose(modal, ns, val) {
+    const state = modal._popupState;
+    if (!state || state.ns !== ns) return;
+    modal._popupState = null;
+    modal.style.display = 'none';
+    const r = state.resolve;
+    // laisse le microtask s'exécuter, puis resolve (idempotent)
+    setTimeout(() => r && r(val), 0);
+}
+
+function _popupBind(modal, ns, opts) {
+    if (modal._popupBound === ns) return;
+    modal._popupBound = ns;
+
+    const onOk = () => _popupClose(modal, ns, opts.okValue);
+    const onCancel = () => _popupClose(modal, ns, opts.cancelValue);
+    const onBackdrop = (e) => { if (e.target === modal) onCancel(); };
+    const onKey = (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+        else if (e.key === 'Enter' && !opts.noEnter) { e.preventDefault(); onOk(); }
+    };
+
+    modal.addEventListener('click', onBackdrop);
+    if (opts.okBtn) opts.okBtn.addEventListener('click', onOk);
+    if (opts.cancelBtn) opts.cancelBtn.addEventListener('click', onCancel);
+    document.addEventListener('keydown', onKey);
+}
+
+function showAlert(message, { title = '', type = 'info', buttonText = 'Compris', html = false } = {}) {
     return new Promise(resolve => {
-        let modal = document.getElementById('_confirm-modal');
+        _popupEnsureAnimStyle();
+
+        let modal = document.getElementById('_alert-popup-modal');
+        const create = !modal;
         if (!modal) {
             modal = document.createElement('div');
-            modal.id = '_confirm-modal';
-            modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;';
+            modal.id = '_alert-popup-modal';
+            modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
             modal.innerHTML = `
-                <div id="_confirm-box" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 28px 22px;width:90%;min-width:300px;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.35);animation:_cfade .15s ease;margin:auto">
-                    <div id="_confirm-title" style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:10px"></div>
-                    <div id="_confirm-msg"  style="font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:24px"></div>
-                    <div style="display:flex;justify-content:flex-end;gap:10px">
-                        <button id="_confirm-cancel" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--ink2);font-size:13px;cursor:pointer;font-weight:500"></button>
-                        <button id="_confirm-ok"     style="padding:8px 20px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;"></button>
+                <div id="_alert-popup-box" style="background:var(--surface, #1e293b);border:1px solid var(--border, rgba(255,255,255,0.1));border-radius:16px;padding:24px;width:100%;min-width:300px;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.45);animation:_popfade .18s cubic-bezier(0.16, 1, 0.3, 1);display:flex;flex-direction:column;gap:16px;box-sizing:border-box;margin:auto">
+                    <div style="display:flex;align-items:flex-start;gap:14px">
+                        <div id="_alert-popup-icon" style="font-size:24px;line-height:1;flex-shrink:0;padding:6px;border-radius:10px;background:rgba(255,255,255,0.05);min-width:36px;height:36px;display:flex;align-items:center;justify-content:center"></div>
+                        <div style="flex:1;min-width:0">
+                            <h3 id="_alert-popup-title" style="margin:0 0 6px 0;font-size:15px;font-weight:700;color:var(--ink, #fff)"></h3>
+                            <div id="_alert-popup-msg" style="font-size:13px;line-height:1.6;color:var(--ink2, #cbd5e1);word-break:break-word;white-space:pre-wrap"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;margin-top:6px">
+                        <button id="_alert-popup-ok" style="padding:9px 22px;border-radius:8px;border:none;background:var(--accent, #3b82f6);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s ease">Compris</button>
                     </div>
                 </div>`;
             document.body.appendChild(modal);
         }
 
-        const style = document.getElementById('_confirm-style') || (() => {
-            const s = document.createElement('style');
-            s.id = '_confirm-style';
-            s.textContent = '@keyframes _cfade{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}';
-            document.head.appendChild(s); return s;
-        })();
+        // Déduction automatique du type et du titre par défaut
+        const msgStr = String(message ?? '');
+        if (type === 'info') {
+            const lower = (String(title) + ' ' + msgStr).toLowerCase();
+            if (lower.includes('erreur') || lower.includes('échec') || lower.includes('impossible') || lower.includes('refusé')) type = 'error';
+            else if (lower.includes('succès') || lower.includes('réussi') || lower.includes('enregistré')) type = 'success';
+            else if (lower.includes('attention') || lower.includes('veuillez') || lower.includes('avertissement') || lower.includes('aucune')) type = 'warning';
+        }
 
-        modal.querySelector('#_confirm-title').textContent = title;
-        modal.querySelector('#_confirm-msg').textContent   = message;
-        const cancelBtn = modal.querySelector('#_confirm-cancel');
-        const okBtn     = modal.querySelector('#_confirm-ok');
-        cancelBtn.textContent = cancelText;
-        okBtn.textContent     = confirmText;
-        okBtn.style.background = danger ? 'var(--red, #ef4444)' : 'var(--accent, #3b82f6)';
-        okBtn.style.color      = '#fff';
+        if (!title) {
+            title = type === 'error' ? 'Erreur' : type === 'success' ? 'Succès' : type === 'warning' ? 'Attention' : 'Information';
+        }
 
+        const box = modal.querySelector('#_alert-popup-box');
+        const iconEl = modal.querySelector('#_alert-popup-icon');
+        const titleEl = modal.querySelector('#_alert-popup-title');
+        const msgEl = modal.querySelector('#_alert-popup-msg');
+        const okBtn = modal.querySelector('#_alert-popup-ok');
+
+        iconEl.textContent = _popupIcons[type] || 'ℹ️';
+        iconEl.style.background = (type === 'warning' || type === 'error') ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.05)';
+        titleEl.textContent = title;
+        if (html) msgEl.innerHTML = message;
+        else msgEl.textContent = msgStr;
+
+        okBtn.textContent = buttonText;
+        okBtn.style.background = _popupColors[type] || 'var(--accent, #3b82f6)';
+
+        modal._popupState = { ns: 'alert', resolve };
+        _popupBind(modal, 'alert', { okBtn, okValue: undefined, cancelValue: undefined });
         modal.style.display = 'flex';
+        box.scrollTop = 0;
+        _popupReplayAnimation(box);
+        setTimeout(() => okBtn.focus(), 50);
+    });
+}
 
-        const close = val => {
-            modal.style.display = 'none';
-            okBtn.removeEventListener('click', onOk);
-            cancelBtn.removeEventListener('click', onCancel);
-            modal.removeEventListener('click', onBackdrop);
-            resolve(val);
-        };
-        const onOk       = () => close(true);
-        const onCancel   = () => close(false);
-        const onBackdrop = e => { if (e.target === modal) close(false); };
+function showPopup(options = {}) {
+    if (typeof options === 'string') options = { message: options };
+    return showAlert(options.message || options.html || '', options);
+}
 
-        okBtn.addEventListener('click', onOk);
-        cancelBtn.addEventListener('click', onCancel);
-        modal.addEventListener('click', onBackdrop);
+// Remplacer window.alert natif par notre popup
+if (typeof window !== 'undefined') {
+    window.showAlert = showAlert;
+    window.showPopup = showPopup;
+    window.alert = function (msg) {
+        return showAlert(msg);
+    };
+}
+
+// --- Confirm Dialog (remplace window.confirm natif) ---
+function showConfirm(message, { title = 'Confirmation', confirmText = 'Confirmer', cancelText = 'Annuler', danger = false, html = false } = {}) {
+    return new Promise(resolve => {
+        _popupEnsureAnimStyle();
+
+        let modal = document.getElementById('_confirm-modal');
+        const create = !modal;
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = '_confirm-modal';
+            modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+            modal.innerHTML = `
+                <div id="_confirm-box" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;width:100%;min-width:300px;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.45);animation:_popfade .18s cubic-bezier(0.16, 1, 0.3, 1);margin:auto;display:flex;flex-direction:column;gap:16px;box-sizing:border-box">
+                    <div style="display:flex;align-items:flex-start;gap:14px">
+                        <div style="font-size:24px;line-height:1;flex-shrink:0;padding:6px;border-radius:10px;background:rgba(255,255,255,0.05);min-width:36px;height:36px;display:flex;align-items:center;justify-content:center">${danger ? '⚠️' : '❓'}</div>
+                        <div style="flex:1;min-width:0">
+                            <div id="_confirm-title" style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px"></div>
+                            <div id="_confirm-msg" style="font-size:13px;color:var(--ink2);line-height:1.6;word-break:break-word;white-space:pre-wrap"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
+                        <button id="_confirm-cancel" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--ink2);font-size:13px;cursor:pointer;font-weight:500;transition:background .15s ease"></button>
+                        <button id="_confirm-ok" style="padding:8px 20px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#fff;transition:opacity .15s ease"></button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        const box = modal.querySelector('#_confirm-box');
+        modal.querySelector('#_confirm-title').textContent = title;
+        const msgEl = modal.querySelector('#_confirm-msg');
+        const cancelBtn = modal.querySelector('#_confirm-cancel');
+        const okBtn = modal.querySelector('#_confirm-ok');
+        if (html) msgEl.innerHTML = message;
+        else msgEl.textContent = message;
+        cancelBtn.textContent = cancelText;
+        okBtn.textContent = confirmText;
+        okBtn.style.background = danger ? 'var(--red, #ef4444)' : 'var(--accent, #3b82f6)';
+
+        modal._popupState = { ns: 'confirm', resolve };
+        _popupBind(modal, 'confirm', { okBtn, cancelBtn, okValue: true, cancelValue: false });
+        modal.style.display = 'flex';
+        box.scrollTop = 0;
+        _popupReplayAnimation(box);
         setTimeout(() => okBtn.focus(), 50);
     });
 }

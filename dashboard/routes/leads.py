@@ -476,12 +476,12 @@ def api_lead_delete():
 def api_regenerate_email_stream(lead_id):
     """Régénère un email avec streaming (SSE)."""
     from flask import Response, stream_with_context
-    from services.email_generator import generate_email_for_lead
+    # CONTRAT V2 : redaction MANUELLE - pont V1 coupe
 
     def generate():
         try:
             # Générer l'email
-            ok = generate_email_for_lead(lead_id)
+            ok = self._has_manual_draft(lead_id)  # CONTRAT V2
             if not ok:
                 yield "data: {\"error\": \"Échec génération\"}\n\n"
                 return

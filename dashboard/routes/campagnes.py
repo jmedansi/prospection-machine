@@ -18,6 +18,7 @@ from core.objectif_registry import get_or_create_liste
 from core.state_machine import transition_prospect, statut_display, VALID_TRANSITIONS, STATUT_LABELS
 from database import campagnes as campagnes_repo
 from database import prospects as prospects_repo
+from database.connection import get_conn
 
 campagnes_bp = Blueprint('campagnes_bp', __name__)
 
@@ -503,3 +504,91 @@ def api_v2_lead_email_send(prospect_id):
     return jsonify({'success': res.get('success', True), 'statut': res.get('statut'), 'message': res.get('message'),
                     **({'callback_id': res['callback_id']} if res.get('callback_id') else {}),
                     **({'id': res['id']} if res.get('id') else {})}), (400 if hard_fail else 200)
+
+
+@campagnes_bp.route('/api/v2/leads/<int:prospect_id>/reply', methods=['POST'])
+def api_v2_lead_custom_reply(prospect_id):
+    """Envoie un email de réponse ou relance personnalisée pour ce prospect."""
+    import json
+    from envoi import gateway, threading, email_shell
+
+    p = prospects_repo.get_prospect(prospect_id)
+    if not p:
+        return jsonify({'success': False, 'error': 'Prospect introuvable'}), 404
+    if not p.get('email'):
+        return jsonify({'success': False, 'error': 'Ce prospect n\'a pas d\'adresse email'}), 400
+
+    data = request.get_json(silent=True) or {}
+    subject = (data.get('subject') or data.get('objet') or '').strip()
+    body = (data.get('body') or data.get('corps') or '').strip()
+
+    if not body:
+        return jsonify({'success': False, 'error': 'Le corps de l\'email ne peut pas être vide'}), 400
+
+    # Chaîner les headers RFC 2822
+    prior = threading.last_touch_event(p.get('events'))
+    if prior and prior.get('message_id'):
+        in_reply_to = prior.get('message_id')
+        references = threading.extend_references(prior.get('references_header'), prior.get('message_id'))
+        parent_event_id = prior.get('id')
+        thread_id = prior.get('thread_id') or prior.get('id')
+    else:
+        in_reply_to = references = parent_event_id = thread_id = None
+
+    if not subject:
+        init_obj = p.get('email_objet') or 'Votre activité'
+        subject = threading.ensure_re(init_obj)
+
+    cid = p.get('campagne_id')
+    resp = gateway.envoyer({
+        'to': p['email'],
+        'nom': p.get('entreprise') or p.get('nom') or '',
+        'subject': subject,
+        'corps': body,
+        'campagne_id': cid,
+        'dry_run': False,
+        'in_reply_to': in_reply_to,
+        'references': references,
+    })
+
+    if not resp.get('success'):
+        return jsonify({'success': False, 'error': resp.get('erreur') or resp.get('statut') or 'Échec envoi'}), 400
+
+    mailbox = resp.get('boite') or {}
+    payload = {
+        'step': 'reponse_manuelle',
+        'objet': subject,
+        'corps': body,
+        'snippet': body[:250],
+        'backend': mailbox.get('backend'),
+        'mailbox_email': mailbox.get('email'),
+        'rfc_message_id': resp.get('message_id'),
+        'in_reply_to': in_reply_to,
+        'references': references,
+    }
+    with get_conn() as conn:
+        cur = conn.execute(
+            """INSERT INTO prospect_events
+               (prospect_id, campagne_id, event_type, payload, mailbox_id, message_id,
+                in_reply_to, references_header, direction, parent_event_id, thread_id)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (prospect_id, cid, 'reponse_manuelle', json.dumps(payload, ensure_ascii=False),
+             mailbox.get('id'), resp.get('message_id'),
+             in_reply_to, references, 'out', parent_event_id, thread_id),
+        )
+        event_id = cur.lastrowid
+        if thread_id is None:
+            conn.execute("UPDATE prospect_events SET thread_id = id WHERE id = ?", (event_id,))
+        conn.execute(
+            """INSERT INTO emails_envoyes
+               (lead_id, message_id_resend, date_envoi, email_destinataire,
+                email_objet, email_corps, statut_envoi)
+               VALUES (?, ?, datetime('now'), ?, ?, ?, 'envoye')""",
+            (prospect_id, resp.get('message_id') or '', p['email'], subject, email_shell.build_html_email(subject, body)),
+        )
+        conn.commit()
+
+    # Canal de contact : une réponse manuelle envoyée = moyen "mail" activé automatiquement
+    prospects_repo.update_prospect(prospect_id, data_extra={'contact_mail': 1})
+
+    return jsonify({'success': True, 'message': 'Email envoyé avec succès', 'message_id': resp.get('message_id')})

@@ -16,7 +16,7 @@ from database.listes import create_liste
 ALLOWED_FIELDS = {
     'description', 'statut', 'segment', 'sequence_id', 'template_id',
     'validation_telegram', 'backend_pref', 'max_touches', 'qualification',
-    'envoi_auto',
+    'envoi_auto', 'validation_relances',
 }
 
 
@@ -47,8 +47,9 @@ def create_campagne(nom: str, **kwargs) -> dict:
         with get_conn() as conn:
             cur = conn.execute(
                 """INSERT INTO campagnes (nom, description, segment, validation_telegram,
-                                          backend_pref, max_touches, qualification, envoi_auto)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                                          backend_pref, max_touches, qualification, envoi_auto,
+                                          validation_relances)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     nom,
                     str(kwargs.get('description') or ''),
@@ -58,6 +59,7 @@ def create_campagne(nom: str, **kwargs) -> dict:
                     int(kwargs.get('max_touches') or 3),
                     kwargs.get('qualification') or '',
                     1 if kwargs.get('envoi_auto', True) else 0,
+                    1 if kwargs.get('validation_relances') else 0,
                 ),
             )
             campagne_id = cur.lastrowid

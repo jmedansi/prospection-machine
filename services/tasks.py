@@ -80,8 +80,8 @@ def task_audit(self, lead_id: int):
 def task_generate_email(self, lead_id: int):
     """Génère l'email de prospection pour un lead audité."""
     try:
-        from services.email_generator import generate_email_for_lead
-        ok = generate_email_for_lead(lead_id)
+        # CONTRAT V2 : redaction MANUELLE - pont V1 coupe
+        ok = self._has_manual_draft(lead_id)  # CONTRAT V2
         return {"status": "completed" if ok else "failed", "lead_id": lead_id}
     except Exception as e:
         self.retry(exc=e, countdown=60)

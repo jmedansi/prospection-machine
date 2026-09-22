@@ -147,8 +147,8 @@ def debug_email_mapping():
     """
     import re
     from copywriter.main import generate_email_content
-    from dashboard.pipeline.email_generation import SITUATION_TO_PROFILE
-    from envoi.email_builder import build_premium_email
+    # CONTRAT V2 : redaction MANUELLE - pont V1 coupe
+    # CONTRAT V2 : redaction MANUELLE - pont V1 coupe
 
     def make_audit_for_label(label: str) -> dict:
         base = {
@@ -207,7 +207,7 @@ def debug_email_mapping():
                 'template_variant': 'v1',
                 'lien_rapport': 'https://audit.incidenx.com/test-slug/',
             }
-            html = build_premium_email(builder_data, verify_link=False)
+            # build_premium_email : générateur V1 supprimé - CONTRAT V2 rédaction manuelle
 
             title_match = re.search(r'<title>([^<]+)</title>', html) if html else None
             title = title_match.group(1) if title_match else 'N/A'

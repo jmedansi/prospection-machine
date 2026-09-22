@@ -1586,10 +1586,21 @@ ${hasEmail ? `
         `;
     }
 
-    function _setEmailPreviewSrc(lead) {
+    async function _setEmailPreviewSrc(lead) {
         const iframe = document.getElementById('email-preview-iframe');
-        if (!iframe || !lead.email_corps) return;
-        const blob = new Blob([lead.email_corps], { type: 'text/html' });
+        if (!iframe) return;
+        let html = (lead._v2Email && lead._v2Email.corps) || null;
+        if (!html && lead.id) {
+            try {
+                const r = await fetch('/api/v2/leads/' + lead.id + '/email', { cache: 'no-store' });
+                const d = await r.json();
+                if (d && d.success && d.email && d.email.corps) html = d.email.corps;
+            } catch (e) { html = null; }
+            if (!iframe.isConnected) return;
+        }
+        if (!html && lead.email_corps) html = lead.email_corps;
+        if (!html) return;
+        const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         iframe.src = url;
         iframe.onload = () => URL.revokeObjectURL(url);
@@ -1632,62 +1643,200 @@ ${hasEmail ? `
     }
 
     function renderSuiviPanel(lead) {
-        const hasSent = !!lead.sent_at;
-        const statutColor = { envoye:'#3b82f6', delivered:'#10b981', bounced:'#ef4444', spam:'#f97316', scheduled:'#6366f1' };
+        const thread = Array.isArray(lead.thread) ? lead.thread : [];
+        const hasThread = thread.length > 0;
+        const statutColor = { envoye:'#3b82f6', delivered:'#10b981', bounced:'#ef4444', spam:'#f97316', scheduled:'#6366f1', recu:'#10b981' };
+        const defaultSubject = lead.email_objet ? (lead.email_objet.toLowerCase().startsWith('re:') ? lead.email_objet : `Re: ${lead.email_objet}`) : 'Re: Notre échange';
+
+        function _cleanUiText(txt) {
+            if (!txt) return { clean: '', quote: '' };
+            const qPatterns = [
+                /(?:\r?\n|^|\s+)(?:Le\s+[\s\S]+?\s+a\s+[eé]crit\s*:)/i,
+                /(?:\r?\n|^|\s+)(?:On\s+[\s\S]+?\s+wrote\s*:)/i,
+                /(?:\r?\n|^|\s+)[-]{2,}\s*(?:Original Message|Message d'origine|Forwarded message)\s*[-]{2,}/i,
+                /(?:\r?\n|^|\s+)(?:De\s*:[^\n]+(?:\r?\n|\s+)Envoy[eé]\s*:[^\n]+)/i,
+                /(?:\r?\n|^|\s+)(?:From\s*:[^\n]+(?:\r?\n|\s+)Sent\s*:[^\n]+)/i,
+                /(?:\r?\n|^)\s*>[^\n]*/
+            ];
+            let pos = txt.length;
+            for (const p of qPatterns) {
+                const m = txt.match(p);
+                if (m && m.index < pos) pos = m.index;
+            }
+            return {
+                clean: txt.slice(0, pos).trim(),
+                quote: txt.slice(pos).trim()
+            };
+        }
+
+        const threadCards = thread.map((t, idx) => {
+            const isInbound = t.direction === 'in' || t.event_type === 'reponse';
+            const bg = isInbound ? 'rgba(16,185,129,0.06)' : 'var(--surface2)';
+            const border = isInbound ? 'rgba(16,185,129,0.3)' : 'var(--border)';
+            const tagColor = isInbound ? '#10b981' : '#3b82f6';
+            const icon = isInbound ? '💬' : (idx === 0 ? '✉️' : '🔄');
+            const dateStr = (t.sent_at || t.created_at || '').replace('T', ' ').slice(0, 16);
+            
+            const rawBody = (t.corps || t.snippet || '').trim();
+            const uiCleaned = isInbound ? _cleanUiText(rawBody) : { clean: rawBody, quote: '' };
+            const bodyClean = uiCleaned.clean || rawBody;
+            const quoteText = t.quote || uiCleaned.quote;
+
+            return `
+            <div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+                    <div style="display:flex;align-items:center;gap:6px">
+                        <span style="font-size:13px">${icon}</span>
+                        <span style="font-size:11px;font-weight:700;color:${tagColor};text-transform:uppercase;letter-spacing:.04em">${escHtml(t.step_label || 'Message')}</span>
+                        ${isInbound ? '<span class="status-badge ok" style="font-size:10px;padding:1px 6px">Réponse prospect</span>' : ''}
+                    </div>
+                    <span style="font-size:11px;color:var(--ink3)">${escHtml(dateStr)}</span>
+                </div>
+                ${t.subject ? `<div style="font-size:12px;font-weight:600;color:var(--ink1)">« ${escHtml(t.subject)} »</div>` : ''}
+                ${bodyClean ? `
+                <div style="font-size:12px;line-height:1.55;color:var(--ink);white-space:pre-wrap;background:${isInbound ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.02)'};padding:8px 10px;border-radius:6px;max-height:220px;overflow-y:auto;border:${isInbound ? '1px solid rgba(16,185,129,0.2)' : 'none'}">
+                    ${escHtml(bodyClean)}
+                </div>` : ''}
+                ${quoteText ? `
+                <details style="margin-top:2px;font-size:11px;color:var(--ink3)">
+                    <summary style="cursor:pointer;opacity:0.75;padding:2px 0;user-select:none">💬 Afficher l'historique cité...</summary>
+                    <div style="font-size:11px;line-height:1.45;color:var(--ink3);white-space:pre-wrap;background:rgba(0,0,0,0.03);padding:6px 8px;border-radius:6px;margin-top:4px;max-height:130px;overflow-y:auto">
+                        ${escHtml(quoteText)}
+                    </div>
+                </details>` : ''}
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:2px">
+                    <div>${t.from_addr ? `De : ${escHtml(t.from_addr)}` : ''}</div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        ${t.is_opened ? '<span style="color:#10b981;font-weight:600" title="Email ouvert">👁 Ouvert</span>' : ''}
+                        ${t.is_clicked ? '<span style="color:#3b82f6;font-weight:600" title="Lien cliqué">🔗 Cliqué</span>' : ''}
+                        <span style="color:${statutColor[t.email_status] || 'var(--ink3)'};font-weight:600">${escHtml(t.email_status || 'envoyé')}</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
         return `
         <div class="panel-section" style="margin-bottom:14px">
-            <h4 style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Niveau de traitement</h4>
+            <h4 style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Niveau de traitement & Statut</h4>
             ${_ulPanelTraitement(lead)}
         </div>
 
         <div class="panel-section" style="margin-bottom:14px">
-            <h4 style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Historique email</h4>
-            ${hasSent ? `
-            <div style="display:flex;flex-direction:column;gap:8px">
-                <div style="display:flex;justify-content:space-between">
-                    <span style="font-size:12px;color:var(--ink3)">Envoyé le</span>
-                    <span style="font-size:12px;font-weight:600">${escHtml((lead.sent_at || '').split('T')[0] || lead.sent_at)}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between">
-                    <span style="font-size:12px;color:var(--ink3)">Statut</span>
-                    <span style="font-size:12px;font-weight:600;color:${statutColor[lead.email_status] || 'var(--ink1)'}">${escHtml(lead.email_status || '—')}</span>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">
-                    <div style="text-align:center;padding:8px;background:var(--surface2);border-radius:8px">
-                        <div style="font-size:18px;font-weight:700;color:${lead.is_opened ? '#10b981' : 'var(--ink3)'}">${lead.is_opened ? '✓' : '—'}</div>
-                        <div style="font-size:10px;color:var(--ink3)">Ouvert</div>
-                    </div>
-                    <div style="text-align:center;padding:8px;background:var(--surface2);border-radius:8px">
-                        <div style="font-size:18px;font-weight:700;color:${lead.is_clicked ? '#10b981' : 'var(--ink3)'}">${lead.is_clicked ? '✓' : '—'}</div>
-                        <div style="font-size:10px;color:var(--ink3)">Cliqué</div>
-                    </div>
-                    <div style="text-align:center;padding:8px;background:var(--surface2);border-radius:8px">
-                        <div style="font-size:18px;font-weight:700;color:${lead.is_replied ? '#f59e0b' : 'var(--ink3)'}">${lead.is_replied ? '✓' : '—'}</div>
-                        <div style="font-size:10px;color:var(--ink3)">Répondu</div>
-                    </div>
-                </div>
-                ${lead.opened_at ? `<div style="font-size:11px;color:var(--ink3)">Ouvert le ${escHtml(lead.opened_at.split('T')[0])}</div>` : ''}
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <h4 style="font-size:10px;font-weight:700;color:var(--ink3);margin:0;text-transform:uppercase;letter-spacing:.06em">
+                    Fil de discussion (${thread.length} échange${thread.length > 1 ? 's' : ''})
+                </h4>
+                <button class="btn bg1 sm" style="font-size:11px;padding:3px 8px" onclick="loadPanelContent(${lead.id}, 'suivi')" title="Actualiser le fil">🔄 Actualiser</button>
             </div>
-            ` : `<p style="font-size:12px;color:var(--ink3)">Aucun email envoyé</p>`}
+            ${hasThread ? `
+            <div style="display:flex;flex-direction:column">
+                ${threadCards}
+            </div>` : `
+            <div style="text-align:center;padding:16px;background:var(--surface2);border-radius:10px;color:var(--ink3);font-size:12px">
+                Aucun email échangé pour l'instant avec ce prospect.
+            </div>`}
+        </div>
+
+        <!-- Zone de réponse / Nouveau message -->
+        <div class="panel-section" style="margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px">
+            <h4 style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px">
+                <span>✉️</span> Répondre / Nouveau message direct
+            </h4>
+            <div style="display:flex;flex-direction:column;gap:8px">
+                <div>
+                    <label style="font-size:11px;color:var(--ink3);font-weight:600;display:block;margin-bottom:3px">Objet du message</label>
+                    <input id="suivi-reply-subject-${lead.id}" type="text" value="${escHtml(defaultSubject)}"
+                           style="width:100%;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--ink);box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--ink3);font-weight:600;display:block;margin-bottom:3px">Corps de l'email</label>
+                    <textarea id="suivi-reply-body-${lead.id}" rows="4" placeholder="Tapez votre message pour ce prospect..."
+                              style="width:100%;font-size:12px;line-height:1.5;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--ink);resize:vertical;box-sizing:border-box"></textarea>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+                    <button id="suivi-reply-btn-${lead.id}" class="btn bp1 sm" style="font-size:12px;padding:7px 14px;font-weight:600"
+                            onclick="window.sendLeadDirectReply(${lead.id})">
+                        ✈️ Envoyer le message
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="panel-section">
-            <h4 style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Actions rapides</h4>
-            <div style="display:flex;flex-direction:column;gap:8px">
-                ${lead.statut_prospection === 'repondu' && lead.audit_id ? `
-                <button class="btn bp1 sm" style="font-size:13px;padding:10px" onclick="sniperSendStep2(${lead.audit_id || lead.id})">
-                    Envoyer rapport (Step 2)
-                </button>` : ''}
-                <button class="btn bg1 sm" style="font-size:13px;padding:10px" onclick="generateEmailForLead(${lead.id})">
-                    ${lead.email_corps ? 'Régénérer email' : 'Générer email'}
+            <h4 style="font-size:10px;font-weight:700;color:var(--ink3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Actions rapides de qualification</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <button class="btn bp1 sm" style="font-size:12px;padding:8px" onclick="unifiedLeadsChangeStatut(${lead.id},'rdv_obtenu');loadPanelContent(${lead.id},'suivi')">
+                    ✅ RDV obtenu
                 </button>
-                ${lead.statut_prospection === 'step1_envoye' || lead.statut === 'envoye' ? '' : `
-                <button class="btn bg1 sm" style="font-size:13px;padding:10px" onclick="sendTestEmail(${lead.id})">
-                    Envoyer email test
-                </button>`}
+                <button class="btn bg1 sm" style="font-size:12px;padding:8px" onclick="unifiedLeadsChangeStatut(${lead.id},'a_relancer_plus_tard');loadPanelContent(${lead.id},'suivi')">
+                    ⏳ À relancer + tard
+                </button>
+                <button class="btn bg1 sm" style="font-size:12px;padding:8px" onclick="unifiedLeadsChangeStatut(${lead.id},'pas_interesse');loadPanelContent(${lead.id},'suivi')">
+                    ✖ Pas intéressé
+                </button>
+                <button class="btn bd sm" style="font-size:12px;padding:8px" onclick="unifiedLeadsChangeStatut(${lead.id},'ne_plus_contacter');loadPanelContent(${lead.id},'suivi')">
+                    🚫 Ne plus contacter
+                </button>
             </div>
         </div>`;
     }
+
+    // Helper global pour envoyer une réponse directe depuis le panneau suivi
+    window.sendLeadDirectReply = async function sendLeadDirectReply(leadId) {
+        const subEl = document.getElementById('suivi-reply-subject-' + leadId);
+        const bodyEl = document.getElementById('suivi-reply-body-' + leadId);
+        const btn = document.getElementById('suivi-reply-btn-' + leadId);
+
+        const subject = subEl ? subEl.value.trim() : '';
+        const body = bodyEl ? bodyEl.value.trim() : '';
+
+        if (!body) {
+            if (typeof _t === 'function') _t('Veuillez saisir un corps de message', 'warning');
+            else alert('Veuillez saisir un corps de message');
+            if (bodyEl) bodyEl.focus();
+            return;
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Envoi en cours...';
+        }
+
+        try {
+            const resp = await fetch('/api/v2/leads/' + leadId + '/reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subject: subject, body: body }),
+            });
+            const data = await resp.json();
+            if (data.success) {
+                if (typeof _t === 'function') _t('Email envoyé avec succès !', 'success');
+                if (bodyEl) bodyEl.value = '';
+                // Recharger le panneau suivi pour voir le message apparaître immédiatement dans le fil
+                loadPanelContent(leadId, 'suivi');
+            } else {
+                if (typeof _t === 'function') _t('Erreur : ' + (data.error || 'Échec envoi'), 'error');
+                else alert('Erreur : ' + (data.error || 'Échec envoi'));
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '✈️ Envoyer le message';
+                }
+            }
+        } catch (e) {
+            if (typeof _t === 'function') _t('Erreur réseau : ' + e.message, 'error');
+            else alert('Erreur réseau : ' + e.message);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '✈️ Envoyer le message';
+            }
+        }
+    };
+
+    window.openLeadPanel = openLeadPanel;
+    window.closeSidePanel = closeSidePanel;
+    window.switchPanelTab = switchPanelTab;
+    window.loadPanelContent = loadPanelContent;
+    window.renderSuiviPanel = renderSuiviPanel;
 }
 
 // ---------------------------------------------------------------------------

@@ -31,13 +31,20 @@ class RedacteurAgent(BaseAgent):
         if not lead_ids:
             return self.fail("lead_ids est requis et ne peut pas être vide")
 
-        from services.email_generator import generate_email_for_lead
-
+        # NOTE (purge V1 définitive) : plus aucun pont vers le générateur auto.
+        # La rédaction est 100 % MANUELLE par l'agent : chaque email est écrit à la
+        # main dans leads_audites.email_objet / email_corps, en s'appuyant sur le
+        # récap IA (prospects.data_extra) + nom entreprise + dirigeant trouvé +
+        # recherches complémentaires. AUCUNE génération automatique.
         success_count, errors = 0, []
 
         for lead_id in lead_ids:
             try:
-                ok = generate_email_for_lead(lead_id)
+                # CONTRAT V2 : la r?daction est MANUELLE. On v?rifie seulement
+                # que l'email a bien ?t? r?dig? ? la main (email_objet + email_corps).
+                from database.repos import leads_repo
+                lead = leads_repo.get(lead_id)
+                ok = bool((lead.get("email_objet") or "").strip() and (lead.get("email_corps") or "").strip())
                 if ok:
                     success_count += 1
                 else:

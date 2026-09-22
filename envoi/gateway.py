@@ -250,10 +250,11 @@ def _dispatch(mailbox, to_str, message):
 
     backend = ((mailbox or {}).get('backend') or 'smtp') if mailbox else 'smtp'
 
-    # ── Tracking maison (pixel + clic, backend SMTP) : le Message-ID doit exister
-    #    AVANT le build HTML pour être encodé dans les liens.
+    # ── Tracking maison (pixel + clic, tous backends) : le Message-ID doit
+    #    exister AVANT le build HTML pour être encodé dans les liens. Si le
+    #    corps contient déjà le pixel (idempotence), apply_tracking ne touche à rien.
     from envoi import track_links
-    if backend == 'smtp' and not dry_run and track_links.tracking_enabled():
+    if not dry_run and track_links.tracking_enabled():
         message_id = message.get('message_id')
         if not message_id:
             from email.utils import make_msgid

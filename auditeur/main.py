@@ -279,8 +279,8 @@ def run_tech_audit_sqlite(limit=None, lead_names=None, lead_ids=None):
             if not audit_result.get('audit_failed', False) and audit_result.get('template_used') not in ('ignored', 'failed'):
                 try:
                     print(f"   [Email Generator] Génération de l'email pour {nom}...")
-                    from services.email_generator import generate_email_for_lead
-                    if generate_email_for_lead(lead_id):
+                    # CONTRAT V2 : redaction MANUELLE - pont V1 coupe
+                    if self._has_manual_draft(lead_id):  # CONTRAT V2
                         print(f"   [Email Generator] [OK] Email généré et stocké pour {nom}")
                     else:
                         logger.warning(f"Email generation échoue pour {nom} (lead_id={lead_id})")

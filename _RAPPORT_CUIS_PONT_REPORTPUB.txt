@@ -1,0 +1,8 @@
+============================================================
+RAPPORT COUPE PONT report_publishing.py  (ts=20260922_142346)
+============================================================
+   imports V1 retires        : 0
+   appels generate_...():False : 1
+   occurrences restantes 'generate_email_for_lead' : 1
+   py_compile exit           : 0
+   backup                   : D:\prospection-machine\Archives\purge_pont_report_publishing_20260922_142346\orig_report_publishing.py.bak
