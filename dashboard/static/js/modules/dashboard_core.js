@@ -952,7 +952,7 @@
 
             // Politique de contact (Migré de Sniper)
             let contactHtml = '';
-            const hasEmailValide = !!lead.email_valide_audit;
+            const hasEmailValide = !!lead.email_valide_audit || !!email;
             const catchAll = !!lead.is_catch_all;
             const hasPhone = !!(lead.telephone || lead.telephone_sniper);
             

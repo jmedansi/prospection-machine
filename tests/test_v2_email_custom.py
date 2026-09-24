@@ -77,7 +77,7 @@ def test_send_relance_custom_pos1_sans_template_neq_crash(tmp_db, fake_gateway):
     from core.state_machine import transition_prospect
     transition_prospect(pid, 'en_sequence', reason='initial (test)')
     from envoi import sequence_engine as seq
-    res = seq.send_relance(oid, pid)  # plantait sur prep['template'].get('id')
+    res = seq.send_relance(oid, pid, approval='auto')  # relance validée (lot ✅) — plantait sur prep['template'].get('id')
     assert res['success'] is True
     assert res['statut'] == 'envoye' and res['step'] == 'relance_1'
     assert len(fake_gateway) == 1
@@ -85,8 +85,9 @@ def test_send_relance_custom_pos1_sans_template_neq_crash(tmp_db, fake_gateway):
     assert event and event[0]['payload'].get('template_id') is None
 
 
-def test_send_initial_sans_email_ni_template_pas_template(tmp_db, fake_gateway):
-    """Ni email personnalisé ni template de séquence → verrou pas_template (pas de crash)."""
+def test_send_initial_sans_email_ia_pas_email_ia(tmp_db, fake_gateway):
+    """Ni email rédigé (IA/manuel) ni template de séquence → verrou pas_email_ia
+    (Option A : l'envoi est BLOQUÉ, aucun repli mécanique sur template)."""
     oid = _campagne()
     from database import prospects_repo
     from core.objectif_registry import get_or_create_liste
@@ -103,5 +104,5 @@ def test_send_initial_sans_email_ni_template_pas_template(tmp_db, fake_gateway):
     from envoi import sequence_engine as seq
     res = seq.send_initial(oid, pid)
     assert res['success'] is False
-    assert res['statut'] == 'pas_template'
+    assert res['statut'] == 'pas_email_ia'
     assert fake_gateway == []

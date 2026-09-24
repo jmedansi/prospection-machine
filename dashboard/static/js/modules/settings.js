@@ -58,9 +58,42 @@ async function loadSettings() {
 // ── Boîtes d'expédition (mailboxes) ────────────────────────────────────
 const _escM = s => (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+async function loadEnvoiBackend() {
+    const radios = document.querySelectorAll('input[name="envoi-backend"]');
+    if (!radios.length) return;
+    try {
+        const r = await fetch('/api/settings/envoi-backend?_t=' + Date.now());
+        const d = await r.json();
+        if (!d.success) return;
+        radios.forEach(el => { el.checked = el.value === d.backend; });
+        const info = document.getElementById('envoi-backend-info');
+        if (info) {
+            const n = d.disponibles || {};
+            info.textContent = `Actuel : ${d.backend || 'auto'} — boîtes disponibles : SMTP ${n.smtp || 0}, Resend ${n.resend || 0}`;
+        }
+    } catch (e) { /* silencieux : l'onglet reste utilisable */ }
+}
+
+async function saveEnvoiBackend() {
+    const checked = document.querySelector('input[name="envoi-backend"]:checked');
+    if (!checked) return;
+    try {
+        const r = await fetch('/api/settings/envoi-backend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ backend: checked.value }),
+        });
+        const d = await r.json();
+        if (!d.success) { showToast(d.error || 'Erreur', 'error'); return; }
+        showToast('Méthode d\'envoi mise à jour : ' + d.backend, 'success');
+        loadEnvoiBackend();
+    } catch (e) { showToast('Erreur réseau', 'error'); }
+}
+
 async function loadMailboxes() {
     const tbody = document.getElementById('mailboxes-tbody');
     if (!tbody) return;
+    loadEnvoiBackend();
     try {
         const r = await fetch('/api/mailboxes?_t=' + Date.now());
         const d = await r.json();

@@ -109,12 +109,27 @@ def api_auto_send_set():
 
 @campagnes_bp.route('/api/v2/campagnes/<int:campagne_id>/send', methods=['POST'])
 def api_send_campagne_now(campagne_id):
-    """Déclenchement manuel (ignore envoi_auto + kill-switch) : initial + relances dues."""
+    """Déclenchement manuel (ignore envoi_auto + kill-switch) : initial + relances dues.
+
+    `liste_id` optionnel : bouton « Envoyer » d'une liste précise → restreint
+    l'initial ET les relances aux prospects de cette liste uniquement (sinon
+    toute la campagne).
+    """
     from core.orchestration import run_auto_send, run_relances
     data = request.get_json(silent=True) or {}
-    limit = int(data.get('limit', 0) or 10)
-    init_res = run_auto_send(campagne_id, limit_per_campagne=limit, manual=True)
-    rel_res = run_relances(campagne_id, limit_per_campagne=limit, manual=True)
+    raw_limit = data.get('limit', 0)
+    limit = None
+    try:
+        if raw_limit is not None and int(raw_limit) > 0:
+            limit = int(raw_limit)
+    except (TypeError, ValueError):
+        limit = None
+    liste_id = data.get('liste_id')
+    lead_ids = data.get('lead_ids') or None
+    init_res = run_auto_send(campagne_id, limit_per_campagne=limit, manual=True,
+                             liste_id=liste_id, prospect_ids=lead_ids)
+    rel_res = run_relances(campagne_id, limit_per_campagne=limit, manual=True,
+                           liste_id=liste_id, prospect_ids=lead_ids)
     if not init_res['success'] or not rel_res['success']:
         return jsonify({'success': False, 'error': init_res.get('error') or rel_res.get('error')}), 400
     return jsonify({
@@ -372,6 +387,73 @@ def api_desinscrire_prospect(prospect_id):
     return jsonify(res), (200 if res['success'] else 404)
 
 
+def _coerce_ids(raw) -> list[int]:
+    if not raw:
+        return []
+    if isinstance(raw, (int, str)):
+        raw = [raw]
+    out = []
+    for x in raw:
+        try:
+            out.append(int(x))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+@campagnes_bp.route('/api/v2/leads/bulk/ecarter', methods=['POST'])
+def api_bulk_ecarter():
+    """Écarter / réintégrer une sélection de prospects en une seule requête."""
+    data = request.get_json(silent=True) or {}
+    ids = _coerce_ids(data.get('lead_ids'))
+    if not ids:
+        return jsonify({'success': False, 'error': 'Aucun lead_id fourni'}), 400
+    ecarte = bool(data.get('ecarte', True))
+    ok, errors = 0, []
+    for pid in ids:
+        res = prospects_repo.set_ecarte(pid, ecarte)
+        if res['success']:
+            ok += 1
+        else:
+            errors.append({'prospect_id': pid, 'error': res.get('error') or 'introuvable'})
+    return jsonify({'success': True, 'updated': ok, 'errors': errors, 'ecarte': ecarte})
+
+
+@campagnes_bp.route('/api/v2/leads/bulk/desinscrire', methods=['POST'])
+def api_bulk_desinscrire():
+    """Désinscrire / réactiver une sélection de prospects (opposition globale)."""
+    data = request.get_json(silent=True) or {}
+    ids = _coerce_ids(data.get('lead_ids'))
+    if not ids:
+        return jsonify({'success': False, 'error': 'Aucun lead_id fourni'}), 400
+    en = bool(data.get('ne_plus_contacter', True))
+    ok, errors = 0, []
+    for pid in ids:
+        res = prospects_repo.set_ne_plus_contacter(pid, en, raison=data.get('raison') or 'desinscription')
+        if res['success']:
+            ok += 1
+        else:
+            errors.append({'prospect_id': pid, 'error': res.get('error') or 'introuvable'})
+    return jsonify({'success': True, 'updated': ok, 'errors': errors, 'ne_plus_contacter': en})
+
+
+@campagnes_bp.route('/api/v2/leads/bulk', methods=['DELETE'])
+def api_bulk_delete():
+    """Suppression définitive d'une sélection de prospects."""
+    data = request.get_json(silent=True) or {}
+    ids = _coerce_ids(data.get('lead_ids'))
+    if not ids:
+        return jsonify({'success': False, 'error': 'Aucun lead_id fourni'}), 400
+    ok, errors = 0, []
+    for pid in ids:
+        res = prospects_repo.delete_prospect(pid)
+        if res['success']:
+            ok += 1
+        else:
+            errors.append({'prospect_id': pid, 'error': res.get('error') or 'introuvable'})
+    return jsonify({'success': True, 'deleted': ok, 'errors': errors})
+
+
 @campagnes_bp.route('/api/v2/leads/<int:prospect_id>', methods=['GET'])
 def api_get_prospect(prospect_id):
     """Détail d'un prospect (file humaine) : infos + events (payload JSON parsé)."""
@@ -393,23 +475,22 @@ def api_transition_prospect(prospect_id):
 
 
 def _render_v2_email(prospect):
-    """Rendu du prochain email d'un prospect v2, tel qu'il sera envoyé (HTML final).
-    
+    """Rendu de la PREMIÈRE email (position 0, « Envoi initial ») d'un prospect v2,
+    tel qu'il sera envoyé (HTML final).
+
+    RÈGLE PRODUIT : l'onglet Email affiche TOUJOURS la 1re email (initiale), jamais
+    une relance — l'initial est manuel et les relances passent par validation Telegram.
     Source de vérité absolue : L'email rédigé pour le prospect (agent IA / utilisateur).
     Repli : Le template de la campagne si aucun email personnalisé n'est présent.
     """
-    from envoi.sequence_engine import next_position_for, get_custom_step_email
-    from envoi import email_shell, template_registry, threading
+    from envoi.sequence_engine import get_custom_step_email
+    from envoi import email_shell, template_registry
 
     cid = prospect.get('campagne_id')
     obj = campagnes_repo.get_campagne(cid) if cid else None
     profil = (obj or {}).get('objectif_principale') or ''
 
     position, step_label = 0, 'Envoi initial'
-    if prospect.get('statut') != 'qualifie':
-        pos = next_position_for(prospect.get('statut'))
-        if pos is not None:
-            position, step_label = pos, 'Relance %d' % pos
 
     # 1. Priorité 1 : Email rédigé pour le prospect (agent IA ou manuel)
     custom = get_custom_step_email(prospect, position)
@@ -429,8 +510,6 @@ def _render_v2_email(prospect):
             rendered = template_registry.render_template(template, prospect)
             objet = rendered['objet']
             corps = rendered['corps']
-            if position > 0:
-                objet = threading.ensure_re(objet)
             return {
                 'objet': objet, 'corps': email_shell.build_html_email(objet, corps),
                 'corps_texte': corps, 'profil': profil, 'step': position,
@@ -451,6 +530,46 @@ def api_v2_lead_email(prospect_id):
     if not p:
         return jsonify({'success': False, 'error': 'Prospect introuvable'}), 404
     return jsonify({'success': True, 'email': _render_v2_email(p)})
+
+
+@campagnes_bp.route('/api/v2/leads/<int:prospect_id>/email-preview', methods=['GET'])
+def api_v2_lead_email_preview(prospect_id):
+    """Prévisualisation du contenu EXACT qui SERA envoyé pour la touche demandée.
+
+    Partage le même code que l'envoi (`sequence_engine.prepare_initial` /
+    `prepare_step` en dry_run) → la prévisualisation reflète la source de
+    vérité (`data_extra.email_*` / colonnes email_* du prospect), jamais un
+    template de séquence.
+
+    Query : `?position=0|1|2|3` (0 = initial par défaut).
+    Retour : objet + corps (texte déjà rendu, prêt pour l'envoi), `source` :
+    - 'ia'               → contenu rédigé (source de vérité) ;
+    - 'template_fallback'→ code mort côté Option A (toujours 'ia' ici), réservé.
+    400 `raison='pas_email_ia'` si aucune étape de la séquence n'a de contenu
+    rédigé → l'UI affiche un message « email non rédigé ».
+    """
+    from envoi import sequence_engine
+
+    p = prospects_repo.get_prospect(prospect_id)
+    if not p:
+        return jsonify({'success': False, 'error': 'Prospect introuvable'}), 404
+    cid = p.get('campagne_id')
+    position = request.args.get('position', default=0, type=int)
+    if position == 0:
+        prep = sequence_engine.prepare_initial(cid, prospect_id, dry_run=True)
+    else:
+        prep = sequence_engine.prepare_step(cid, prospect_id, position,
+                                            'Relance %d' % position, dry_run=True)
+    if not prep.get('ok'):
+        return jsonify({'success': False,
+                        'raison': prep.get('raison'),
+                        'message': prep.get('message') or prep.get('raison')}), 400
+    return jsonify({
+        'success': True,
+        'objet': prep['objet'],
+        'corps': prep['corps'],
+        'source': 'ia' if prep.get('template') is None else 'template_fallback',
+    })
 
 
 @campagnes_bp.route('/api/v2/leads/<int:prospect_id>/email/test', methods=['POST'])
@@ -487,7 +606,12 @@ def api_v2_lead_email_test(prospect_id):
 
 @campagnes_bp.route('/api/v2/leads/<int:prospect_id>/email/send', methods=['POST'])
 def api_v2_lead_email_send(prospect_id):
-    """Envoie réellement la prochaine touche du prospect (w/ en_sequence → relance)."""
+    """Envoie la prochaine touche du prospect.
+
+    - `qualifie`   → initial : envoi MANUEL direct (règle : 1er mail manuel, sans exception).
+    - sinon        → relance : TOUJOURS via validation Telegram (approval='telegram'),
+      aucune relance ne part sans ✅.
+    """
     from envoi import sequence_engine
 
     p = prospects_repo.get_prospect(prospect_id)
@@ -497,7 +621,7 @@ def api_v2_lead_email_send(prospect_id):
     if p.get('statut') == 'qualifie':
         res = sequence_engine.send_initial(cid, prospect_id, humanize_on=False)
     else:
-        res = sequence_engine.send_relance(cid, prospect_id, humanize_on=False)
+        res = sequence_engine.send_relance(cid, prospect_id, humanize_on=False, approval='telegram')
     if not isinstance(res, dict):
         res = {'message': str(res)}
     hard_fail = res.get('success') is False and not res.get('statut')

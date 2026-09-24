@@ -39,7 +39,13 @@ def _prospect(oid, email='contact@dupont.fr'):
     lid = get_or_create_liste(oid)
     return prospects_repo.insert_prospect(lid, nom='Boulangerie Dupont', email=email,
                                           prenom='M. Dupont', entreprise='Boulangerie Dupont',
-                                          secteur='Boulangerie', site_web='https://dupont.fr')['prospect_id']
+                                          secteur='Boulangerie', site_web='https://dupont.fr',
+                                          data_extra={
+                                              # Source de vérité du tunnel v2 : l'email RÉDIGÉ.
+                                              # Sans lui, l'envoi serait bloqué (raison 'pas_email_ia').
+                                              'email_objet': 'Une proposition pour {{entreprise}}',
+                                              'email_corps': 'Bonjour {{prenom}},\n\nVoici ma proposition.',
+                                          })['prospect_id']
 
 
 @pytest.fixture

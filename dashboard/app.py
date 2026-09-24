@@ -63,7 +63,7 @@ def create_app():
     from dashboard.routes import (
         leads_bp, audits_bp, emails_bp, campaigns_bp,
         stats_bp, review_bp, pages_bp, rapports_bp, health_bp,
-        sniper_bp, deploy_bp, templates_bp, webhooks_bp, lists_bp,
+        sniper_bp, deploy_bp, templates_bp, webhooks_bp,
         tasks_bp, ia_bp, objectifs_bp, campagnes_bp, listes_bp, replies_bp,
         mailboxes_bp
     )
@@ -81,7 +81,6 @@ def create_app():
     app.register_blueprint(deploy_bp)
     app.register_blueprint(templates_bp)
     app.register_blueprint(webhooks_bp)
-    app.register_blueprint(lists_bp)
     app.register_blueprint(tasks_bp)
     app.register_blueprint(ia_bp)
     app.register_blueprint(objectifs_bp)
@@ -89,10 +88,6 @@ def create_app():
     app.register_blueprint(listes_bp)
     app.register_blueprint(replies_bp)
     app.register_blueprint(mailboxes_bp)
-
-    # Barrière de décommissionnement du pipeline v1 (routes V1-PUR → 410 Gone)
-    from dashboard.routes.v1_disabled import disable_v1
-    disable_v1(app)
 
     # Discovery of child modules (Phase 4.2)
     def _discover_modules():

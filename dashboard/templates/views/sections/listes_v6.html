@@ -169,7 +169,7 @@
             <button class="ld-btn ld-indigo" onclick="ListesModule.runIA('redact')" title="Rédaction des emails IA (objets + corps, aucun envoi)">✍️ Rédiger</button>
             <button class="ld-btn ld-sky" onclick="ListesModule.runIA('scan')" title="Actualiser : relit le CSV complété et réintègre les résultats">🔄 Actualiser</button>
             <span class="lists-toolbar-sep"></span>
-            <button class="ld-btn ld-green" onclick="ListesModule.sendCampaign()" title="Envoi manuel de la campagne porteuse (initials + relances dues)">📤 Envoi</button>
+            <button id="liste-btn-send" class="ld-btn ld-green" onclick="ListesModule.sendList()" title="Envoyer tous les emails de cette liste uniquement (tracking d'ouverture et de clic activé)">📤 Envoyer la liste</button>
             <button class="ld-btn ld-sky" onclick="ListesModule.openImport()" title="Importer des prospects dans cette liste (fichier CSV ou JSON)">📥 Importer</button>
             <button class="ld-btn ld-ghost lists-toolbar-toggle" onclick="ListesModule.toggleToolbar()" title="Plus d'actions">▸</button>
             <span id="lists-toolbar-extra" class="lists-toolbar-extra">
@@ -179,6 +179,28 @@
               <button class="ld-btn ld-red" onclick="ListesModule.removeActive()" title="Supprimer la liste ET ses prospects (irréversible)">🗑 Supprimer</button>
             </span>
             <input type="file" id="liste-import-input" hidden accept=".csv,.json,text/csv,application/json">
+          </div>
+        </div>
+
+        <!-- ─── Suivi en temps réel de l'envoi de la liste ─────────── -->
+        <div id="liste-send-progress-banner" class="lists-send-progress-card" style="display: none;">
+          <div class="lists-send-progress-top">
+            <div class="lists-send-progress-info">
+              <span class="lists-send-spinner"></span>
+              <span id="liste-send-progress-title" class="lists-send-progress-title">Envoi de la liste en cours…</span>
+              <span id="liste-send-progress-counter" class="lists-send-counter"><strong>0</strong> / 0 emails</span>
+            </div>
+            <div class="lists-send-progress-actions">
+              <span id="liste-send-progress-pct" class="lists-send-badge">0%</span>
+              <button id="liste-send-cancel-btn" class="ld-btn ld-red sm" onclick="ListesModule.cancelSend()" title="Interrompre l'envoi" style="display:none;padding:2px 8px;font-size:11px">Arrêter</button>
+            </div>
+          </div>
+          <div class="lists-send-progress-bar-bg">
+            <div id="liste-send-progress-bar-fill" class="lists-send-progress-bar-fill" style="width: 0%"></div>
+          </div>
+          <div class="lists-send-progress-footer">
+            <span id="liste-send-current-lead" class="lists-send-lead-info">Initialisation du tunnel d'envoi…</span>
+            <span class="lists-send-tracking-tag">⚡ Tracking actif (ouvertures + clics)</span>
           </div>
         </div>
 

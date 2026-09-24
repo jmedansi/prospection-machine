@@ -1,18 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-agents/expediteur/agent.py — ExpéditeurAgent
+agents/expediteur/agent.py — ExpéditeurAgent (PURGE V1 DÉFINITIVE)
 
-Responsabilité unique : envoyer les emails approuvés via Resend
-et enregistrer chaque envoi dans emails_envoyes.
+⚠️ STUB DE COMPATIBILITÉ — ce module ne lit plus leads_audites et ne lance plus
+d'envoi batch. Il est conservé UNIQUEMENT parce que la coquille V5 (archive)
+charge encore `agents/` au démarrage.
 
-Entrée  : lead_ids[] (optionnel — si None, envoie tous les approuvés)
-Sortie  : AgentResult { success_count, failed_count, results[] }
+PURGE V1 DÉFINITIVE : tout envoi RÉEL (initial ou relance) passe par le tunnel
+v2 — `sequence_engine.send_initial` / `send_relance` → `gateway.envoyer` —
+déclenché par l'utilisateur depuis le dashboard :
+    - bouton « ▶ Envoyer » d'une campagne  → POST /api/v2/campagnes/<id>/send
+    - bouton panel « Envoyer le mail »     → POST /api/v2/leads/<id>/email/send
+    - bouton « Envoyer » d'une liste       → POST /api/v2/listes/<id>/send
+Aucune route legacy /api/email/send* n'émet plus quoi que ce soit :
+`run()` échoue toujours avec un message explicite.
+
+`send_test()` est conservé mais passe par `sequence_engine.prepare_initial`
+(contenu FRAIS rédigé = source de vérité) puis `gateway.envoyer` avec
+`no_quota=True` / `ignore_quota=True` (envoi réel vers soi-même, aucun quota
+boîte consommé, aucune transition / event / insertion emails_envoyes).
 """
 from __future__ import annotations
-import threading
-import os
 from core.result import BaseAgent, AgentResult, timed
-from services.job_tracker import _email_job, reset_email_job
+from services.job_tracker import _email_job
 
 
 class ExpediteurAgent(BaseAgent):
@@ -21,131 +31,21 @@ class ExpediteurAgent(BaseAgent):
     @timed("expediteur")
     def run(self, lead_ids: list[int] | None = None) -> AgentResult:
         """
-        Lance l'envoi des emails approuvés en arrière-plan.
+        STUB (purge V1) : l'envoi batch V1 est désactivé.
 
-        Args:
-            lead_ids: Liste d'IDs à envoyer (None = tous les approuvés)
-
-        Returns:
-            AgentResult.data = { "message": str, "total": int }
+        Tous les envois passent par le tunnel v2 piloté par l'utilisateur
+        (route /api/v2/*). Ce return échoue volontairement — aucun email ne
+        peut partir par ce chemin legacy.
         """
-        if _email_job.get("running"):
-            return self.fail("Un envoi est déjà en cours", error_type="ConflictError")
-
-        from database.repos import audits_repo
-        from database.repos import emails_repo
-        # Envoi backends: Resend (API) et SMTP direct
-        from envoi.resend_sender import send_prospecting_email as resend_send
-        from envoi.smtp_sender import send_prospecting_email_smtp
-
-        candidats = audits_repo.get_ready_for_email()
-
-        filtered = [
-            l for l in candidats
-            if l.get("approuve")
-            and (lead_ids is None or str(l.get("lead_id")) in [str(x) for x in lead_ids])
-        ]
-
-        if not filtered:
-            return self.fail("Aucun email approuvé à envoyer",
-                             error_type="EmptyQueueError")
-
-        reset_email_job(total=len(filtered))
-
-        def _run():
-            try:
-                for lead in filtered:
-                    if _email_job.get("cancelled"):
-                        break
-                    _email_job["current"] += 1
-                    nom          = lead.get("nom", "prospect")
-                    email        = (lead.get("email") or "").strip()
-                    email_objet  = (lead.get("email_objet") or "").strip()
-                    email_corps  = (lead.get("email_corps") or "").strip()
-                    lien         = (lead.get("lien_rapport") or lead.get("site_web") or
-                                    "https://audit.incidenx.com")
-
-                    if not email or not email_corps:
-                        _email_job["failed"] += 1
-                        _email_job["results"].append({
-                            "nom": nom, "statut": "skip",
-                            "raison": "Email ou corps manquant",
-                        })
-                        continue
-
-                    html = email_corps
-                    if not email_corps.strip().startswith("<"):
-                        html = f"<!DOCTYPE html><html><body>{email_corps.replace(chr(10), '<br>')}</body></html>"
-
-                    use_smtp = bool(os.environ.get('USE_SMTP_SEND') or os.environ.get('SMTP_HOST'))
-                    if use_smtp:
-                        result = send_prospecting_email_smtp(
-                            prospect_email=email,
-                            prospect_nom=nom,
-                            email_objet=email_objet,
-                            email_corps=html,
-                            lien_rapport=lien,
-                            dry_run=False,
-                        )
-                    else:
-                        result = resend_send(
-                            prospect_email=email,
-                            prospect_nom=nom,
-                            email_objet=email_objet,
-                            email_corps=html,
-                            lien_rapport=lien,
-                            dry_run=False,
-                        )
-
-                    if result.get("success"):
-                        record_id = emails_repo.insert({
-                            "lead_id":            lead.get("lead_id"),
-                            "message_id_resend":  result.get("message_id", ""),
-                            "email_destinataire": email,
-                            "email_objet":        email_objet,
-                            "email_corps":        html,
-                            "lien_rapport":       lien,
-                            "statut_envoi":       "envoye",
-                        })
-                        from database.repos import leads_repo
-                        leads_repo.update_statut(lead["lead_id"], "envoye")
-                        # Planifier les séquences de relance auto
-                        try:
-                            from services.email_sequence_service import EmailSequenceService
-                            EmailSequenceService().plan_sequences_for_lead(lead.get("la_id"), record_id)
-                        except Exception as e:
-                            self.logger.error(f"Erreur plan_sequences_for_lead: {e}")
-                            
-                        # Marquer step1_envoye pour que IMAP poller puisse détecter les réponses
-                        try:
-                            from database.connection import get_conn
-                            with get_conn() as conn:
-                                conn.execute(
-                                    "UPDATE leads_audites SET statut_prospection='step1_envoye' WHERE lead_id=?",
-                                    (lead.get("lead_id"),)
-                                )
-                                conn.commit()
-                        except Exception:
-                            pass
-                        _email_job["success"] += 1
-                        _email_job["results"].append({"nom": nom, "statut": "ok"})
-                    else:
-                        _email_job["failed"] += 1
-                        _email_job["results"].append({
-                            "nom": nom, "statut": "error",
-                            "raison": result.get("erreur"),
-                        })
-            except Exception as e:
-                self.logger.error(f"Erreur envoi batch: {e}")
-            finally:
-                _email_job["running"] = False
-
-        threading.Thread(target=_run, daemon=True).start()
-        self.logger.info(f"Envoi lancé — {len(filtered)} emails")
-        return self.ok({"message": f"Envoi de {len(filtered)} emails lancé", "total": len(filtered)})
+        return self.fail(
+            "ExpéditeurAgent V1 désactivé (purge V1 définitive) : utilisez le "
+            "bouton « Envoyer » de la campagne / de la liste dans le dashboard "
+            "(routes /api/v2/campagnes/<id>/send, /api/v2/listes/<id>/send).",
+            error_type="V1Disabled",
+        )
 
     def status(self) -> dict:
-        """État courant du job d'envoi."""
+        """État courant du job d'envoi (V1 résiduel)."""
         return {
             "running":  _email_job.get("running", False),
             "current":  _email_job.get("current", 0),
@@ -158,52 +58,49 @@ class ExpediteurAgent(BaseAgent):
     @timed("expediteur")
     def send_test(self, lead_id: int, to_email: str) -> AgentResult:
         """
-        Envoie un email de test à une adresse spécifique.
+        Envoi de TEST via le tunnel v2 : contenu rédigé (source de vérité,
+        relu à l'instant T) + `gateway.envoyer` avec `no_quota=True` /
+        `ignore_quota=True` → envoi réel vers `to_email` (adresse de test,
+        PAS le prospect) sans aucun quota boîte consommé, sans transition
+        d'état ni event ni insertion emails_envoyes.
 
         Args:
-            lead_id:  Lead dont on veut envoyer le contenu
-            to_email: Adresse de réception du test
+            lead_id:  Prospect v2 dont on veut tester le contenu
+            to_email: Adresse de réception du test (soi-même)
 
         Returns:
             AgentResult.data = { "message_id": str }
         """
-        from database.repos import leads_repo
-        from envoi.resend_sender import send_prospecting_email as resend_send
-        from envoi.smtp_sender import send_prospecting_email_smtp
+        from database import prospects as prospects_repo
+        from envoi import sequence_engine, gateway
 
-        lead = leads_repo.get_by_id(lead_id)
-        if not lead:
-            return self.fail(f"Lead {lead_id} introuvable", error_type="NotFoundError")
+        prospect = prospects_repo.get_prospect(lead_id)
+        if not prospect:
+            return self.fail(f"Prospect {lead_id} introuvable", error_type="NotFoundError")
 
-        email_corps = lead.get("email_corps")
-        email_objet = lead.get("email_objet")
-
-        if not email_corps:
-            return self.fail("Pas d'email généré pour ce lead", error_type="MissingDataError")
-
-        use_smtp = bool(os.environ.get('USE_SMTP_SEND') or os.environ.get('SMTP_HOST'))
-        if use_smtp:
-            result = send_prospecting_email_smtp(
-                prospect_email=to_email,
-                prospect_nom=lead.get("nom", "Test"),
-                email_objet=f"[TEST] {email_objet or 'Email de test'}",
-                email_corps=email_corps,
-                lien_rapport=lead.get("lien_rapport", ""),
-                dry_run=False,
-            )
-        else:
-            result = resend_send(
-                prospect_email=to_email,
-                prospect_nom=lead.get("nom", "Test"),
-                email_objet=f"[TEST] {email_objet or 'Email de test'}",
-                email_corps=email_corps,
-                lien_rapport=lead.get("lien_rapport", ""),
-                dry_run=False,
+        cid = prospect.get("campagne_id")
+        prep = sequence_engine.prepare_initial(cid, lead_id, dry_run=True)
+        if not prep.get("ok"):
+            return self.fail(
+                f"Aucun email prêt à tester pour le prospect {lead_id} : "
+                f"{prep.get('raison') or prep.get('message') or 'contenu manquant'}",
+                error_type="MissingDataError",
             )
 
-        if result.get("success"):
-            return self.ok({"message_id": result.get("message_id"), "to": to_email})
-        return self.fail(result.get("erreur", "Envoi test échoué"), error_type="SendError")
+        resp = gateway.envoyer({
+            "to": to_email,
+            "nom": prospect.get("entreprise") or prospect.get("nom") or "Test",
+            "subject": "[TEST] %s" % prep["objet"],
+            "corps": prep["corps"],
+            "campagne_id": cid,
+            "dry_run": False,
+            "no_quota": True,
+            "ignore_quota": True,
+        }, boite=None)
+        if resp.get("success"):
+            return self.ok({"message_id": resp.get("message_id"), "to": to_email})
+        return self.fail(resp.get("erreur") or resp.get("statut") or "Envoi test échoué",
+                         error_type="SendError")
 
 
 expediteur_agent = ExpediteurAgent()

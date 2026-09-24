@@ -39,7 +39,12 @@ def _prospect(cid, email='contact@dupont.fr', oppose=False, ecarte=False):
     from database import prospects_repo
     lid = get_or_create_liste(cid)
     pid = prospects_repo.insert_prospect(lid, nom='Boulangerie Dupont', email=email,
-                                         entreprise='Boulangerie Dupont', secteur='Boulangerie')['prospect_id']
+                                         entreprise='Boulangerie Dupont', secteur='Boulangerie',
+                                         data_extra={
+                                             # Source de vérité du tunnel v2 : l'email RÉDIGÉ.
+                                             'email_objet': 'Une proposition pour {{entreprise}}',
+                                             'email_corps': 'Bonjour,\n\nVoici ma proposition.',
+                                         })['prospect_id']
     from database.connection import get_conn
     with get_conn() as c:
         if oppose:
@@ -96,8 +101,9 @@ def test_kill_switch_global_arrete_tout(tmp_db, fake_gateway):
     from database import campagnes as campagnes_repo
     campagnes_repo.set_auto_send_enabled(False)
     from core.orchestration import run_auto_send
+    # Règle 2026-09 : run_auto_send SANS manual=True est TOUJOURS refusé
     res = run_auto_send()
-    assert res['quoted'] == 'global_off'
+    assert res['quoted'] == 'initial_manuel_obligatoire'
     assert res['runs'] == []
     assert fake_gateway == []
 
@@ -108,8 +114,9 @@ def test_scheduler_ignore_objectif_envoi_auto_0(tmp_db, fake_gateway, monkeypatc
     from database import campagnes as campagnes_repo
     campagnes_repo.set_auto_send_enabled(True)
     from core.orchestration import run_auto_send
+    # auto-send d'initial supprimé : rien ne part sans manual=True
     res = run_auto_send()
-    assert res['quoted'] == 'no_target'
+    assert res['quoted'] == 'initial_manuel_obligatoire'
     assert fake_gateway == []
 
 
@@ -119,13 +126,11 @@ def test_auto_send_envoie_et_respecte_validation(tmp_db, monkeypatch, fake_gatew
     from database import campagnes as campagnes_repo
     campagnes_repo.set_auto_send_enabled(True)
     from core.orchestration import run_auto_send
+    # pas de manual=True → refus, rien envoyé
     res = run_auto_send()
-    assert res['success'] and res['total'] == 1
-    details = res['runs'][0]['details']
-    assert details[0]['statut'] == 'envoye'
-    assert len(fake_gateway) == 1
-    from database import prospects_repo
-    assert prospects_repo.get_prospect(pid)['statut'] == 'en_sequence'
+    assert res['success'] and res['quoted'] == 'initial_manuel_obligatoire'
+    assert res['runs'] == []
+    assert fake_gateway == []
 
 
 def test_manual_bypass_global_et_envoi_auto(tmp_db, fake_gateway):
@@ -149,7 +154,7 @@ def test_manual_sans_force_ignore_lobjectif(tmp_db, fake_gateway):
     campagnes_repo.set_auto_send_enabled(True)
     from core.orchestration import run_auto_send
     res = run_auto_send(objectif_id=oid)   # pas de manual= True
-    assert res.get('quoted') == 'auto_off'
+    assert res.get('quoted') == 'initial_manuel_obligatoire'
     assert fake_gateway == []
 
 
@@ -174,10 +179,11 @@ def test_auto_send_avec_validation_demande_sans_envoi(tmp_db, monkeypatch, fake_
     from database import campagnes as campagnes_repo
     campagnes_repo.set_auto_send_enabled(True)
     from core.orchestration import run_auto_send
+    # sans manual=True → refus structurel, aucun envoi
     res = run_auto_send()
-    assert res['total'] == 1
-    assert res['runs'][0]['details'][0]['statut'] == 'attente_approbation'
-    assert fake_gateway == []  # rien envoyé tant que pas ✅
+    assert res['quoted'] == 'initial_manuel_obligatoire'
+    assert res['runs'] == []
+    assert fake_gateway == []  # rien envoyé
 
 
 def test_kill_switch_se_relit_depuis_la_base(tmp_db):

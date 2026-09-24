@@ -163,6 +163,28 @@ def test_evenement_journalise_statut(tmp_db):
     assert detail['statut_meta']['previous_statut'] == 'qualifie'
 
 
+def test_reouverture_retour_attente(tmp_db):
+    """Un prospects jamais réellement envoyé peut revenir en attente (requalification)."""
+    from database import prospects_repo
+    from core.state_machine import transition_prospect
+    cid = _campagne('Obj')
+    pid = _prospect(cid, email='z@z.fr')
+    assert transition_prospect(pid, 'en_sequence', reason='initial')['success']
+    r = transition_prospect(pid, 'qualifie', reason='repair: initial jamais envoyé')
+    assert r['success']
+    assert prospects_repo.get_prospect(pid)['statut'] == 'qualifie'
+    types = [e['event_type'] for e in prospects_repo.get_prospect(pid)['events']]
+    assert types.count('status_change') == 2
+
+
+def test_envoi_backend_global_repli_non_cassant(tmp_db):
+    """Le backend global ne casse jamais : 'auto' par défaut, campagne explicite prime."""
+    from database import campagnes as _c
+    cid = _campagne('Obj', backend_pref='resend')
+    c = _c.get_campagne(cid)
+    assert c['backend_pref'] == 'resend'
+
+
 # ─── API v2 : campagnes ────────────────────────────────────────────────────────
 
 def test_api_crud_campagne(client):

@@ -745,7 +745,7 @@ async function sniperOpenPanel(leadId) {
 
         // Politique de contact
         let contactHtml = '';
-        const hasEmail  = d.email_valide_audit && d.email_valide_audit !== '';
+        const hasEmail  = (d.email_valide_audit && d.email_valide_audit !== '') || (d.email && d.email !== '');
         const catchAll  = d.is_catch_all;
         const hasPhone  = d.telephone && d.telephone !== '';
         if (hasEmail && !catchAll)  contactHtml = `<div style="background:#10b98115;color:#10b981;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px">✅ Email valide — Envoi step 1 possible</div>`;

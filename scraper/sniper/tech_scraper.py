@@ -233,35 +233,51 @@ def _score_and_store(company: dict, wap: dict, pagespeed: dict) -> bool:
     if siren:
         with get_conn() as conn:
             existing = conn.execute(
-                "SELECT id FROM leads_bruts WHERE donnees_audit LIKE ? AND source='tech'",
+                "SELECT id FROM prospects WHERE data_extra LIKE ? AND source='tech'",
                 (f'%"siren":"{siren}"%',)
             ).fetchone()
             if existing:
                 logger.debug(f"Tech — SIREN {siren} déjà présent, ignoré")
                 return False
 
-        # Injecter SIREN dans les données audit
-        donnees_dict = json.loads(donnees)
-        donnees_dict["siren"] = siren
-        donnees = json.dumps(donnees_dict, ensure_ascii=False)
+    extra = {
+        "tag_urgence":    tag,
+        "niveau":         niveau,
+        "reason":         reason,
+    }
+    if siren:
+        extra["siren"] = siren
 
-    lead_id = insert_lead({
+    # On ajoute les data d'audit extraites
+    extra.update(json.loads(build_donnees_audit(pagespeed, wap, tag, niveau, reason)))
+
+    lead_v2 = {
         "nom":            company["nom"],
-        "adresse":        "",
         "ville":          company.get("ville", ""),
         "site_web":       company["site_web"],
-        "telephone":      "",
-        "email":          "",
         "mot_cle":        company.get("naf", ""),
         "category":       f"Tech Stack — {company.get('naf', '')}",
-        "source":         "tech",
-        "tag_urgence":    tag,
-        "niveau_urgence": niveau,
-        "donnees_audit":  donnees,
-        "statut":         "en_attente",
-    })
+        "secteur":        "tech"
+    }
 
-    if lead_id:
+    from core.objectif_registry import import_lead_as_prospect
+    # Note: campaign_id doit être passé (généralement via une variable globale ou state, 
+    # TechScraper crée la campagne dans run, il faut qu'on puisse y accéder)
+    # Dans ce script, campaign_id est stocké dans _state["campaign_id"] ?
+    # Vérifions : on va le récupérer depuis _state.
+    cid = _state.get("campaign_id")
+    if not cid:
+        logger.error("TechScraper : _state['campaign_id'] manquant")
+        return False
+
+    res = import_lead_as_prospect(
+        cid,
+        lead=lead_v2,
+        source="tech",
+        data_extra_extra=extra,
+    )
+    
+    if res.get("success"):
         cms = wap.get("cms") or wap.get("ecommerce") or "?"
         _log(f"  ✓  {company['site_web']} — {tag} niv.{niveau} | {cms} | {reason[:60]}")
         return True
@@ -316,10 +332,14 @@ class TechScraper:
 
         try:
             # ── Créer la campagne ─────────────────────────────────────────────
-            from database import insert_campaign
+            from core.objectif_registry import resolve_or_create_campagne
             if not campaign_name:
                 campaign_name = f"Sniper Tech — {datetime.now().strftime('%d/%m %H:%M')}"
-            campaign_id = insert_campaign(campaign_name, "tech", "fr")
+            v2_campagne = resolve_or_create_campagne(campaign_name)
+            if not v2_campagne:
+                raise Exception("Impossible de créer/résoudre la campagne V2")
+            campaign_id = v2_campagne[0]
+            _state["campaign_id"] = campaign_id
             _log(f"Campagne créée : #{campaign_id} — {campaign_name}")
 
             # ── Phase 1 : Fetch API Entreprises ──────────────────────────────

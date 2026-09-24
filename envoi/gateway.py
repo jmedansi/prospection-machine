@@ -24,6 +24,36 @@ logger = logging.getLogger(__name__)
 BACKENDS = ('smtp', 'resend')
 
 
+def get_global_backend() -> str:
+    """Backend d'envoi global choisi dans Paramètres (planning_settings.envoi_backend).
+
+    Valeurs : 'smtp' | 'resend' | 'auto'. Retourne une valeur valide de
+    `backends` ou 'auto' (par défaut, les deux transports restent éligibles).
+    """
+    try:
+        with get_conn() as conn:
+            r = conn.execute(
+                "SELECT value FROM planning_settings WHERE key = 'envoi_backend'"
+            ).fetchone()
+        value = (r['value'] if r else 'auto') or 'auto'
+        return value if value in BACKENDS else 'auto'
+    except Exception:
+        return 'auto'
+
+
+def set_global_backend(value) -> None:
+    """Persiste le backend global dans planning_settings ('smtp'|'resend'|'auto')."""
+    value = (value or 'auto').strip().lower()
+    if value not in BACKENDS:
+        value = 'auto'
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO planning_settings (key, value) VALUES ('envoi_backend', ?)",
+            (value,),
+        )
+        conn.commit()
+
+
 def get_next_mailbox(campagne_id=None, backend_pref='auto', objectif_id=None, ignore_quota=False):
     """Sélectionne la prochaine boîte éligible.
 
@@ -218,6 +248,10 @@ def envoyer(message: dict, boite=None) -> dict:
             backend_pref = (c or {}).get('backend_pref') or 'auto'
         except Exception:
             pass
+    if backend_pref == 'auto':
+        # Repli global : planning_settings.envoi_backend (smtp | resend) choisi
+        # dans Paramètres. Une campagne qui fixe explicitement son backend prime.
+        backend_pref = get_global_backend() or 'auto'
 
     mailbox = boite
     dry_run = bool(message.get('dry_run'))

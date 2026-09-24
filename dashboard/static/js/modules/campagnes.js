@@ -236,17 +236,26 @@
             const id = this.currentId;
             if (!id) { toast('Sélectionnez une campagne', 'error'); return; }
             const o = this.campagnes.find(x => x.id === id);
+            const allSelected = typeof window.ulGetSelectedIds === 'function' ? window.ulGetSelectedIds() : [];
+            const selected = allSelected.filter(lid => {
+                const cache = typeof window._ul !== 'undefined' ? window._ul.leads : null;
+                const lead = cache ? cache.find(x => x.id === lid) : null;
+                if (!lead) return true;
+                const cid = Number(lead.campagne_id || lead.objectif_id || 0);
+                return Number(cid) === Number(id) || Number(cid) === 0;
+            });
+            const scope = selected.length ? `${selected.length} prospect(s) sélectionné(s)` : `toute la campagne`;
             const ok = typeof window.UI !== 'undefined'
-                ? await window.UI.confirm(`Déclencher l'envoi initial maintenant pour « ${o?.nom || id} » ?`)
+                ? await window.UI.confirm(`Déclencher l'envoi initial maintenant pour ${scope} (« ${o?.nom || id} ») ?`)
                 : typeof window.showConfirm === 'function'
-                    ? await window.showConfirm(`Déclencher l'envoi initial maintenant pour « ${o?.nom || id} » ?`)
-                    : window.confirm(`Déclencher l'envoi initial maintenant pour « ${o?.nom || id} » ?`);
+                    ? await window.showConfirm(`Déclencher l'envoi initial maintenant pour ${scope} (« ${o?.nom || id} ») ?`)
+                    : window.confirm(`Déclencher l'envoi initial maintenant pour ${scope} (« ${o?.nom || id} ») ?`);
             if (!ok) return;
             try {
                 const r = await fetch(`/api/v2/campagnes/${id}/send`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ limit: 1000 }),
+                    body: JSON.stringify({ limit: 0, lead_ids: selected.length ? selected : undefined }),
                 });
                 const d = await r.json();
                 if (!d.success) throw new Error(d.error || 'Erreur');

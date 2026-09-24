@@ -593,9 +593,9 @@ async def main_async(argv=None):
         try:
             with db_get_conn() as _conn:
                 if args.secteur:
-                    _rows = _conn.execute("SELECT LOWER(TRIM(nom)) FROM leads_bruts WHERE nom IS NOT NULL AND secteur=?", (args.secteur,)).fetchall()
+                    _rows = _conn.execute("SELECT LOWER(TRIM(nom)) FROM prospects WHERE nom IS NOT NULL AND secteur=?", (args.secteur,)).fetchall()
                 else:
-                    _rows = _conn.execute("SELECT LOWER(TRIM(nom)) FROM leads_bruts WHERE nom IS NOT NULL").fetchall()
+                    _rows = _conn.execute("SELECT LOWER(TRIM(nom)) FROM prospects WHERE nom IS NOT NULL").fetchall()
             seen_noms_global = set(r[0] for r in _rows if r[0])
             print(f"   [DB] Mémoire chargée : {len(seen_noms_global)} leads (secteur={args.secteur or 'tous'})")
         except: pass
@@ -826,21 +826,15 @@ async def main_async(argv=None):
 
                 valid_leads.append(lead)
 
-                # SQLite immédiat
-                if _DB_AVAILABLE:
-                    try:
-                        db_insert_lead(lead)
-                    except Exception as e:
-                        logger.error(f"SQLite insert_lead({lead['nom']}): {e}")
 
-                # Miroir v2 : insertion du lead enrichi DANS la liste cible (ou liste par défaut)
+
+                # Insertion native V2
                 if v2_campagne:
                     try:
                         from core.objectif_registry import import_lead_as_prospect
                         r = import_lead_as_prospect(
                             v2_campagne[0], lead,
                             source='scraping',
-                            data_extra_extra={'campaign_id': args.campaign_id},
                             liste_id=v2_liste,
                         )
                         if r.get('statut_dedupe') == 'created':

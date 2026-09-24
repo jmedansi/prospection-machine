@@ -207,47 +207,34 @@ def init_scheduler(_app=None):
 
     _scheduler.add_job(_check_v2_approvals, IntervalTrigger(minutes=1), id='v2_approval_poll')
 
-    # v2 — Envoi automatique des initials (kill-switch global + envoi_auto par objectif)
-    def _run_v2_send_initial():
-        try:
-            from core.orchestration import run_auto_send
-            res = run_auto_send()
-            if res.get('runs'):
-                logger.info(
-                    "[v2-auto-send] %s objectif(s), %s envoi(s) tenté(s) (quota global: %s)",
-                    len(res['runs']), res.get('total'), res.get('quoted', 'n/a'),
-                )
-        except Exception as e:
-            logger.error(f"[v2-auto-send] erreur : {e}")
-            import traceback
-            logger.error(traceback.format_exc())
+    # v2 — Envois initiaux : RÈGLE PRODUIT = MANUEL UNIQUEMENT, SANS EXCEPTION.
+    # Aucun job d'auto-envoi d'initial ne doit exister ici. Le seul chemin d'envoi
+    # initial est le bouton « ▶ Envoyer » (run_auto_send(manual=True)) ou le bouton
+    # panel « Envoyer le mail » sur un prospect qualifie (send_initial direct).
+    # Le kill-switch global `v2_auto_send` est verrouillé à '0' (voir garde dans
+    # core.orchestration.run_auto_send).
 
-    _scheduler.add_job(_run_v2_send_initial, IntervalTrigger(minutes=5), id='v2_send_initial')
-
-    # v2 — Relances dues (positions > 0, delai_jours) — mêmes règles global/objectif.
-    # Campagnes `validation_relances=1` : un seul ✅ Telegram par liste (lot) demandé
-    # par `ensure_batch_requests` ; l'envoi réel est déclenché par le poller
-    # `v2_batch_poll` après approbation (`consume_approvals`).
+    # v2 — Relances dues (positions > 0, delai_jours). RÈGLE PRODUIT : TOUTE relance
+    # exige une validation Telegram, SANS EXCEPTION (structurelle dans `send_relance`).
+    # L'auto-envoi passe uniquement par le batch validator : un seul ✅ par liste
+    # (`ensure_batch_requests`) ; l'envoi réel n'a lieu qu'après approbation
+    # (`v2_batch_poll` → `consume_approvals` → `run_relances(liste, approval='auto')`).
+    # Une campagne `envoi_auto=1` sans `validation_relances=1` est IGNORÉE (skip + log) :
+    # jamais d'envoi direct de relances en auto.
     def _run_v2_send_relances():
         try:
             from core import orchestration, relance_batch_validator
-            batch_camps = orchestration.enabled_campagnes()
-            batch_ids = {c['id'] for c in batch_camps if c.get('validation_relances')}
-            if batch_ids:
-                res = relance_batch_validator.ensure_batch_requests()
-                logger.info(
-                    "[v2-relances] %s lot(s) validé(s) Telegram demandé(s) (success=%s)",
-                    len(res.get('requests', [])), res.get('success'),
-                )
-            for camp in orchestration.enabled_campagnes():
-                if camp['id'] in batch_ids:
-                    continue  # envoi après ✅ du lot, pas d'auto-send
-                res = orchestration.run_relances(camp['id'])
-                if res.get('runs'):
-                    logger.info(
-                        "[v2-relances] campagne %s : %s relance(s) tentée(s)",
-                        camp['id'], res.get('total'),
-                    )
+            missing = [c for c in orchestration.enabled_campagnes()
+                       if not c.get('validation_relances')]
+            for camp in missing:
+                logger.warning(
+                    "[v2-relances] campagne %s (%s) : validation_relances=0 → "
+                    "relances auto ignorées (validation Telegram obligatoire)", camp['id'], camp['nom'])
+            res = relance_batch_validator.ensure_batch_requests()
+            logger.info(
+                "[v2-relances] %s lot(s) validé(s) Telegram demandé(s) (success=%s)",
+                len(res.get('requests', [])), res.get('success'),
+            )
         except Exception as e:
             logger.error(f"[v2-relances] erreur : {e}")
             import traceback

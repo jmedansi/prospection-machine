@@ -182,14 +182,33 @@
 
     if (typeof window.previewEmail !== 'function') {
         window.previewEmail = async function previewEmail(leadId) {
-            // v2 : l'aperçu = email rendu tel que le prospect le verra
+            // v2 : l'aperçu = contenu EXACT qui sera envoyé (sequence_engine,
+            // source de vérité data_extra), jamais un template de séquence.
             if (typeof _ulIsV2 === 'function' && _ulIsV2()) {
                 try {
-                    const r = await fetch('/api/v2/leads/' + leadId + '/email', { cache: 'no-store' });
+                    const r = await fetch('/api/v2/leads/' + leadId + '/email-preview', { cache: 'no-store' });
                     const d = await r.json();
-                    if (d && d.success && d.email && d.email.corps) {
+                    const esc = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                    if (d && d.success) {
+                        let note = '';
+                        if (d.source === 'template_fallback') {
+                            note = '<div style="background:#fff7e6;color:#7a4d00;padding:8px 12px;border:1px solid #f0dcb0;border-radius:8px;margin:0 0 16px">'
+                                + '⚠ Aperçu de TEMPLATE (inspiration) — le contenu réellement envoyé sera l\'email rédigé par l\'IA.</div>';
+                        }
                         const win = window.open('', '_blank');
-                        if (win) { win.document.write(d.email.corps); win.document.close(); }
+                        if (win) {
+                            win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + esc(d.objet) + '</title></head>'
+                                + '<body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f3f4f6;padding:32px"><div style="max-width:640px;margin:0 auto;background:#fff;border-radius:12px;padding:28px">'
+                                + note
+                                + '<p style="font-weight:700;font-size:16px;margin:0 0 16px">' + esc(d.objet) + '</p>'
+                                + '<div style="white-space:pre-wrap;line-height:1.55;font-size:14px;color:#1f2937">' + esc(d.corps) + '</div>'
+                                + '</div></body></html>');
+                            win.document.close();
+                        }
+                        return;
+                    }
+                    if (d && d.raison === 'pas_email_ia') {
+                        _t('Aucun email rédigé par l\'IA pour ce prospect — l\'envoi est bloqué tant qu\'un contenu n\'est pas généré.', 'warning');
                         return;
                     }
                 } catch (e) { /* repli legacy */ }

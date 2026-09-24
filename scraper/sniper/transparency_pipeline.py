@@ -134,25 +134,33 @@ def _score_and_store(enriched: Dict, campaign_id: int) -> bool:
         enriched.get("ceo_prenom"), enriched.get("ceo_nom")
     ])) or company_name
 
-    from database import insert_lead
-    lead_id = insert_lead({
-        "campaign_id":    campaign_id,
+    extra = {
+        "tag_urgence":    tag,
+        "niveau":         niveau,
+        "reason":         reason,
+    }
+    extra.update(json.loads(donnees_json))
+
+    lead_v2 = {
         "nom":            ceo_nom_complet,
-        "adresse":        "",
         "ville":          pays.upper(),
         "site_web":       url,
         "telephone":      telephone,
         "email":          email,
         "mot_cle":        mot_cle,
         "category":       f"Annonceur Google — {mot_cle}",
-        "source":         "transparency",
-        "tag_urgence":    tag,
-        "niveau_urgence": niveau,
-        "donnees_audit":  donnees_json,
-        "statut":         "en_attente",
-    })
+        "secteur":        "transparency",
+    }
 
-    if lead_id:
+    from core.objectif_registry import import_lead_as_prospect
+    res = import_lead_as_prospect(
+        campaign_id,
+        lead=lead_v2,
+        source="transparency",
+        data_extra_extra=extra,
+    )
+
+    if res.get("success"):
         _log(f"  ✓  {url} — {tag} niveau {niveau} | {reason}")
         return True
     return False
@@ -192,16 +200,16 @@ class TransparencyPipeline:
         })
 
         try:
-            from database import insert_campaign
+            from core.objectif_registry import resolve_or_create_campagne
             if not campaign_name:
                 campaign_name = (
                     f"Sniper Transparency — {country.upper()} "
                     f"— {datetime.now().strftime('%d/%m %H:%M')}"
                 )
-            campaign_id = insert_campaign(
-                campaign_name, "transparency", country,
-                nb_demande=len(keywords) * max_per_kw
-            )
+            v2_campagne = resolve_or_create_campagne(campaign_name)
+            if not v2_campagne:
+                raise Exception("Impossible de créer/résoudre la campagne V2")
+            campaign_id = v2_campagne[0]
             _log(f"Campagne créée : #{campaign_id} — {campaign_name}")
 
             # ── Phase 1 : Extraction ──────────────────────────────────────────

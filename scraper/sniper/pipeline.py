@@ -172,10 +172,12 @@ def _enrich_domain(domain_info: Dict) -> Optional[Dict]:
 
 def _store_lead(enriched: Dict, campaign_id: int, tag: str, niveau: int, reason: str, statut: str = "en_attente", log_file: Optional[str] = None, secteur: str = "") -> bool:
     """
-    Applique le scoring et insère le lead qualifié en base.
+    Applique le scoring et insère le lead qualifié dans la table V2 prospects.
     Retourne True si accepté, False si rejeté.
     """
     from scraper.sniper.scoring import build_donnees_audit
+    from core.objectif_registry import import_lead_as_prospect
+    from urllib.parse import urlparse
 
     url       = enriched["domaine"]
     mot_cle   = enriched.get("mot_cle", "")
@@ -185,25 +187,22 @@ def _store_lead(enriched: Dict, campaign_id: int, tag: str, niveau: int, reason:
 
     donnees = build_donnees_audit(pagespeed, wap, tag, niveau, reason, enriched)
 
-    # Extraire un nom d'entreprise depuis le domaine (fallback)
-    from urllib.parse import urlparse
     parsed = urlparse(url)
     netloc = parsed.netloc.lower().lstrip("www.")
     company_name = netloc.split(".")[0].replace("-", " ").title()
 
-    # Données enrichies (Phase 1.5)
+    # Données enrichies
     email_valide = enriched.get("email_valide") or ""
     email_brut   = enriched.get("email_contact") or email_valide
     telephone    = enriched.get("telephone") or ""
-    ceo_nom_complet = " ".join(filter(None, [
-        enriched.get("ceo_prenom"), enriched.get("ceo_nom")
-    ])) or company_name
+    ceo_prenom   = enriched.get("ceo_prenom") or ""
+    ceo_nom      = enriched.get("ceo_nom") or ""
+    ceo_nom_complet = " ".join(filter(None, [ceo_prenom, ceo_nom])) or company_name
 
-    from database import insert_lead, update_lead, get_conn
-    
     lead_data = {
-        "campaign_id":    campaign_id,
         "nom":            ceo_nom_complet,
+        "prenom":         ceo_prenom,
+        "nom_famille":    ceo_nom,
         "adresse":        "",
         "ville":          pays.upper(),
         "site_web":       url,
@@ -211,51 +210,42 @@ def _store_lead(enriched: Dict, campaign_id: int, tag: str, niveau: int, reason:
         "email":          email_brut,
         "email_valide":   email_valide,
         "mot_cle":        mot_cle,
-        "category":       f"Annonceur — {mot_cle}",
         "source":         "ads",
         "tag_urgence":    tag,
         "niveau_urgence": niveau,
         "donnees_audit":  donnees,
-        "statut":         statut,
+        "statut":         "qualifie" if statut == "en_attente" else statut,
         "secteur":        secteur,
     }
 
-    # Si le lead a déjà un ID (sauvegarde hâtive), on UPDATE
-    existing_id = enriched.get("id")
-    if existing_id:
-        update_lead(existing_id, lead_data)
-        lead_id = existing_id
-    else:
-        lead_id = insert_lead(lead_data)
+    try:
+        prospect_id = import_lead_as_prospect(
+            campaign_id=campaign_id,
+            lead=lead_data,
+            source="ads",
+            data_extra={"tag_urgence": tag, "niveau_urgence": niveau, "donnees_audit": donnees}
+        )
+    except Exception as e:
+        logger.error(f"Erreur import_lead_as_prospect pour {url}: {e}")
+        return False
 
-    if lead_id:
+    if prospect_id:
         _log(f"  ✓  {url} — {tag} niveau {niveau} | {reason}", log_file=log_file)
 
         # ── Cascade omnicanale : LinkedIn → Formulaire (si email introuvable) ──
         is_catch_all = enriched.get("is_catch_all", False)
         no_email     = not enriched.get("email_valide")
-        ceo_prenom   = enriched.get("ceo_prenom")
-        ceo_nom      = enriched.get("ceo_nom")
 
         if statut == "en_attente" and (is_catch_all or no_email) and ceo_prenom and ceo_nom and not _state.get("batch_mode"):
             _log(f"  ↩  {url} — email absent, bascule LinkedIn ({ceo_prenom} {ceo_nom})", log_file=log_file)
             try:
-                import threading
                 from sniper.linkedin_agent import send_linkedin_outreach
-
-                with get_conn() as conn:
-                    audit_row = conn.execute(
-                        "SELECT id FROM leads_audites WHERE lead_id=? ORDER BY id DESC LIMIT 1",
-                        (lead_id,)
-                    ).fetchone()
-                audit_id = audit_row[0] if audit_row else 0
-
-                telephone = enriched.get("telephone") or ""
+                tel = enriched.get("telephone") or ""
 
                 def _omnichannel_wrapper():
                     # 1. LinkedIn
                     li_ok = send_linkedin_outreach(
-                        audit_id=audit_id, lead_id=lead_id,
+                        audit_id=prospect_id, lead_id=prospect_id,
                         prenom=ceo_prenom, nom=ceo_nom,
                         company_name=company_name, domain=netloc, site_web=url,
                     )
@@ -267,17 +257,17 @@ def _store_lead(enriched: Dict, campaign_id: int, tag: str, niveau: int, reason:
                     if url:
                         from sniper.form_sender import send_form_outreach
                         form_ok = send_form_outreach(
-                            lead_id=lead_id, site_web=url,
+                            lead_id=prospect_id, site_web=url,
                             prenom=ceo_prenom, nom=ceo_nom,
                         )
                     if form_ok:
                         return
 
                     # 3. WhatsApp (mobile FR uniquement)
-                    if telephone:
+                    if tel:
                         from sniper.whatsapp_sender import send_whatsapp_outreach
                         send_whatsapp_outreach(
-                            lead_id=lead_id, phone=telephone,
+                            lead_id=prospect_id, phone=tel,
                             site_web=url, prenom=ceo_prenom, nom=ceo_nom,
                         )
 
@@ -342,8 +332,8 @@ class SniperPipeline:
         })
 
         try:
-            # ── Créer la campagne en DB ──────────────────────────────────────
-            from database import insert_campaign
+            # ── Créer ou récupérer la campagne en DB V2 ─────────────────────
+            from core.objectif_registry import resolve_or_create_campagne, import_lead_as_prospect
             if not campaign_name:
                 campaign_name = f"Sniper_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
@@ -364,8 +354,8 @@ class SniperPipeline:
             def _log_local(msg, level="info"):
                 _log(msg, level=level, log_file=self.log_file)
 
-            campaign_id = insert_campaign(campaign_name, "ads", country, nb_demande=len(keywords) * max_per_kw)
-            _log_local(f"Campagne créée : #{campaign_id} — {campaign_name}", "success")
+            campaign_id = resolve_or_create_campagne(campaign_name, source="ads", secteur=self.secteur or (keywords[0] if keywords else ""))
+            _log_local(f"Campagne V2 prête : #{campaign_id} — {campaign_name}", "success")
 
             # ── Rotation de villes — état initial ────────────────────────────
             from core.city_rotator import CityRotator
@@ -402,8 +392,7 @@ class SniperPipeline:
 
                 with get_conn() as _c:
                     _rows = _c.execute(
-                        "SELECT site_web FROM leads_bruts WHERE source='ads' "
-                        "AND site_web IS NOT NULL AND site_web != ''"
+                        "SELECT site_web FROM prospects WHERE site_web IS NOT NULL AND site_web != ''"
                     ).fetchall()
                 _known_domains = {
                     r["site_web"].lower().replace("://www.", "://").rstrip("/")
@@ -411,13 +400,11 @@ class SniperPipeline:
                 }
                 _log_local(f"  {len(_known_domains)} domaines déjà en base (exclus)")
 
-                # Callback pour le suivi temps réel + sauvegarde hâtive
-                from database import insert_lead
+                # Callback pour le suivi temps réel
                 from urllib.parse import urlparse
                 
                 def _on_lead_discovered(lead):
                     url = lead.get("domaine", "")
-                    # On évite les doublons déjà en base (double check au cas où l'extracteur en trouve)
                     norm_url = url.lower().replace("://www.", "://").rstrip("/")
                     if norm_url in _known_domains:
                         return
@@ -425,25 +412,28 @@ class SniperPipeline:
                     _state["total"] += 1
                     _state["current_kw"] = lead.get("mot_cle", "")
                     
-                    # Sauvegarde immédiate (Sécurité crash/coupure)
                     netloc = urlparse(url).netloc.lower().lstrip("www.")
                     company_name = netloc.split(".")[0].replace("-", " ").title()
                     
                     try:
-                        lead["id"] = insert_lead({
-                            "campaign_id": campaign_id,
-                            "nom": company_name,
-                            "site_web": url,
-                            "mot_cle": lead.get("mot_cle", ""),
-                            "ville": city or country.upper(),
-                            "source": "ads",
-                            "statut": "scraped",
-                            "secteur": self.secteur,
-                        })
-                        _known_domains.add(norm_url) # Evite d'insérer 2 fois le même dans la même session
+                        pid = import_lead_as_prospect(
+                            campaign_id=campaign_id,
+                            lead={
+                                "nom": company_name,
+                                "site_web": url,
+                                "mot_cle": lead.get("mot_cle", ""),
+                                "ville": city or country.upper(),
+                                "source": "ads",
+                                "secteur": self.secteur,
+                                "statut": "nouveau",
+                            },
+                            source="ads"
+                        )
+                        lead["id"] = pid
+                        _known_domains.add(norm_url)
                         _log_local(f"Lead trouvé : {url} ({lead.get('mot_cle', '')})", "discovery")
                     except Exception as e:
-                        logger.error(f"Erreur sauvegarde hâtive pour {url}: {e}")
+                        logger.error(f"Erreur import lead hâtif pour {url}: {e}")
 
                 raw_leads = extract_ads(
                     current_keywords, country=country,
@@ -554,22 +544,10 @@ class SniperPipeline:
                 + (f" [rotation x{rotation_pass}]" if rotation_pass else "")
             )
 
-            # ── Phase 5 : Génération automatique des emails (hors boucle) ────
+            # ── Phase 5 : Finalisation V2 ─────────────────────────────────────
             if _state["accepted"] > 0:
-                _state["phase"] = "generation"
-                _log_local(f"Phase 5 — Génération emails ({_state['accepted']} leads)")
-                try:
-                    from sniper.email_generator import generate_sniper_emails_batch
-                    result = generate_sniper_emails_batch(campaign_id=campaign_id, limit=500)
-                    _state["emails_generes"] = result.get("success", 0)
-                    _log_local(
-                        f"  Emails générés : {_state['emails_generes']} "
-                        f"(échecs: {result.get('errors', 0)}, "
-                        f"ignorés: {result.get('skipped', 0)})"
-                    )
-                except Exception as e:
-                    logger.error(f"Email generation erreur: {e}")
-                    _log_local(f"  Génération emails échouée : {e}")
+                _state["phase"] = "done"
+                _log_local(f"Phase 5 — Leads qualifiés importés en base V2 ({_state['accepted']} prospects)")
 
             return {
                 "accepted":       _state["accepted"],

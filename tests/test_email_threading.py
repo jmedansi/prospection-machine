@@ -45,7 +45,14 @@ def _prospect(oid, email='contact@dupont.fr'):
     lid = get_or_create_liste(oid)
     return prospects_repo.insert_prospect(lid, nom='Boulangerie Dupont', email=email,
                                           prenom='M. Dupont', entreprise='Boulangerie Dupont',
-                                          secteur='Boulangerie')['prospect_id']
+                                          secteur='Boulangerie',
+                                          data_extra={
+                                              # Source de vérité du tunnel v2 : emails RÉDIGÉS.
+                                              'email_objet':  'Première prise de contact {{prenom}}',
+                                              'email_corps':  'Bonjour {{prenom}},\n\nVoici ma proposition.',
+                                              'email_objet_2': 'Relance {{prenom}}',
+                                              'email_corps_2': 'Bonjour {{prenom}},\n\nRelance n°1.',
+                                          })['prospect_id']
 
 
 def _seed_template_step(oid, position, objet=None, corps='Bonjour {{prenom}}, voici notre offre'):

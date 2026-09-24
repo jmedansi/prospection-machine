@@ -376,31 +376,43 @@ def _score_and_store(item: dict, wap: dict, pagespeed: dict, campaign_id: int = 
     domain = item["domaine"]
     with get_conn() as conn:
         existing = conn.execute(
-            "SELECT id FROM leads_bruts WHERE site_web LIKE ? AND source='ecom'",
+            "SELECT id FROM prospects WHERE site_web LIKE ? AND source='ecom'",
             (f"%{domain.replace('https://', '').replace('http://', '')}%",)
         ).fetchone()
         if existing:
             logger.debug(f"Ecom — {domain} déjà présent, ignoré")
             return False
 
-    lead_id = insert_lead({
-        "campaign_id":    campaign_id,
+    extra = {
+        "tag_urgence":    tag,
+        "niveau":         niveau,
+        "reason":         reason,
+        "ecom_source":    item.get("source"),
+    }
+    # On ajoute les data d'audit extraites
+    extra.update(json.loads(build_donnees_audit(pagespeed, wap, tag, niveau, reason, enriched={"ecom_source": item.get("source")})))
+
+    lead_v2 = {
         "nom":            "",
-        "adresse":        "",
         "ville":          "",
         "site_web":       domain,
-        "telephone":      "",
-        "email":          "",
         "mot_cle":        item.get("mot_cle", ""),
         "category":       item.get("mot_cle", "E-commerce"),
-        "source":         "ecom",
-        "tag_urgence":    tag,
-        "niveau_urgence": niveau,
-        "donnees_audit":  donnees,
-        "statut":         statut,
-    })
+        "secteur":        "ecom",
+    }
 
-    if lead_id:
+    from core.objectif_registry import import_lead_as_prospect
+    res = import_lead_as_prospect(
+        campaign_id,
+        lead=lead_v2,
+        source="ecom",
+        data_extra_extra=extra,
+    )
+    
+    if res.get("success"):
+        statut = "en_attente"
+
+    if res.get("success"):
         cms = wap.get("cms") or wap.get("ecommerce") or "?"
         _log(f"  +  {domain} — {tag} niv.{niveau} | {cms} | {reason[:60]}")
         return statut == "en_attente"
@@ -447,10 +459,13 @@ class EcomScraper:
             keywords = DEFAULT_KEYWORDS
 
         try:
-            from database import insert_campaign
+            from core.objectif_registry import resolve_or_create_campagne
             if not campaign_name:
                 campaign_name = f"Sniper Ecom — {datetime.now().strftime('%d/%m %H:%M')}"
-            campaign_id = insert_campaign(campaign_name, "ecom", country)
+            v2_campagne = resolve_or_create_campagne(campaign_name)
+            if not v2_campagne:
+                raise Exception("Impossible de créer/résoudre la campagne V2")
+            campaign_id = v2_campagne[0]
             _log(f"Campagne créée : #{campaign_id} — {campaign_name}")
 
             # ── Rotation de villes — état initial ────────────────────────────

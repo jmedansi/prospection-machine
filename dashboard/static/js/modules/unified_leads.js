@@ -544,17 +544,29 @@ async function ulToggleObjectif(leadId) {
 }
 
 async function ulToggleEcarte(leadId) {
+    const ids = ulGetSelectedIds();
+    const single = !ids.length;
+    const target = single ? [leadId] : ids;
     const lead = _ul.leads.find(x => x.id === leadId);
     if (!lead) return;
     const next = !lead.ecarte;
+    const label = single ? (lead.nom || `#${leadId}`) : `${ids.length} lead(s) sélectionné(s)`;
+    const ok = typeof window.UI !== 'undefined'
+        ? await window.UI.confirm(next ? `Écarter « ${label} » des flux d'envoi ?` : `Réintégrer « ${label} » ?`)
+        : confirm(next ? `Écarter « ${label} » des flux d'envoi ?` : `Réintégrer « ${label} » ?`);
+    if (!ok) return;
     try {
-        const url = _ulIsV2() ? `/api/v2/leads/${leadId}/ecarter` : `/api/leads/${leadId}/ecarter`;
+        const url = _ulIsV2()
+            ? (single ? `/api/v2/leads/${leadId}/ecarter` : `/api/v2/leads/bulk/ecarter`)
+            : `/api/leads/${leadId}/ecarter`;
+        const body = { ecarte: next };
+        if (!single && _ulIsV2()) body.lead_ids = ids;
         const r = await fetch(url, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ecarte: next })
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         const d = await r.json();
         if (!d.success) throw new Error(d.error);
-        showToast?.(next ? "Lead écarté des flux d'envoi" : 'Lead réintégré', 'success');
+        showToast?.(next ? `${d.updated ?? 1} lead(s) écarté(s) des flux d'envoi` : `${d.updated ?? 1} lead(s) réintégré(s)`, 'success');
         unifiedLeadsLoad(_ul.page);
     } catch (e) {
         console.error('[ulToggleEcarte]', e);
@@ -563,18 +575,29 @@ async function ulToggleEcarte(leadId) {
 }
 
 async function ulToggleDesinscrit(leadId) {
+    const ids = ulGetSelectedIds();
+    const single = !ids.length;
+    const target = single ? [leadId] : ids;
     const lead = _ul.leads.find(x => x.id === leadId);
     if (!lead) return;
     const next = !lead.desinscrit;
+    const label = single ? (lead.nom || `#${leadId}`) : `${ids.length} lead(s) sélectionné(s)`;
+    const ok = typeof window.UI !== 'undefined'
+        ? await window.UI.confirm(next ? `Désinscrire « ${label} » (opposition) ?` : `Réactiver « ${label} » ?`)
+        : confirm(next ? `Désinscrire « ${label} » (opposition) ?` : `Réactiver « ${label} » ?`);
+    if (!ok) return;
     try {
-        const url = _ulIsV2() ? `/api/v2/leads/${leadId}/desinscrire` : `/api/leads/${leadId}/desinscrire`;
-        const body = _ulIsV2() ? { ne_plus_contacter: next } : { desinscrit: next };
+        const url = _ulIsV2()
+            ? (single ? `/api/v2/leads/${leadId}/desinscrire` : `/api/v2/leads/bulk/desinscrire`)
+            : `/api/leads/${leadId}/desinscrire`;
+        const body = { ne_plus_contacter: next };
+        if (!single && _ulIsV2()) body.lead_ids = ids;
         const r = await fetch(url, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
         });
         const d = await r.json();
         if (!d.success) throw new Error(d.error);
-        showToast?.(next ? 'Lead désinscrit' : 'Lead réactivé', 'success');
+        showToast?.(next ? `${d.updated ?? 1} lead(s) désinscrit(s)` : `${d.updated ?? 1} lead(s) réactivé(s)`, 'success');
         unifiedLeadsLoad(_ul.page);
     } catch (e) {
         console.error('[ulToggleDesinscrit]', e);
@@ -1297,7 +1320,7 @@ const maquetteHtml = obj === 'web' ? `
 
         // Politique de contact (Migré de Sniper)
         let contactHtml = '';
-        const hasEmailValide = !!lead.email_valide_audit;
+        const hasEmailValide = !!lead.email_valide_audit || !!email;
         const catchAll = !!lead.is_catch_all;
         const hasPhone = !!(lead.telephone || lead.telephone_sniper);
 
@@ -1589,15 +1612,48 @@ ${hasEmail ? `
     async function _setEmailPreviewSrc(lead) {
         const iframe = document.getElementById('email-preview-iframe');
         if (!iframe) return;
-        let html = (lead._v2Email && lead._v2Email.corps) || null;
-        if (!html && lead.id) {
+        // Purge V1 — source de vérité : la prévisualisation affiche le contenu
+        // EXACT qui sera envoyé (sequence_engine en dry_run), jamais un template.
+        if (lead.id) {
             try {
-                const r = await fetch('/api/v2/leads/' + lead.id + '/email', { cache: 'no-store' });
+                const r = await fetch('/api/v2/leads/' + lead.id + '/email-preview', { cache: 'no-store' });
                 const d = await r.json();
-                if (d && d.success && d.email && d.email.corps) html = d.email.corps;
-            } catch (e) { html = null; }
+                if (!iframe.isConnected) return;
+                const esc = (typeof escHtml === 'function') ? escHtml : (s => String(s == null ? '' : s));
+                if (d && d.success) {
+                    let note = '';
+                    if (d.source === 'template_fallback') {
+                        note = '<div style="background:#fff7e6;color:#7a4d00;padding:8px 12px;border-bottom:1px solid #f0dcb0">'
+                            + '⚠ Aperçu de TEMPLATE (inspiration) — le contenu réellement envoyé sera l\'email rédigé par l\'IA.</div>';
+                    }
+                    const html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0">'
+                        + note
+                        + '<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:16px;white-space:pre-wrap;line-height:1.55;font-size:14px;color:#1f2937">'
+                        + '<p style="font-weight:600;margin:0 0 12px">' + esc(d.objet || '') + '</p>'
+                        + esc(d.corps || '')
+                        + '</div></body></html>';
+                    const blob = new Blob([html], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    iframe.src = url;
+                    iframe.onload = () => URL.revokeObjectURL(url);
+                    return;
+                }
+                if (d && d.raison === 'pas_email_ia') {
+                    const msg = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0">'
+                        + '<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;color:#6b7280;font-size:13px;line-height:1.6;text-align:center">'
+                        + 'Aucun email rédigé par l\'IA pour ce prospect.<br>'
+                        + 'L\'envoi est bloqué tant que vous n\'avez pas généré un contenu (« Rédiger mail »).'
+                        + '</div></body></html>';
+                    const blob = new Blob([msg], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    iframe.src = url;
+                    iframe.onload = () => URL.revokeObjectURL(url);
+                    return;
+                }
+            } catch (e) { /* repli historique ci-dessous */ }
             if (!iframe.isConnected) return;
         }
+        let html = (lead._v2Email && lead._v2Email.corps) || null;
         if (!html && lead.email_corps) html = lead.email_corps;
         if (!html) return;
         const blob = new Blob([html], { type: 'text/html' });
@@ -2047,9 +2103,17 @@ async function ulDeleteSelected() {
     if (!ok) return;
     try {
         if (_ulIsV2()) {
-            await Promise.all(ids.map(id => fetch(`/api/v2/leads/${id}`, { method: 'DELETE' })));
-            showToast?.(`${ids.length} lead(s) supprimé(s)`, 'success');
+            const r = await fetch('/api/v2/leads/bulk', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lead_ids: ids }),
+            });
+            const d = await r.json();
+            if (!d.success) throw new Error(d.error);
+            closeModal?.('modal-ul-edit');
+            showToast?.(`${d.deleted} lead(s) supprimé(s)`, 'success');
             unifiedLeadsLoad(_ul.page);
+            if (window.ListesModule && typeof window.ListesModule.onProspectsChanged === 'function') window.ListesModule.onProspectsChanged();
             if (typeof window.CampagnesModule !== 'undefined') window.CampagnesModule.refreshStats();
             return;
         }

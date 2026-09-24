@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
 """
 copywriter/main.py
-==================
-Rôle UNIQUE : détecter la situation commerciale d'un lead (S1-S8)
-et retourner le profil email correspondant pour email_builder.
+=================
+Rôle UNIQUE : détecter la situation commerciale d'un lead (S1-S8) et
+retourner les 4 champs texte de synthèse :
+  - phrase_synthese  : label de la situation (ex. « Bon GMB, mauvais site »)
+  - diagnostic       : argument commercial personnalisé
+  - rapport_resume   : idem
+  - service_propose  : type de service recommandé
 
-CE MODULE NE GÉNÈRE PAS D'EMAILS HTML.
-L'email HTML est généré exclusivement par envoi/email_builder.py
-en utilisant les templates dans templates/emails/template_profil_{a,b,c,d}.html.
+CE MODULE NE RETOURNE NI PROFIL EMAIL NI email_objet/email_corps.
+- Il NE GÉNÈRE PAS d'emails : l'email HTML V1 est/was produit par
+  envoi/email_builder.py + templates/emails/template_profil_{a,b,c,d}.html
+  (pipeline V1 décommissionné).
+- En V2, le contenu réellement envoyé est rédigé par l'agent IA rédacteur /
+  l'utilisateur, stocké dans prospect.data_extra.email_objet/email_corps
+  (variantes *_2 .. *_4) — source de vérité unique du tunnel
+  sequence_engine → gateway.
 
-Mapping situation → profil email_builder (défini dans dashboard/pipeline.py) :
-  S1 Site lent            → B
-  S2 Pas de meta          → D
-  S3 Peu d'avis           → C
-  S4 Pas de site          → A
-  S5 Note faible          → C
-  S6 Pas de CTA           → B
-  S7 Vieux CMS            → B
-  S8 Bon GMB + site lent  → B
+Mapping situation → profil email (décision historique V1, dashboard/pipeline) :
+  S1 Site lent            → B   (profil_b)
+  S2 Pas de meta          → D   (profil_d)
+  S3 Peu d'avis           → C   (profil_c)
+  S4 Pas de site          → A   (profil_a)
+  S5 Note faible          → C   (profil_c)
+  S6 Pas de CTA           → B   (profil_b)
+  S7 Vieux CMS            → B   (profil_b)
+  S8 Bon GMB + site lent  → B   (profil_b)
 """
 import os
 import sys

@@ -462,10 +462,14 @@
         },
 
         async removeLead(id) {
+            const selIds = this._checkedIds();
+            const single = !selIds.length;
+            const ids = single ? [id] : selIds;
+            const label = single ? (_state.leads.find(x => x.id === id)?.nom || '#' + id) : `${ids.length} prospect(s) sélectionné(s)`;
             const l = _state.leads.find(x => x.id === id);
-            const ok = window.confirm(`Retirer « ${l?.nom || '#' + id} » de cette liste (→ Corbeille, non destructif) ?`);
+            const ok = window.confirm(`Retirer « ${label} » de cette liste (→ Corbeille, non destructif) ?`);
             if (!ok) return;
-            await this._unlink([id]);
+            await this._unlink(ids);
         },
 
         async _unlink(ids) {
@@ -567,18 +571,25 @@
         },
 
         async toggleEcarte(id) {
+            let ids = this._checkedIds();
+            const single = !ids.length;
+            if (single) ids = [id];
             const l = _state.leads.find(x => x.id === id);
-            if (!l) return;
-            const next = !l.ecarte;
+            const next = !(l?.ecarte ?? false);
+            const label = single ? (l?.nom || `#${id}`) : `${ids.length} prospect(s) sélectionné(s)`;
+            const ok = window.confirm(next
+                ? `Écarter « ${label} » des flux d'envoi ?`
+                : `Réintégrer « ${label} » ?`);
+            if (!ok) return;
             try {
-                const r = await fetch(`/api/v2/leads/${id}/ecarter`, {
+                const r = await fetch(`/api/v2/leads/bulk/ecarter`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ecarte: next }),
+                    body: JSON.stringify({ lead_ids: ids, ecarte: next }),
                 });
                 const d = await r.json();
                 if (!d.success) throw new Error(d.error);
-                toast(next ? "Lead écarté des flux d'envoi" : 'Lead réintégré', 'success');
+                toast(next ? `${d.updated} lead(s) écarté(s) des flux d'envoi` : `${d.updated} lead(s) réintégré(s)`, 'success');
                 await this.loadLeads(_state.page);
                 await this._refreshStats();
             } catch (e) {
@@ -588,18 +599,25 @@
         },
 
         async toggleDesinscrit(id) {
+            let ids = this._checkedIds();
+            const single = !ids.length;
+            if (single) ids = [id];
             const l = _state.leads.find(x => x.id === id);
-            if (!l) return;
-            const next = !l.desinscrit;
+            const next = !(l?.desinscrit ?? false);
+            const label = single ? (l?.nom || `#${id}`) : `${ids.length} prospect(s) sélectionné(s)`;
+            const ok = window.confirm(next
+                ? `Désinscrire « ${label} » (opposition, toutes campagnes) ?`
+                : `Réactiver « ${label} » ?`);
+            if (!ok) return;
             try {
-                const r = await fetch(`/api/v2/leads/${id}/desinscrire`, {
+                const r = await fetch(`/api/v2/leads/bulk/desinscrire`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ne_plus_contacter: next }),
+                    body: JSON.stringify({ lead_ids: ids, ne_plus_contacter: next }),
                 });
                 const d = await r.json();
                 if (!d.success) throw new Error(d.error);
-                toast(next ? 'Lead désinscrit' : 'Lead réactivé', 'success');
+                toast(next ? `${d.updated} lead(s) désinscrit(s)` : `${d.updated} lead(s) réactivé(s)`, 'success');
                 await this.loadLeads(_state.page);
                 await this._refreshStats();
             } catch (e) {
@@ -609,14 +627,21 @@
         },
 
         async deleteLead(id) {
-            const l = _state.leads.find(x => x.id === id);
-            const ok = window.confirm(`Supprimer définitivement « ${l?.nom || `#${id}`} » ? Irréversible.`);
+            let ids = this._checkedIds();
+            const single = !ids.length;
+            if (single) ids = [id];
+            const label = single ? (_state.leads.find(x => x.id === id)?.nom || `#${id}`) : `${ids.length} prospect(s) sélectionné(s)`;
+            const ok = window.confirm(`Supprimer définitivement « ${label} » ? Irréversible.`);
             if (!ok) return;
             try {
-                const r = await fetch(`/api/v2/leads/${id}`, { method: 'DELETE' });
+                const r = await fetch(`/api/v2/leads/bulk`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lead_ids: ids }),
+                });
                 const d = await r.json();
                 if (!d.success) throw new Error(d.error);
-                toast('Prospect supprimé', 'success');
+                toast(`${d.deleted} prospect(s) supprimé(s)`, 'success');
                 await this.loadLeads(_state.page);
                 await this._refreshStats();
             } catch (e) {
@@ -951,6 +976,25 @@
                 return;
             }
             const Ia = window.IaActions;
+            const selIds = this._checkedIds();
+            if (selIds.length) {
+                // Sélection active → l'action IA ne cible que les prospects cochés.
+                const scope = { lead_ids: selIds };
+                const selMap = {
+                    qualify: () => Ia.qualify(scope),
+                    maquette: () => Ia.maquette(scope),
+                    redact: () => Ia.redact(scope),
+                    scan: () => Ia.scan(scope),
+                };
+                const fn = selMap[action];
+                if (!fn) return;
+                const d = await fn();
+                if (action === 'scan' && d && d.ok) {
+                    await this.refresh();
+                    await this._refreshStats();
+                }
+                return;
+            }
             const map = {
                 qualify: () => Ia.qualifyList(l.id, l.nom),
                 maquette: () => Ia.maquetteList(l.id, l.nom),
@@ -972,31 +1016,208 @@
                 return;
             }
             const Ia = window.IaActions;
-            const fn = action === 'maquette' ? Ia.maquetteLead : Ia.qualifyLead;
-            await fn(id);
+            const selIds = this._checkedIds();
+            const scope = selIds.length ? { lead_ids: selIds } : { lead_ids: [id] };
+            const fn = action === 'maquette' ? Ia.maquette : Ia.qualify;
+            await fn(scope);
         },
 
-        async sendCampaign() {
+        // ─── Envoi ciblé par liste avec suivi temps réel & tracking ─────────
+        async sendList() {
             const l = this.activeList;
-            if (!l) return;
-            const ok = window.confirm(
-                `Envoyer maintenant les emails de la campagne « ${l.campagne_nom || ''} » ` +
-                `(porteuse de « ${l.nom} ») ?\n\nInitials + relances dues, dans la limite du quota.`
-            );
+            if (!l) {
+                toast('Sélectionnez d\'abord une liste', 'warning');
+                return;
+            }
+
+            const selected = this._checkedIds();
+            const confirmMsg = selected.length
+                ? `Envoyer ${selected.length} email(s) sélectionné(s) de la liste « ${l.nom} » uniquement ?\n\n` +
+                  `• Uniquement les ${selected.length} prospects cochés (aucun autre prospect)\n` +
+                  `• Initials + relances dues\n` +
+                  `• Tracking d'ouverture et de clic activé systématiquement`
+                : `Envoyer TOUS les emails de la liste « ${l.nom} » uniquement ?\n\n` +
+                  `• Uniquement les prospects de cette liste (aucun autre prospect de la campagne)\n` +
+                  `• Initials + relances dues\n` +
+                  `• Tracking d'ouverture et de clic activé systématiquement`;
+
+            const ok = window.UI?.confirm
+                ? await window.UI.confirm(confirmMsg, { title: '📤 Envoi de la liste', confirmText: 'Envoyer maintenant' })
+                : window.confirm(confirmMsg);
             if (!ok) return;
+
+            const btn = sel('liste-btn-send');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Lancement…';
+            }
+
             try {
-                const r = await fetch(`/api/v2/campagnes/${l.campagne_id}/send`, {
+                const r = await fetch(`/api/v2/listes/${l.id}/send`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ limit: 10 }),
+                    body: JSON.stringify({ lead_ids: selected.length ? selected : undefined }),
                 });
                 const d = await r.json();
-                if (!d.success) throw new Error(d.error || 'Erreur envoi');
-                toast(`Envoi : ${d.initials} initial + ${d.relances} relance(s)`, 'success');
-                await this._refreshStats();
+
+                if (!d.success) {
+                    throw new Error(d.error || 'Erreur lors du lancement de l\'envoi');
+                }
+
+                if (d.total === 0) {
+                    toast(d.message || `Aucun email en attente d'envoi dans « ${l.nom} »`, 'info');
+                    if (btn) { btn.disabled = false; btn.textContent = '📤 Envoyer la liste'; }
+                    return;
+                }
+
+                toast(`🚀 Envoi lancé : ${d.total} prospect(s) ciblé(s)`, 'info');
+                this._startProgressTracking(l.id, d.job_id, d.total);
             } catch (e) {
-                console.error('[listes] send', e);
+                console.error('[listes] sendList', e);
                 toast(e.message || 'Erreur envoi', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = '📤 Envoyer la liste'; }
+            }
+        },
+
+        // Alias de compatibilité
+        async sendCampaign() {
+            return this.sendList();
+        },
+
+        async cancelSend() {
+            const l = this.activeList;
+            if (!l) return;
+            try {
+                const r = await fetch(`/api/v2/listes/${l.id}/send/cancel`, { method: 'POST' });
+                const d = await r.json();
+                if (d.success) {
+                    toast('Envoi en cours d\'annulation…', 'info');
+                    const leadEl = sel('liste-send-current-lead');
+                    if (leadEl) leadEl.textContent = 'Arrêt demandé par l\'utilisateur…';
+                }
+            } catch (e) {
+                console.error('[listes] cancelSend', e);
+            }
+        },
+
+        _startProgressTracking(listeId, jobId, totalInitial) {
+            const banner = sel('liste-send-progress-banner');
+            const fill = sel('liste-send-progress-bar-fill');
+            const counter = sel('liste-send-progress-counter');
+            const pctEl = sel('liste-send-progress-pct');
+            const titleEl = sel('liste-send-progress-title');
+            const leadEl = sel('liste-send-current-lead');
+            const cancelBtn = sel('liste-send-cancel-btn');
+            const sendBtn = sel('liste-btn-send');
+
+            if (banner) banner.style.display = 'flex';
+            if (cancelBtn) cancelBtn.style.display = 'inline-block';
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.textContent = '📤 Envoi en cours…';
+            }
+            if (titleEl) titleEl.textContent = 'Envoi de la liste en cours…';
+            if (counter) counter.innerHTML = `<strong>0</strong> / ${totalInitial || 0} emails`;
+            if (pctEl) pctEl.textContent = '0%';
+            if (fill) fill.style.width = '0%';
+            if (leadEl) leadEl.textContent = 'Démarrage du tunnel d\'envoi avec tracking…';
+
+            // Nettoyer un éventuel intervalle précédent
+            if (_state.pollInterval) {
+                clearInterval(_state.pollInterval);
+                _state.pollInterval = null;
+            }
+
+            const updateUIFromJob = (job) => {
+                if (!job) return;
+                const cur = job.current || 0;
+                const tot = job.total || totalInitial || 0;
+                const pct = job.percentage || (tot > 0 ? Math.round((cur / tot) * 100) : 0);
+
+                if (counter) counter.innerHTML = `<strong>${cur}</strong> / ${tot} emails`;
+                if (pctEl) pctEl.textContent = `${pct}%`;
+                if (fill) fill.style.width = `${pct}%`;
+
+                if (job.current_lead) {
+                    const l = job.current_lead;
+                    const statusIcon = l.success ? '✅' : '⚠️';
+                    if (leadEl) {
+                        leadEl.textContent = `${statusIcon} ${l.nom || 'Prospect'} (${l.email || ''}) — ${l.statut || ''}`;
+                    }
+                }
+
+                if (!job.running) {
+                    // Job terminé ou annulé
+                    if (_state.pollInterval) {
+                        clearInterval(_state.pollInterval);
+                        _state.pollInterval = null;
+                    }
+                    if (cancelBtn) cancelBtn.style.display = 'none';
+                    if (sendBtn) {
+                        sendBtn.disabled = false;
+                        sendBtn.textContent = '📤 Envoyer la liste';
+                    }
+
+                    if (job.status === 'termine') {
+                        if (titleEl) titleEl.textContent = '✅ Envoi terminé avec succès';
+                        if (leadEl) leadEl.textContent = `Bilan : ${job.sent || 0} envoyé(s), ${job.failed || 0} erreur(s) — Tracking actif`;
+                        toast(`✅ Envoi terminé : ${job.sent || 0} email(s) envoyé(s) sur ${tot}`, 'success');
+                    } else if (job.status === 'annule') {
+                        if (titleEl) titleEl.textContent = '⏹️ Envoi interrompu';
+                        if (leadEl) leadEl.textContent = `Interrompu à ${cur}/${tot} emails (${job.sent || 0} envoyés)`;
+                        toast('Envoi de la liste interrompu', 'warning');
+                    } else if (job.status === 'erreur') {
+                        if (titleEl) titleEl.textContent = '❌ Erreur lors de l\'envoi';
+                        if (leadEl) leadEl.textContent = job.error || 'Erreur inattendue';
+                        toast(job.error || 'Erreur lors de l\'envoi', 'error');
+                    }
+
+                    // Rafraîchir les leads et stats
+                    this.loadLeads(_state.page);
+                    this._refreshStats();
+
+                    // Masquer la bannière après 8 secondes
+                    setTimeout(() => {
+                        if (banner && !_state.pollInterval) {
+                            banner.style.display = 'none';
+                        }
+                    }, 8000);
+                }
+            };
+
+            // Polling régulier de secours (toutes les 500ms)
+            _state.pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/v2/listes/${listeId}/send/status`);
+                    const data = await res.json();
+                    if (data.success && data.job) {
+                        updateUIFromJob(data.job);
+                    }
+                } catch (e) {
+                    console.error('[listes] poll status error', e);
+                }
+            }, 500);
+
+            // Écoute des événements WebSocket si socketio est connecté
+            const sock = window.socket || (typeof io !== 'undefined' ? window.socketio : null);
+            if (sock && typeof sock.on === 'function' && !_state.socketWired) {
+                _state.socketWired = true;
+                sock.on('list_send_progress', (payload) => {
+                    if (payload && payload.liste_id === listeId) {
+                        if (counter) counter.innerHTML = `<strong>${payload.current}</strong> / ${payload.total} emails`;
+                        if (pctEl) pctEl.textContent = `${payload.percentage}%`;
+                        if (fill) fill.style.width = `${payload.percentage}%`;
+                        if (payload.lead && leadEl) {
+                            const icon = payload.lead.success ? '✅' : '⚠️';
+                            leadEl.textContent = `${icon} ${payload.lead.nom || 'Prospect'} (${payload.lead.email || ''}) — ${payload.lead.statut || ''}`;
+                        }
+                    }
+                });
+                sock.on('list_send_done', (payload) => {
+                    if (payload && payload.liste_id === listeId) {
+                        updateUIFromJob({ running: false, status: payload.status || 'termine', sent: payload.sent, failed: payload.failed, total: payload.total, current: payload.total });
+                    }
+                });
             }
         },
 

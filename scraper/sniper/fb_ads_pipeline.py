@@ -185,7 +185,7 @@ def _enrich_with_site(lead: Dict) -> Optional[Dict]:
 # ─── Insert lead en base ───────────────────────────────────────────────────────
 
 def _store_lead(lead: Dict, campaign_id: int, tag: str, niveau: int, reason: str, statut: str = "en_attente") -> bool:
-    from database import insert_lead
+    from core.objectif_registry import import_lead_as_prospect
 
     url          = lead.get("site_web") or ""
     domain       = urlparse(url).netloc.lstrip("www.") if url else ""
@@ -194,7 +194,7 @@ def _store_lead(lead: Dict, campaign_id: int, tag: str, niveau: int, reason: str
         domain.split(".")[0].replace("-", " ").title() if domain else "Inconnu"
     )
 
-    donnees = json.dumps({
+    extra = {
         "score_mobile": lead.get("pagespeed", {}).get("mobile_score"),
         "cms":          lead.get("wappalyzer", {}).get("cms"),
         "cdn":          lead.get("wappalyzer", {}).get("cdn"),
@@ -203,30 +203,31 @@ def _store_lead(lead: Dict, campaign_id: int, tag: str, niveau: int, reason: str
         "ad_id":        lead.get("ad_id", ""),
         "ad_start":     lead.get("ad_start", ""),
         "ad_body":      lead.get("ad_body", ""),
-        "tag":          tag,
+        "tag_urgence":  tag,
         "niveau":       niveau,
         "reason":       reason,
         "skip_reason":  lead.get("_skip_reason"),
-    }, ensure_ascii=False)
+    }
 
-    lead_id = insert_lead({
-        "campaign_id":    campaign_id,
+    # Format attendu par import_lead_as_prospect
+    lead_v2 = {
         "nom":            company_name,
-        "adresse":        "",
         "ville":          lead.get("pays", "FR"),
         "site_web":       url,
         "telephone":      lead.get("telephone", ""),
         "email":          lead.get("email_valide", ""),
-        "email_valide":   lead.get("email_valide", ""),  # stocker l'email réel, pas "Valide"
         "mot_cle":        lead.get("mot_cle", ""),
         "category":       lead.get("category", "Annonceur Meta"),
-        "source":         "fb_ads",
-        "tag_urgence":    tag,
-        "niveau_urgence": niveau,
-        "donnees_audit":  donnees,
-        "statut":         statut,
-    })
-    return bool(lead_id)
+        "secteur":        "fb_ads",
+    }
+
+    res = import_lead_as_prospect(
+        campaign_id,
+        lead=lead_v2,
+        source="fb_ads",
+        data_extra_extra=extra,
+    )
+    return res.get("success", False)
 
 
 # ─── Pipeline principal ────────────────────────────────────────────────────────
@@ -260,13 +261,14 @@ class FbAdsPipeline:
 
         campaign_id = None
         try:
-            from database import insert_campaign
+            from core.objectif_registry import resolve_or_create_campagne
             if not campaign_name:
                 campaign_name = f"Sniper FB Ads — {country} — {datetime.now().strftime('%d/%m %H:%M')}"
-            campaign_id = insert_campaign(
-                campaign_name, "fb_ads", country,
-                nb_demande=len(search_terms) * 50
-            )
+            
+            v2_campagne = resolve_or_create_campagne(campaign_name)
+            if not v2_campagne:
+                raise Exception("Impossible de créer/résoudre la campagne V2")
+            campaign_id = v2_campagne[0]
             _log(f"Campagne créée : #{campaign_id} — {campaign_name}")
 
             # ── Rotation de villes — état initial ──────────────────────────

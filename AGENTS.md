@@ -197,22 +197,29 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
   `send_initial` fait UN envoi (ou UNE demande), atomique.
 
 ### Orchestration des envois — `core/orchestration.py`
-- Kill-switch global `planning_settings.v2_auto_send` (`'1'` par défaut, toggle « Auto »
-  dans la topbar → `/api/v2/auto-send`) : coupé → l'auto-send ne tourne pas.
-- `campagnes.envoi_auto` (modal « Gérer la campagne ») : 0 = SLT manuel (le scheduler ne
-  le touche pas), 1 = participe à l'auto-send.
+- **RÈGLE PRODUIT (2026-09) : l'envoi INITIAL est MANUEL SANS EXCEPTION.** Aucun job
+  d'auto-envoi d'initial n'existe dans le scheduler (`v2_send_initial` a été SUPPRIMÉ) et
+  `run_auto_send()` refuse toute exécution avec `manual=False` (`statut='initial_manuel_obligatoire'`).
+  Même si le kill-switch global `v2_auto_send` ou `envoi_auto` est à 1, automatisé = interdit
+  pour une touche 0. Chemin d'envoi initial UNIQUE : bouton « ▶ Envoyer » d'une campagne
+  (`manual=True`) ou bouton panel « Envoyer le mail » sur un prospect `qualifie`.
+- Kill-switch global `planning_settings.v2_auto_send` (toggle « Auto » de la topbar →
+  `/api/v2/auto-send`) : verrouillé à `'0'` car sans intérêt pour les initials (aucun
+  auto-envoi d'initial possible) ; conservé pour compat.
+- `campagnes.envoi_auto` (modal « Gérer la campagne ») : ne concerne QUE les relances
+  (voir `_run_v2_send_relances`) — ne recrée jamais d'auto-envoi d'initial.
 - `run_auto_send(campagne_id=None, limit_per_campagne=10, manual=False)` :
-  − mode scheduler (`campagne_id=None`) : kill-switch + `enabled_campagnes()`
-    (`statut='actif'` ET `envoi_auto=1`) → chaque candidat passe par `send_initial`
-    (verrous + validation Telegram + quota) ;
+  − `manual=False` → retour immédiat `initial_manuel_obligatoire`, ZÉRO envoi ;
   − `manual=True` (bouton `POST /api/v2/campagnes/<id>/send` « ▶ Envoyer ») : bypass du
     kill-switch ET de `envoi_auto` (action explicite utilisateur).
   (compat : les kwargs `objectif_id` restent acceptés en alias de `campagne_id`.)
 - `candidates_for(campagne_id, limit)` : `qualifie` + non écarté + non opposé + email
   présent + absent de `suppression_list`, FIFO (created_at ASC).
 - Jobs scheduler v2 :
-  − `v2_send_initial` (5 min) : `run_auto_send()` ;
-  − `v2_send_relances` (10 min) : `run_relances()` ;
+  − ~~`v2_send_initial`~~ SUPPRIMÉ (initial = manuel sans exception) ;
+  − `v2_send_relances` (10 min) : `ensure_batch_requests()` uniquement (✅ Telegram par
+    liste) — aucune exécution directe de `run_relances` en auto ;
+  − `v2_batch_poll` (1 min) : `consume_approvals()` → envoi des lots ✅ ;
   − `v2_reply_poll` (15 min) : `envoi.reply_poller.run_poll()` (réponses entrantes) ;
   − `v2_approval_poll` (1 min) : `approve_and_send_initial()` sur callback `v2_approve_*`.
 
@@ -220,8 +227,18 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
 - Mécanique : statut détermine la position suivante (`en_sequence→1`, `relance_1→2`,
   `relance_2→3`) ; le template position N (`delai_jours`) est dû quand
   `dernière_touche + delai_jours ≤ maintenant` ; chaque relance repasse par le tunnel
-  complet (verrous, rendu, humanisation, ✅ Telegram si `validation_telegram=1`,
-  transition `relance_k → relance_{k+1}`).
+  complet (verrous, rendu, humanisation, transition `relance_k → relance_{k+1}`).
+- **RÈGLE PRODUIT (structurelle) : TOUTE relance exige une ✅ Telegram, sans exception.**
+  Dans `send_relance()`, `needs_tg = approval != 'auto' and not dry_run` — `validation_telegram`
+  ne s'applique qu'à l'INITIAL ; aucune config ne permet une relance sans validation.
+  Exceptions : `approval='auto'` (lot déjà ✅ en amont par le batch validator) / `dry_run`.
+- Auto-envoi des relances (`scheduler._run_v2_send_relances`) : UNIQUEMENT via
+  `relance_batch_validator.ensure_batch_requests()` → un ✅ Telegram par liste → `consume_approvals()`
+  → `run_relances(cid, liste_id=..., approval='auto')`. Une campagne `envoi_auto=1` avec
+  `validation_relances=0` est IGNORÉE (skip + log) — jamais d'auto-envoi direct.
+- Bouton panel « Envoyer le mail » (`POST /api/v2/leads/<id>/email/send`) : prospect
+  `qualifie` → initial direct (manuel) ; `en_sequence`/`relance_k` → `send_relance(approval='telegram')`
+  (demande ✅/❌, aucun envoi direct).
 - `max_touches` (campagnes) : touché → transition `sans_reponse` (cycle fermé).
 - **Callback Telegram partagé** `v2_approve_{prospect_id}` : `_request_validation()`
   purge le pending.db avant toute nouvelle demande (l'initial consommé ne bloque pas
@@ -277,14 +294,16 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
 
 ### Panneau latéral — onglet Email (v2, `dashboard/routes/campagnes.py`)
 - `GET /api/v2/leads/<int:pid>/email` : aperçu « tel que le prospect le verra ».
-  `_render_v2_email()` rend position suivante (`next_position_for` : qualifie→0,
-  en_sequence→1, relance_1→2, relance_2→3) via `template_registry.get_step/render_template`
-  puis `email_shell.build_html_email` (HTML final, Re: sur relance). Repli sur `data_extra`
+  `_render_v2_email()` rend TOUJOURS la position 0 (« Envoi initial ») via
+  `template_registry.get_step/render_template` puis `email_shell.build_html_email`
+  (HTML final). RÈGLE PRODUIT : l'onglet Email montre la 1re email, jamais une relance
+  (initial = manuel ; relances = validation Telegram). Repli sur `data_extra`
   (éditeur) sinon `source:'none'`. **Jamais de passe LLM** (humanize off) : préview = template.
 - `POST /api/v2/leads/<int:pid>/email/test` : envoi réel VIA `gateway.envoyer` (quota boîte
   consommé) à `to` (défaut RESEND_SENDER_EMAIL), objet préfixé `[TEST]`. Consomme un slot.
 - `POST /api/v2/leads/<int:pid>/email/send` : envoi réel de la prochaine touche
-  (`send_initial` si `qualifie`, sinon `send_relance`, `humanize_on=False`).
+  (`send_initial` direct si `qualifie` — initial manuel ; sinon `send_relance` avec
+  `approval='telegram'` — validation Telegram obligatoire, `humanize_on=False`).
 - UI : `unified_leads.js` `renderEmailTab`/`_ulFetchV2Email` injecte le rendu dans le lead
   (`email_corps`/`email_objet` top-level) pour les renderers V5 ; `v6_restore.js`
   `panelSendEmail` (bouton « Envoyer le mail » v2), `sendTestEmail` (v2), `previewEmail`,

@@ -31,7 +31,12 @@ def _prospect(oid, email='contact@dupont.fr', statut='qualifie', site_web='https
     lid = get_or_create_liste(oid)
     pid = prospects_repo.insert_prospect(lid, nom='Boulangerie Dupont', email=email,
                                          prenom='M. Dupont', entreprise='Boulangerie Dupont',
-                                         secteur='Boulangerie', site_web=site_web)['prospect_id']
+                                         secteur='Boulangerie', site_web=site_web,
+                                         data_extra={
+                                             # Source de vérité du tunnel v2 : l'email RÉDIGÉ.
+                                             'email_objet': 'Une proposition pour {{entreprise}}',
+                                             'email_corps': 'Bonjour {{prenom}},\n\nVoici ma proposition.',
+                                         })['prospect_id']
     if statut != 'qualifie':
         from core.state_machine import transition_prospect
         transition_prospect(pid, statut, reason='test')
@@ -206,12 +211,16 @@ def test_send_initial_verrous(tmp_db):
     r = seq.send_initial(oid, pid3, dry_run=True)
     assert not r['success'] and r['statut'] == 'pas_email'
 
-    # sans template position 0
+    # aucun email rédigé (ni IA ni manuel) → verrou pas_email_ia.
+    # Le template de séquence ne PALLIE PAS un contenu absent (purge V1).
     from envoi import template_registry as tr
     for t in tr.get_templates(campagne_id=oid, include_inactifs=True):
         tr.delete(t['id'])
-    r = seq.send_initial(oid, pid, dry_run=True)
-    assert not r['success'] and r['statut'] == 'pas_template'
+    pid4 = prospects_repo.insert_prospect(
+        get_or_create_liste(oid), nom='Sans contenu', email='sans@mail.fr',
+        data_extra={'note': 'pas de redaction'})['prospect_id']
+    r = seq.send_initial(oid, pid4, dry_run=True)
+    assert not r['success'] and r['statut'] == 'pas_email_ia'
 
 
 def test_send_initial_envoi_effectif_sur_boite_test(tmp_db):

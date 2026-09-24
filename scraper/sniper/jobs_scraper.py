@@ -313,7 +313,7 @@ def _score_and_store(site_web: str, offer: dict, wap: dict, pagespeed: dict) -> 
     # Déduplication sur site_web
     with get_conn() as conn:
         existing = conn.execute(
-            "SELECT id FROM leads_bruts WHERE site_web=? AND source='jobs' "
+            "SELECT id FROM prospects WHERE site_web=? AND source='jobs' "
             "AND statut NOT IN ('archive','desabonne')",
             (site_web,)
         ).fetchone()
@@ -321,23 +321,35 @@ def _score_and_store(site_web: str, offer: dict, wap: dict, pagespeed: dict) -> 
             logger.debug(f"Jobs — {site_web} déjà présent, ignoré")
             return False
 
-    lead_id = insert_lead({
+    extra = {
+        "keyword_signal": keyword_used,
+        "rome_code":      rome_code,
+        "offer_id":       offer.get("id", ""),
+        "tag_urgence":    tag,
+        "niveau":         niveau,
+        "reason":         reason,
+    }
+    # On ajoute les data d'audit extraites
+    extra.update(json.loads(build_donnees_audit(pagespeed, wap, tag, niveau, reason)))
+
+    lead_v2 = {
         "nom":            company_name,
-        "adresse":        "",
         "ville":          lieu,
         "site_web":       site_web,
-        "telephone":      "",
-        "email":          "",
         "mot_cle":        keyword_used,
         "category":       f"Signal RH — {keyword_used}",
-        "source":         "jobs",
-        "tag_urgence":    tag,
-        "niveau_urgence": niveau,
-        "donnees_audit":  donnees,
-        "statut":         "en_attente",
-    })
+        "secteur":        "jobs"
+    }
 
-    if lead_id:
+    from core.objectif_registry import import_lead_as_prospect
+    res = import_lead_as_prospect(
+        campaign_id,
+        lead=lead_v2,
+        source="jobs",
+        data_extra_extra=extra,
+    )
+    
+    if res.get("success"):
         cms = wap.get("cms") or wap.get("ecommerce") or "full-code"
         _log(f"  ✓  {site_web} — {tag} niv.{niveau} | {cms} | signal: {keyword_used}")
         return True
@@ -395,10 +407,13 @@ class JobsScraper:
 
         try:
             # ── Créer la campagne ─────────────────────────────────────────────
-            from database import insert_campaign
+            from core.objectif_registry import resolve_or_create_campagne
             if not campaign_name:
                 campaign_name = f"Sniper Jobs — {datetime.now().strftime('%d/%m %H:%M')}"
-            campaign_id = insert_campaign(campaign_name, "jobs", "fr")
+            v2_campagne = resolve_or_create_campagne(campaign_name)
+            if not v2_campagne:
+                raise Exception("Impossible de créer/résoudre la campagne V2")
+            campaign_id = v2_campagne[0]
             _log(f"Campagne créée : #{campaign_id} — {campaign_name}")
 
             # ── Phase 1 : Fetch France Travail ────────────────────────────────

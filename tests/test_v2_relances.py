@@ -42,7 +42,20 @@ def _prospect(oid, email='contact@dupont.fr'):
     lid = get_or_create_liste(oid)
     return prospects_repo.insert_prospect(lid, nom='Boulangerie Dupont', email=email,
                                           prenom='M. Dupont', entreprise='Boulangerie Dupont',
-                                          secteur='Boulangerie')['prospect_id']
+                                          secteur='Boulangerie',
+                                          data_extra={
+                                              # Source de vérité du tunnel v2 : emails RÉDIGÉS par
+                                              # étape. Sans contenu, l'envoi serait bloqué
+                                              # (raison 'pas_email_ia').
+                                              'email_objet':  'Une proposition pour {{entreprise}}',
+                                              'email_corps':  'Bonjour {{prenom}},\n\nVoici ma proposition.',
+                                              'email_objet_2': 'Re: Une proposition pour {{entreprise}}',
+                                              'email_corps_2': 'Bonjour {{prenom}},\n\nRelance n°1.',
+                                              'email_objet_3': 'Re: Une proposition pour {{entreprise}}',
+                                              'email_corps_3': 'Bonjour {{prenom}},\n\nRelance n°2.',
+                                              'email_objet_4': 'Re: Une proposition pour {{entreprise}}',
+                                              'email_corps_4': 'Bonjour {{prenom}},\n\nDernière relance.',
+                                          })['prospect_id']
 
 
 def _seed_template_step(oid, position, delai_jours=0, corps='Corps relance {{prenom}}'):
@@ -141,7 +154,8 @@ def test_send_relance_auto_transitionne(tmp_db, fake_gateway):
     pid = _prospect(oid)
     _to_en_sequence(pid, oid, days_ago=1)
     from envoi import sequence_engine as seq
-    res = seq.send_relance(oid, pid)
+    # Règle structurelle : relance auto uniquement avec approval='auto' (lot ✅ Telegram)
+    res = seq.send_relance(oid, pid, approval='auto')
     assert res['success'] and res['statut'] == 'envoye' and res['step'] == 'relance_1'
     assert len(fake_gateway) == 1
     from database import prospects_repo
@@ -149,6 +163,22 @@ def test_send_relance_auto_transitionne(tmp_db, fake_gateway):
     assert p['statut'] == 'relance_1'
     events = [e['event_type'] for e in p['events']]
     assert 'relance_1' in events
+
+
+def test_send_relance_sans_approval_demande_telegram(tmp_db, fake_gateway, fake_tg):
+    """Règle structurelle : aucune relance ne part sans validation Telegram,
+    même pour une campagne validation_telegram=0."""
+    oid = _objectif(validation_telegram=0)
+    _seed_template_step(oid, 1, delai_jours=0)
+    pid = _prospect(oid)
+    _to_en_sequence(pid, oid, days_ago=1)
+    from envoi import sequence_engine as seq
+    res = seq.send_relance(oid, pid)
+    assert res['success'] is False and res['statut'] == 'attente_approbation'
+    assert fake_gateway == []
+    from database import prospects_repo
+    p = prospects_repo.get_prospect(pid)
+    assert p['statut'] == 'en_sequence'  # pas de transition avant ✅
 
 
 def test_send_relance_max_touches_ferme_le_cycle(tmp_db, fake_gateway):
@@ -213,10 +243,12 @@ def test_run_relances_kill_switch_et_manuel(tmp_db, fake_gateway):
     assert fake_gateway == []
     res2 = run_relances(objectif_id=oid, manual=True)
     assert res2['total'] == 1
-    assert res2['runs'][0]['details'][0]['statut'] == 'envoye'
-    assert len(fake_gateway) == 1
+    # Règle structurelle : une relance ne part JAMAIS sans validation Telegram,
+    # même en manuel (sans approval) → attente_approbation, aucun envoi direct.
+    assert res2['runs'][0]['details'][0]['statut'] == 'attente_approbation'
+    assert fake_gateway == []
     from database import prospects_repo
-    assert prospects_repo.get_prospect(pid)['statut'] == 'relance_1'
+    assert prospects_repo.get_prospect(pid)['statut'] == 'en_sequence'
 
 
 def test_template_update_et_inactif_retire_des_dues(tmp_db, fake_gateway):

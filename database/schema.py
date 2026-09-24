@@ -1237,7 +1237,8 @@ def init_db():
                    ('sniper_daily_quota', '20'),
                    ('sniper_auto_generate', '1'),
                    ('sniper_auto_send', '0'),
-                   ('sniper_ads_auto_scrape', '0');
+                   ('sniper_ads_auto_scrape', '0'),
+                   ('envoi_backend', 'auto');
 
         -- â”€â”€â”€ PRIORITÃ‰S DE SCRAPING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         CREATE TABLE IF NOT EXISTS scraping_priorities (

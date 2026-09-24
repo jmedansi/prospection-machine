@@ -28,12 +28,17 @@ _PIXEL_IMG = (
 
 
 def tracking_enabled() -> bool:
-    """True si TRACKING_BASE_URL est configurée (tracking maison actif)."""
-    return bool(os.getenv('TRACKING_BASE_URL', '').strip())
+    """True si le tracking est actif (activé par défaut sauf si TRACKING_ENABLED=0)."""
+    val = os.getenv('TRACKING_ENABLED', '1').strip().lower()
+    return val not in ('0', 'false', 'no', 'off')
 
 
 def get_base_url() -> str:
-    return os.getenv('TRACKING_BASE_URL', '').strip().rstrip('/')
+    """Retourne l'URL de base pour le pixel et les liens de tracking."""
+    base = os.getenv('TRACKING_BASE_URL', '').strip() or os.getenv('BASE_URL', '').strip() or os.getenv('APP_URL', '').strip()
+    if not base:
+        base = 'http://localhost:5001'
+    return base.rstrip('/')
 
 
 def rewrite_links(html: str, base_url: str, message_id: str) -> str:

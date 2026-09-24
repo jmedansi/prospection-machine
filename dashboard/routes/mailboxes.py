@@ -6,10 +6,14 @@ dashboard/routes/mailboxes.py — API boîtes d'expédition (table `mailboxes`)
                                         actif, quota_jour, usage_jour, campagne_pool)
 - PUT  /api/mailboxes/<int:id>        : mise à jour partielle (quota_jour, actif, label)
 - POST /api/mailboxes/<int:id>/reset  : remet usage_jour à 0 immédiatement
+- GET  /api/settings/envoi-backend    : backend global (smtp/resend/auto) + éligibilité
+- POST /api/settings/envoi-backend    : persiste le backend global
 """
 from flask import Blueprint, jsonify, request
 
 from database.connection import get_conn
+
+from envoi.gateway import get_global_backend, set_global_backend
 
 mailboxes_bp = Blueprint('mailboxes_bp', __name__)
 
@@ -70,3 +74,29 @@ def api_reset_mailbox_usage(mid):
     if cur.rowcount == 0:
         return jsonify({'success': False, 'error': 'boîte introuvable'}), 404
     return jsonify({'success': True})
+
+
+@mailboxes_bp.route('/api/settings/envoi-backend', methods=['GET'])
+def api_get_envoi_backend():
+    """Backend d'envoi global choisi dans Paramètres (défaut : auto)."""
+    backend = get_global_backend()
+    with get_conn() as conn:
+        rows = conn.execute("SELECT backend, COUNT(*) n FROM mailboxes GROUP BY backend").fetchall()
+    disponibles = {r['backend']: r['n'] for r in rows}
+    return jsonify({
+        'success': True,
+        'backend': backend,
+        'options': ['auto', 'smtp', 'resend'],
+        'disponibles': disponibles,
+        'interprete': 'auto' if backend == 'auto' else backend,
+    })
+
+
+@mailboxes_bp.route('/api/settings/envoi-backend', methods=['POST'])
+def api_set_envoi_backend():
+    data = request.get_json(silent=True) or {}
+    value = str(data.get('backend') or 'auto').strip().lower()
+    if value not in ('auto', 'smtp', 'resend'):
+        return jsonify({'success': False, 'error': "backend doit être 'auto', 'smtp' ou 'resend'"}), 400
+    set_global_backend(value)
+    return jsonify({'success': True, 'backend': value})

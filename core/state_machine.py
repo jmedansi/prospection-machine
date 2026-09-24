@@ -57,7 +57,7 @@ OVERRIDE_TRANSITIONS = {'ne_plus_contacter', 'adresse_invalide'}
 
 VALID_TRANSITIONS = {
     'qualifie':             {'en_sequence', 'ecarte', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
-    'en_sequence':          {'relance_1', 'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
+    'en_sequence':          {'qualifie', 'relance_1', 'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
     'relance_1':            {'relance_2', 'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
     'relance_2':            {'relance_3', 'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
     'relance_3':            {'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},

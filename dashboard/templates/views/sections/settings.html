@@ -40,6 +40,27 @@
 
 <!-- Tab: Boîtes -->
 <div id="subtab-setting_boites" class="subtab-content" style="display:none">
+    <div class="card" style="margin-bottom:1rem">
+        <div class="ct2" style="margin-bottom:.25rem">Méthode d'envoi par défaut</div>
+        <p style="font-size:12px;color:var(--ink3);margin-bottom:.75rem">
+            Choisissez le transport utilisé quand une campagne n'impose pas le sien
+            (<b>auto</b> = les deux boîtes restent éligibles). Une campagne qui fixe
+            explicitement SMTP ou Resend (« Gérer la campagne ») prime.
+        </p>
+        <div style="display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:.4rem;font-size:13px;cursor:pointer">
+                <input type="radio" name="envoi-backend" value="auto" checked> Auto
+            </label>
+            <label style="display:flex;align-items:center;gap:.4rem;font-size:13px;cursor:pointer">
+                <input type="radio" name="envoi-backend" value="smtp"> SMTP
+            </label>
+            <label style="display:flex;align-items:center;gap:.4rem;font-size:13px;cursor:pointer">
+                <input type="radio" name="envoi-backend" value="resend"> Resend
+            </label>
+            <span id="envoi-backend-info" style="font-size:12px;color:var(--ink3)"></span>
+            <button class="btn bp1 sm" onclick="saveEnvoiBackend()">Sauvegarder</button>
+        </div>
+    </div>
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
             <div class="ct2" style="margin-bottom:0">Boîtes d'expédition & quotas quotidiens</div>
