@@ -18,6 +18,7 @@ def api_stats():
         date_start = request.args.get('date_start')
         date_end = request.args.get('date_end')
         version = request.args.get('v')
+        v2 = str(request.args.get('v2', '')).lower() in ('1', 'true', 'yes')
 
         stats = get_dashboard_stats(
             campaign_id=campaign_id,
@@ -25,6 +26,7 @@ def api_stats():
             date_end=date_end,
             campaign_ids=campaign_ids,
             objectif_id=objectif_id,
+            v2=v2,
         )
 
         if version == '5':

@@ -2,14 +2,17 @@
 from .connection import get_conn, logger
 
 
-def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None = None, date_end: str | None = None, campaign_ids: str | None = None, objectif_id: int | None = None) -> dict:
+def get_dashboard_stats(campaign_id: int | None = None, date_start: str | None = None, date_end: str | None = None, campaign_ids: str | None = None, objectif_id: int | None = None, v2: bool = False) -> dict:
     """Toutes les métriques cockpit.
 
     `objectif_id` set → métriques v2 (prospects machine à états) ; sinon legacy.
+    `v2=True` force la vue v2 GLOBALE même quand les tables legacy existent encore
+    (onglet « Suivi » sans campagne sélectionnée : sa timeline est 100 % v2, les
+    chiffres doivent l'être aussi — sinon `bounces` restait à 0).
     """
     try:
         with get_conn() as conn:
-            if objectif_id:
+            if objectif_id or v2:
                 return _stats_v2(conn, objectif_id, date_start, date_end)
             # Legacy purgé (décommissionnement §1) → la vue cockpit bascule sur le
             # pipeline v2 GLOBAL (toutes prospects de tous les objectifs).
@@ -213,6 +216,37 @@ def _stats_v2(conn, campagne_id: int | None, date_start: str | None = None, date
         f"SELECT COUNT(*) AS c {from_t} {where} AND p.ecarte = 0 AND p.statut = 'rdv_obtenu'",
         params).fetchone()['c'] or 0
 
+    # ── Délivrabilité — source: emails_envoyes (alimentée par le webhook Resend) ──
+    # Les anciennes valeurs codées en dur (bounces=0, spam=0, ouverts=0)
+    # masquaient 20 bounces réels sur 188 envois.
+    if campagne_id is None:
+        e_from = "FROM emails_envoyes e"
+        e_where = "WHERE 1=1"
+        e_params: list = []
+    else:
+        e_from = ("FROM emails_envoyes e "
+                  "JOIN prospects p ON p.id = e.lead_id "
+                  "JOIN listes l ON p.liste_id = l.id")
+        e_where = "WHERE l.campagne_id = ?"
+        e_params = [campagne_id]
+    if date_start and date_end:
+        e_where += " AND DATE(e.date_envoi) >= ? AND DATE(e.date_envoi) <= ?"
+        e_params += [date_start, date_end]
+
+    def _ecol(expr: str) -> int:
+        return conn.execute(f"SELECT COUNT(*) AS c {e_from} {e_where} AND {expr}",
+                            e_params).fetchone()['c'] or 0
+
+    e_total = _ecol("e.id IS NOT NULL")
+    bounces = _ecol("e.bounce = 1")
+    spam = _ecol("e.spam = 1")
+    ouverts = _ecol("e.ouvert = 1")
+    # Seuls les statuts confirmés par Resend entrent dans le taux de délivrance
+    # (`envoye` = émis mais pas encore de retour → non compté).
+    delivres = _ecol("e.statut_envoi IN ('delivered','opened','clicked','delivré')")
+    suivi_resend = _ecol(
+        "e.statut_envoi IN ('delivered','opened','clicked','delivré','bounced','complained')")
+
     stats = {
         'leads_scrapes': total,
         'leads_attente': qualifie,
@@ -223,14 +257,14 @@ def _stats_v2(conn, campagne_id: int | None, date_start: str | None = None, date
         'leads_sans_site': total - avec_site,
         'emails_prets': avec_email - envoye,         # a un email mais pas encore envoyé
         'envoyes': envoye,
-        'emails_ouverts': 0,
+        'emails_ouverts': ouverts,
         'emails_repondus': repondu,
         'reponses_positives': rdv,
         'rdv_obtenus': rdv,
-        'bounces': 0,
-        'spam': 0,
+        'bounces': bounces,
+        'spam': spam,
         'nb_envoyes': envoye,
-        'taux_ouverture': 0,
+        'taux_ouverture': round(ouverts / e_total * 100) if e_total else 0,
         'taux_clic': 0,
         'taux_reponse': round(repondu / envoye * 100) if envoye else 0,
         'taux_rdv': round(rdv / envoye * 100) if envoye else 0,
@@ -240,6 +274,11 @@ def _stats_v2(conn, campagne_id: int | None, date_start: str | None = None, date
         'seo_moyen': 0,
         'leads_prioritaires': 0,
         'pdfs_generes': 0,
+        'emails_total': e_total,
+        'emails_suivis': suivi_resend,
+        'emails_delivres': delivres,
+        'taux_delivraison': round(delivres / suivi_resend * 100) if suivi_resend else 0,
+        'taux_bounce': round(bounces / e_total * 100) if e_total else 0,
     }
 
     from config_manager import get_config

@@ -29,6 +29,10 @@
             if (window.ListesModule && typeof ListesModule.init === 'function') ListesModule.init();
         } else if (tabName === 'sources') {
             if (typeof sourcesInit === 'function') sourcesInit();
+        } else if (tabName === 'suivi_timeline') {
+            if (window.SuiviModule && typeof SuiviModule.init === 'function') SuiviModule.init();
+        } else if (tabName === 'suivi_calendar') {
+            if (window.RelancesCalendarModule && typeof RelancesCalendarModule.init === 'function') RelancesCalendarModule.init();
         } else if (['settings_gen', 'setting_profil', 'setting_api', 'setting_system', 'setting_boites'].indexOf(tabName) !== -1) {
             if (typeof loadSettings === 'function') loadSettings();
         } else if (tabName === 'health') {
@@ -49,7 +53,14 @@
             if (typeof loadStats === 'function') loadStats();
             if (typeof loadConfig === 'function') loadConfig();
         } else if (page === 'suivi') {
-            if (window.SuiviModule && typeof SuiviModule.init === 'function') SuiviModule.init();
+            var activeSuivi = document.querySelector('#section-suivi .section-tab.active');
+            if (activeSuivi) {
+                var mSuivi = activeSuivi.getAttribute('onclick').match(/'([^']+)'/);
+                if (mSuivi) v6LoadSubTab(mSuivi[1]);
+                else if (window.SuiviModule && typeof SuiviModule.init === 'function') SuiviModule.init();
+            } else {
+                if (window.SuiviModule && typeof SuiviModule.init === 'function') SuiviModule.init();
+            }
         } else if (page === 'campagne') {
             var active = document.querySelector('#section-campagne .section-tab.active');
             if (active) {

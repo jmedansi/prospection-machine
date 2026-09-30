@@ -92,3 +92,41 @@ def api_suivi_echanges():
             ev['payload'] = {}
         events.append(ev)
     return jsonify({'success': True, 'events': events})
+
+
+# ── Bounces / plaintes — bloc récap de l'onglet Suivi ─────────────────────────
+
+@replies_bp.route('/api/v2/suivi/bounces', methods=['GET'])
+def api_suivi_bounces():
+    """File `bounce_queue` : bounces/plaintes en attente de décision.
+
+    `campagne_id` → filtre sur la campagne active ; `statut` → `pending`
+    (défaut) | `traite` | `ignore` | `tous`.
+    """
+    from core.bounce_handler import list_bounces
+    campagne_id = request.args.get('campagne_id', type=int)
+    statut = request.args.get('statut', 'pending')
+    if statut in ('tous', 'all', ''):
+        statut = None
+    rows = list_bounces(campagne_id=campagne_id, statut=statut)
+    for r in rows:
+        r['nom_complet'] = ' '.join(
+            [x for x in (r.get('prenom') or '', r.get('nom') or '') if x]
+        ) or (('🔗 ' + r['entreprise']) if r.get('entreprise') else (r.get('email') or ''))
+    return jsonify({'success': True, 'bounces': rows, 'count': len(rows)})
+
+
+@replies_bp.route('/api/v2/bounces/<int:bounce_id>/archive', methods=['POST'])
+def api_bounce_archive(bounce_id):
+    """✅ — `ne_plus_contacter` + déplacement en 🗑 Corbeille."""
+    from core.bounce_handler import archive_bounce
+    res = archive_bounce(bounce_id)
+    return jsonify(res), 200 if res.get('success') else 400
+
+
+@replies_bp.route('/api/v2/bounces/<int:bounce_id>/ignore', methods=['POST'])
+def api_bounce_ignore(bounce_id):
+    """❌ — aucun mouvement ; l'adresse reste dans `suppression_list`."""
+    from core.bounce_handler import ignore_bounce
+    res = ignore_bounce(bounce_id)
+    return jsonify(res), 200 if res.get('success') else 400

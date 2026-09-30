@@ -10,6 +10,9 @@
       #suivi-stat-ndr         NDR / boîtes mortes
       #suivi-stat-relances    relances envoyées
       #suivi-stat-desinsc     désinscriptions
+      #suivi-stat-bounces     bounces + plaintes (suppression_list)
+      #suivi-bounce-block     bloc récap des bounces à statuer
+      #suivi-bounce-list      lignes du bloc (boutons 🗑 Corbeille / Ignorer)
       #suivi-filter-type      filtre par type d'événement
       #tbody-suivi            timeline des échanges
       #suivi-count            compteur
@@ -68,6 +71,29 @@
         <div class="ml">Désinscriptions</div>
         <div class="mv" id="suivi-stat-desinsc">0</div>
     </div>
+    <div class="mc">
+        <div class="ml">Bounces</div>
+        <div class="mv" id="suivi-stat-bounces">0</div>
+    </div>
+</div>
+
+<!-- ── Bounces à statuer (alternatif aux boutons Telegram) ── -->
+<div id="suivi-bounce-block" style="display:none;border:1px solid var(--border);border-left:3px solid #ef4444;border-radius:12px;background:var(--bg,#fff);margin-top:14px;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);background:#ef44440a">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--ink)">
+            <span style="width:8px;height:8px;border-radius:50%;background:#ef4444"></span>
+            Bounces à traiter
+            <span id="suivi-bounce-count" style="font-weight:500;font-size:12px;color:var(--ink3)"></span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--ink3)">✅ = 🗑 Corbeille · ❌ = ignorer (adresse toujours bloquée)</span>
+            <button class="btn sm" data-act-bulk="archive" title="Tout envoyer en 🗑 Corbeille"
+                style="border:1px solid #ef444455;color:#ef4444">Tout archiver</button>
+            <button class="btn sm" data-act-bulk="ignore" title="Ignorer tous les bounces en attente"
+                style="border:1px solid var(--border);color:var(--ink3)">Tout ignorer</button>
+        </div>
+    </div>
+    <div id="suivi-bounce-list"></div>
 </div>
 
 <!-- ── Timeline des échanges ─────────────────────────────── -->

@@ -64,6 +64,7 @@ def ensure_batch_requests() -> dict:
     position ET son count n'ont pas changé.
     """
     from core import orchestration
+    from envoi.telegram_validation import get_status
     try:
         from core.telegram_adapter import send_validation_request
     except Exception:
@@ -90,11 +91,26 @@ def ensure_batch_requests() -> dict:
             with get_conn() as conn:
                 state = _batch_state(conn, cb)
                 statut = state['statut'] if state else None
-                if statut == 'pending':
-                    continue  # réponse traitée par consume_approvals
+                if statut in ('pending', 'sending'):
+                    continue  # réponse traitée (ou en cours d'envoi) par consume_approvals
                 if statut in ('refuse', 'sent') and \
                         state['position'] == position and state['count'] == count:
                     continue  # lot inchangé → ne pas re-demander
+                # Le hub contient déjà une demande pour CE callback mais le lot a été
+                # supprimé (bouton « Valider » de l'UI) : on réenregistre le lot SANS
+                # renvoyer de message, sinon la ✅ déjà donnée par l'utilisateur ne
+                # serait consommée par personne (« rien n'est parti »).
+                hub_status = None
+                try:
+                    hub_status = get_status(cb)
+                except Exception:
+                    hub_status = None
+                if hub_status in ('ok', 'no', 'pending'):
+                    _save_batch(conn, cb, cid, lid, position, count, 'pending')
+                    requests.append({'callback_id': cb, 'campagne_id': cid, 'liste_id': lid,
+                                     'position': position, 'count': count,
+                                     'reuse': hub_status})
+                    continue
                 if send_validation_request is None:
                     logger.warning("[relance_batch] hub Telegram absent — lot non demandé")
                     return {'success': False, 'requests': requests}
@@ -144,22 +160,39 @@ def consume_approvals() -> dict:
             status = get_status(cb)
             if status not in ('ok', 'no'):
                 continue
+            # Réclamation ATOMIQUE : avec plusieurs scheduler en concurrence, deux
+            # processus lisaient le même lot `pending` et lançaient deux `run_relances`
+            # simultanés (relance_1 puis relance_2 en quelques secondes).
+            claim = conn.execute(
+                "UPDATE relance_batches SET statut='sending', updated_at=datetime('now') "
+                "WHERE callback_id = ? AND statut = 'pending'", (cb,))
+            if claim.rowcount != 1:
+                continue  # déjà réclamé par un autre processus
             mark_completed(cb)
-            if status == 'ok':
-                res = orchestration.run_relances(
-                    row['campagne_id'], limit_per_campagne=_BATCH_HIGH_LIMIT,
-                    liste_id=row['liste_id'], approval='auto', manual=True,
-                )
-                conn.execute(
-                    "UPDATE relance_batches SET statut='sent', updated_at=datetime('now') "
-                    "WHERE callback_id = ?", (cb,))
-                log_status = 'sent'
-            else:
-                res = {'success': True, 'total': 0}
+            try:
+                if status == 'ok':
+                    res = orchestration.run_relances(
+                        row['campagne_id'], limit_per_campagne=_BATCH_HIGH_LIMIT,
+                        liste_id=row['liste_id'], approval='auto', manual=True,
+                    )
+                    conn.execute(
+                        "UPDATE relance_batches SET statut='sent', updated_at=datetime('now') "
+                        "WHERE callback_id = ?", (cb,))
+                    log_status = 'sent'
+                else:
+                    res = {'success': True, 'total': 0}
+                    conn.execute(
+                        "UPDATE relance_batches SET statut='refuse', updated_at=datetime('now') "
+                        "WHERE callback_id = ?", (cb,))
+                    log_status = 'refuse'
+            except Exception as e:
+                # La ✅ est déjà consommée : on ne re-demande JAMAIS → lot fermé en
+                # `refuse` + trace explicite (sinon relance infinie ou lot fantôme).
                 conn.execute(
                     "UPDATE relance_batches SET statut='refuse', updated_at=datetime('now') "
                     "WHERE callback_id = ?", (cb,))
-                log_status = 'refuse'
+                logger.error("[relance_batch] %s : échec pendant l'envoi — %s", cb, e)
+                continue
             consumed.append({'callback_id': cb, 'statut': log_status,
                              'total': res.get('total'), 'runs': res.get('runs')})
     return {'success': True, 'consumed': consumed}

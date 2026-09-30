@@ -207,6 +207,36 @@ def init_scheduler(_app=None):
 
     _scheduler.add_job(_check_v2_approvals, IntervalTrigger(minutes=1), id='v2_approval_poll')
 
+    # v2 — Bounces / plaintes : consommation des ✅/❌ Telegram.
+    # ✅ → `ne_plus_contacter` + déplacement en 🗑 Corbeille ; ❌ → ignoré
+    # (l'adresse reste dans suppression_list, aucun mouvement de prospect).
+    def _check_v2_bounces():
+        try:
+            from core.bounce_handler import consume_bounce_approvals
+            res = consume_bounce_approvals()
+            for item in res.get('consumed', []):
+                logger.info(f"[bounce-poll] {item.get('callback_id')} → {item.get('answer')}"
+                            f" (corbeille={item.get('moved')})")
+        except Exception as e:
+            logger.error(f"[bounce-poll] erreur : {e}")
+
+    _scheduler.add_job(_check_v2_bounces, IntervalTrigger(minutes=1), id='v2_bounce_poll')
+
+    # Délivrabilité — réaligne emails_envoyes sur l'API Resend (source de vérité) :
+    # le webhook n'apparie qu'une partie des envois (Message-ID RFC vs id Resend),
+    # d'où un compteur de bounces local faussé. Alimente aussi bounce_queue.
+    def _sync_resend_tracking():
+        try:
+            from envoi.resend_sync import sync
+            res = sync()
+            if res.get('queue_added') or res.get('bounce_marked') or res.get('bounce_cleared'):
+                logger.info(f"[resend-sync] {res}")
+        except Exception as e:
+            logger.error(f"[resend-sync] erreur : {e}")
+
+    _scheduler.add_job(_sync_resend_tracking, CronTrigger(minute='*/15'),
+                       id='resend_tracking_sync')
+
     # v2 — Envois initiaux : RÈGLE PRODUIT = MANUEL UNIQUEMENT, SANS EXCEPTION.
     # Aucun job d'auto-envoi d'initial ne doit exister ici. Le seul chemin d'envoi
     # initial est le bouton « ▶ Envoyer » (run_auto_send(manual=True)) ou le bouton

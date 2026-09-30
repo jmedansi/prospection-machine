@@ -475,22 +475,33 @@ def api_transition_prospect(prospect_id):
 
 
 def _render_v2_email(prospect):
-    """Rendu de la PREMIÈRE email (position 0, « Envoi initial ») d'un prospect v2,
-    tel qu'il sera envoyé (HTML final).
+    """Rendu de l'email correspondant a la PROCHAINE touche d'un prospect v2,
+    tel qu'il sera envoye (HTML final).
 
-    RÈGLE PRODUIT : l'onglet Email affiche TOUJOURS la 1re email (initiale), jamais
-    une relance — l'initial est manuel et les relances passent par validation Telegram.
-    Source de vérité absolue : L'email rédigé pour le prospect (agent IA / utilisateur).
-    Repli : Le template de la campagne si aucun email personnalisé n'est présent.
+    La position affichee depend du statut du prospect :
+      - 'qualifie'    -> position 0 (Envoi initial)
+      - 'en_sequence' -> position 1 (Relance 1)
+      - 'relance_1'   -> position 2 (Relance 2)
+      - 'relance_2'   -> position 3 (Relance 3)
+
+    REGLE D'AFFICHAGE : onglet Email = prochain mail a envoyer.
+    REGLE D'ENVOI (inchangee) : initial=manuel, relances=Telegram.
+    Source de verite : email redige pour le prospect (IA/manuel).
+    Repli : template de campagne si aucun email redige.
     """
-    from envoi.sequence_engine import get_custom_step_email
+
+    from envoi.sequence_engine import get_custom_step_email, STATUT_NEXT_POSITION
     from envoi import email_shell, template_registry
 
     cid = prospect.get('campagne_id')
     obj = campagnes_repo.get_campagne(cid) if cid else None
     profil = (obj or {}).get('objectif_principale') or ''
 
-    position, step_label = 0, 'Envoi initial'
+    # Determiner la prochaine position selon le statut du prospect
+    statut = prospect.get('statut') or 'qualifie'
+    position = STATUT_NEXT_POSITION.get(statut, 0)  # 0 si qualifie ou etat final
+    STEP_LABELS = {0: 'Envoi initial', 1: 'Relance 1', 2: 'Relance 2', 3: 'Relance 3'}
+    step_label = STEP_LABELS.get(position, f'Etape {position}')
 
     # 1. Priorité 1 : Email rédigé pour le prospect (agent IA ou manuel)
     custom = get_custom_step_email(prospect, position)
@@ -716,3 +727,263 @@ def api_v2_lead_custom_reply(prospect_id):
     prospects_repo.update_prospect(prospect_id, data_extra={'contact_mail': 1})
 
     return jsonify({'success': True, 'message': 'Email envoyé avec succès', 'message_id': resp.get('message_id')})
+
+
+@campagnes_bp.route('/api/v2/relances/calendar', methods=['GET'])
+def api_relances_calendar():
+    """Projection et historique du calendrier des relances jour par jour.
+    
+    Calcule pour tous les prospects actifs leurs prochaines dates d'échéance en jours ouvrés réels,
+    et agrège les envois passés et prévus par date et par liste/campagne.
+    """
+    from datetime import datetime, date, timedelta
+    from core.orchestration import add_business_days, is_business_day
+    from envoi import sequence_engine, template_registry
+
+    campagne_filter = request.args.get('campagne_id', type=int)
+    liste_filter = request.args.get('liste_id', type=int)
+    today = date.today()
+    today_str = today.strftime('%Y-%m-%d')
+
+    NEXT_POS = {'en_sequence': 1, 'relance_1': 2, 'relance_2': 3}
+    DEFAULT_DELAYS = {1: 3, 2: 7, 3: 14}
+
+    with get_conn() as conn:
+        # 1. Relances passées déjà envoyées (derniers 60 jours)
+        past_sql = """
+            SELECT ev.id, ev.prospect_id, ev.event_type, ev.created_at,
+                   p.nom, p.prenom, p.entreprise, p.email, p.liste_id,
+                   l.nom AS liste_nom, l.campagne_id, c.nom AS campagne_nom
+            FROM prospect_events ev
+            JOIN prospects p ON ev.prospect_id = p.id
+            JOIN listes l ON p.liste_id = l.id
+            JOIN campagnes c ON l.campagne_id = c.id
+            WHERE ev.event_type IN ('relance_1', 'relance_2', 'relance_3')
+              AND (l.type IS NULL OR l.type != 'corbeille')
+        """
+        past_params = []
+        if campagne_filter:
+            past_sql += " AND l.campagne_id = ?"
+            past_params.append(campagne_filter)
+        if liste_filter:
+            past_sql += " AND l.id = ?"
+            past_params.append(liste_filter)
+        past_sql += " ORDER BY ev.created_at DESC"
+        past_events = [dict(r) for r in conn.execute(past_sql, past_params).fetchall()]
+
+        # 2. Prospects actifs en cours de séquence
+        active_sql = """
+            SELECT p.id, p.nom, p.prenom, p.entreprise, p.email, p.statut, p.data_extra,
+                   p.liste_id, l.nom AS liste_nom, l.campagne_id, c.nom AS campagne_nom,
+                   c.max_touches,
+                   MAX(CASE WHEN ev.event_type IN ('initial','relance_1','relance_2','relance_3') THEN ev.created_at END) AS last_touch_at
+            FROM prospects p
+            JOIN listes l ON p.liste_id = l.id
+            JOIN campagnes c ON l.campagne_id = c.id
+            LEFT JOIN prospect_events ev ON ev.prospect_id = p.id
+            WHERE p.statut IN ('en_sequence', 'relance_1', 'relance_2')
+              AND p.ecarte = 0 AND p.ne_plus_contacter = 0
+              AND (l.type IS NULL OR l.type != 'corbeille')
+        """
+        active_params = []
+        if campagne_filter:
+            active_sql += " AND l.campagne_id = ?"
+            active_params.append(campagne_filter)
+        if liste_filter:
+            active_sql += " AND l.id = ?"
+            active_params.append(liste_filter)
+        active_sql += " GROUP BY p.id"
+        active_prospects = [dict(r) for r in conn.execute(active_sql, active_params).fetchall()]
+
+        # 3. Liste des campagnes distinctes pour les filtres
+        camps = [dict(r) for r in conn.execute("SELECT id, nom, envoi_auto, validation_relances FROM campagnes WHERE statut = 'actif' ORDER BY nom ASC").fetchall()]
+
+    # Listes distinctes visibles (filtre « Liste » du calendrier)
+    listes_map = {}
+    for _src in (active_prospects, past_events):
+        for _r in _src:
+            _id = _r.get('liste_id')
+            if _id:
+                listes_map[int(_id)] = _r.get('liste_nom') or f"Liste #{_id}"
+    listes = [{'id': k, 'nom': v} for k, v in sorted(listes_map.items(), key=lambda kv: (kv[1] or '').lower())]
+
+    days_data = {}
+
+    # Insérer les événements passés
+    for ev in past_events:
+        d_str = (ev.get('created_at') or '')[:10]
+        if not d_str:
+            continue
+        days_data.setdefault(d_str, {'sent': [], 'due': [], 'planned': []})
+        pos = int(ev['event_type'].split('_')[-1]) if '_' in ev['event_type'] else 1
+        days_data[d_str]['sent'].append({
+            'prospect_id': ev['prospect_id'],
+            'nom': ev['nom'],
+            'prenom': ev['prenom'],
+            'entreprise': ev['entreprise'],
+            'email': ev['email'],
+            'liste_id': ev['liste_id'],
+            'liste_nom': ev['liste_nom'],
+            'campagne_id': ev['campagne_id'],
+            'campagne_nom': ev['campagne_nom'],
+            'position': pos,
+            'step_name': f"Relance {pos}",
+            'status': 'sent',
+            'sent_at': ev['created_at'],
+            'delai_jours': None,
+            'last_touch_at': None,
+        })
+
+    # Projeter les relances à venir
+    for p in active_prospects:
+        last_touch = p['last_touch_at']
+        if not last_touch:
+            continue
+        try:
+            last_dt = datetime.strptime(str(last_touch)[:19], '%Y-%m-%d %H:%M:%S')
+        except Exception:
+            continue
+
+        current_pos = NEXT_POS.get(p['statut'], 1)
+        max_touches = p.get('max_touches') or 3
+
+        prev_dt = last_dt
+        for pos in range(current_pos, max_touches):
+            # Récupérer template ou délai par défaut
+            t = template_registry.get_step(p['campagne_id'], position=pos)
+            delai = int(t.get('delai_jours')) if t and t.get('delai_jours') is not None else DEFAULT_DELAYS.get(pos, 3)
+            sched_dt = add_business_days(prev_dt, delai)
+            d_str = sched_dt.strftime('%Y-%m-%d')
+            sched_date = sched_dt.date()
+
+            item = {
+                'prospect_id': p['id'],
+                'nom': p['nom'],
+                'prenom': p['prenom'],
+                'entreprise': p['entreprise'],
+                'email': p['email'],
+                'liste_id': p['liste_id'],
+                'liste_nom': p['liste_nom'],
+                'campagne_id': p['campagne_id'],
+                'campagne_nom': p['campagne_nom'],
+                'position': pos,
+                'step_name': f"Relance {pos}",
+                'delai_jours': delai,
+                'last_touch_at': last_touch,
+                'scheduled_date': d_str,
+            }
+
+            days_data.setdefault(d_str, {'sent': [], 'due': [], 'planned': []})
+            if pos == current_pos:
+                if sched_date <= today:
+                    item['status'] = 'due'
+                    days_data[d_str]['due'].append(item)
+                else:
+                    item['status'] = 'planned'
+                    days_data[d_str]['planned'].append(item)
+            else:
+                item['status'] = 'planned'
+                days_data[d_str]['planned'].append(item)
+            prev_dt = sched_dt
+
+    # Structurer par jour avec sous-groupes par liste
+    result_days = {}
+    total_due_count = 0
+    total_sent_count = 0
+    total_planned_count = 0
+
+    for d_str, groups in days_data.items():
+        try:
+            day_dt = datetime.strptime(d_str, '%Y-%m-%d').date()
+        except Exception:
+            continue
+
+        sent_list = groups['sent']
+        due_list = groups['due']
+        planned_list = groups['planned']
+
+        total_due_count += len(due_list)
+        total_sent_count += len(sent_list)
+        total_planned_count += len(planned_list)
+
+        # Agréger par lot (liste_id + position + status)
+        batches = {}
+        for status_key, items in [('sent', sent_list), ('due', due_list), ('planned', planned_list)]:
+            for item in items:
+                b_key = f"{item['liste_id']}_{item['position']}_{status_key}"
+                if b_key not in batches:
+                    batches[b_key] = {
+                        'batch_key': b_key,
+                        'liste_id': item['liste_id'],
+                        'liste_nom': item['liste_nom'],
+                        'campagne_id': item['campagne_id'],
+                        'campagne_nom': item['campagne_nom'],
+                        'position': item['position'],
+                        'step_name': item['step_name'],
+                        'status': status_key,
+                        'count': 0,
+                        'delai_jours': item.get('delai_jours'),
+                        'last_touch_at': item.get('last_touch_at'),
+                        'prospects': [],
+                    }
+                batches[b_key]['count'] += 1
+                if len(batches[b_key]['prospects']) < 100:
+                    batches[b_key]['prospects'].append({
+                        'id': item['prospect_id'],
+                        'nom': item.get('nom') or '',
+                        'prenom': item.get('prenom') or '',
+                        'entreprise': item.get('entreprise') or '',
+                        'email': item.get('email') or '',
+                    })
+
+        result_days[d_str] = {
+            'date': d_str,
+            'day_of_week': day_dt.weekday(),  # 0=Lundi, 6=Dimanche
+            'is_business_day': is_business_day(day_dt),
+            'is_today': (d_str == today_str),
+            'is_past': (day_dt < today),
+            'counts': {
+                'sent': len(sent_list),
+                'due': len(due_list),
+                'planned': len(planned_list),
+                'total': len(sent_list) + len(due_list) + len(planned_list),
+            },
+            'batches': list(batches.values()),
+        }
+
+    return jsonify({
+        'success': True,
+        'today': today_str,
+        'summary': {
+            'total_due_now': total_due_count,
+            'total_sent': total_sent_count,
+            'total_planned': total_planned_count,
+            'active_prospects': len(active_prospects),
+        },
+        'campagnes': camps,
+        'listes': listes,
+        'days': result_days,
+    })
+
+
+@campagnes_bp.route('/api/v2/relances/batch-validate', methods=['POST'])
+def api_relances_batch_validate():
+    """Déclenche la demande de validation Telegram immédiate pour une liste spécifique."""
+    data = request.get_json(silent=True) or {}
+    campagne_id = data.get('campagne_id')
+    liste_id = data.get('liste_id')
+
+    if not campagne_id or not liste_id:
+        return jsonify({'success': False, 'error': 'campagne_id et liste_id requis'}), 400
+
+    from core.relance_batch_validator import ensure_batch_requests, batch_callback
+    from database.connection import get_conn
+
+    # Réinitialise le batch s'il était complété/refusé pour permettre une nouvelle validation
+    cb = batch_callback(campagne_id, liste_id)
+    with get_conn() as conn:
+        conn.execute("DELETE FROM relance_batches WHERE callback_id = ?", (cb,))
+        conn.commit()
+
+    res = ensure_batch_requests()
+    return jsonify({'success': True, 'result': res, 'callback_id': cb})

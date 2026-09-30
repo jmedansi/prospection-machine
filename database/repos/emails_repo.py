@@ -86,6 +86,38 @@ class EmailsRepo:
             logger.error(f"EmailsRepo.update_tracking({message_id}) → {e}")
             return False
 
+    def get_address(self, message_id: str) -> str | None:
+        """Adresse destinataire d'un email connu par id Resend OU Message-ID RFC.
+
+        Sert de repli au webhook : le payload Resend `to` est parfois absent
+        (événements partiels), il faut alors l'adresse déjà journalisée.
+        """
+        try:
+            with get_conn() as conn:
+                row = conn.execute(
+                    "SELECT email_destinataire FROM emails_envoyes "
+                    "WHERE message_id_resend = ? OR message_id_brevo = ?",
+                    (message_id, message_id),
+                ).fetchone()
+                return row['email_destinataire'] if row else None
+        except Exception as e:
+            logger.error(f"EmailsRepo.get_address({message_id}) → {e}")
+            return None
+
+    def get_record_id(self, message_id: str) -> int | None:
+        """id `emails_envoyes` d'un envoi connu par id Resend OU Message-ID RFC."""
+        try:
+            with get_conn() as conn:
+                row = conn.execute(
+                    "SELECT id FROM emails_envoyes "
+                    "WHERE message_id_resend = ? OR message_id_brevo = ?",
+                    (message_id, message_id),
+                ).fetchone()
+                return row['id'] if row else None
+        except Exception as e:
+            logger.error(f"EmailsRepo.get_record_id({message_id}) → {e}")
+            return None
+
     def log_event(self, message_id: str, event_type: str,
                   timestamp: str, meta: dict) -> bool:
         """Insère un événement dans email_events."""

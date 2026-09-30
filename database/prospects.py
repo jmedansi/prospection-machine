@@ -121,6 +121,29 @@ def is_in_suppression_list(email) -> bool:
         return _is_in_suppression_list(conn, email)
 
 
+def add_to_suppression_list(email, raison: str = 'bounce_dur',
+                            source_campagne_id: int | None = None) -> bool:
+    """Noircit une adresse dans la suppression_list GLOBALE (idempotent).
+
+    Second point d'écriture de la liste, pour le webhook Resend
+    (`email.bounced` / `email.complained`). Un destinataire rebondi n'a PAS
+    passé par `set_ne_plus_contacter()` : sans cette insertion, le flag
+    `ne_plus_contacter` reste à 0 et la séquence re-cible l'adresse au tour
+    suivant. Retourne False si l'adresse est inutilisable (rien n'est écrit).
+    """
+    addr = _normalize_email(email)
+    if '@' not in addr or addr.startswith('@') or addr.endswith('@'):
+        return False
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO suppression_list (email, raison, source_campagne_id) "
+            "VALUES (?, ?, ?)",
+            (addr, raison, source_campagne_id),
+        )
+        conn.commit()
+    return True
+
+
 def enrich_prospect(conn, prospect_id: int, *, nom='', prenom='', email='', telephone='',
                     site_web='', nb_avis=None, data_extra=None) -> int:
     """Enrichit un prospect existant (jamais de création).

@@ -1548,7 +1548,7 @@ ${!_ulIsV2() || hasAudit || lead.statut==='audit_echoue' ? `
             const profilMatch = lead.email_objet ? lead.email_objet.match(/^(Profil [A-D])/i) : null;
             profil = profilMatch ? profilMatch[1] : '';
         }
-        const v2Step = (lead._v2Email && lead._v2Email.step > 0) ? lead._v2Email : null;
+        const v2Step = (lead._v2Email && lead._v2Email.step_label) ? lead._v2Email : null;
         const previewHtml = lead.email_corps ? lead.email_corps.replace(/"/g, '&quot;') : '';
         return `
         <div class="panel-section" style="background:var(--surface2);padding:20px;border-radius:12px;margin-bottom:16px">
@@ -1560,7 +1560,7 @@ ${!_ulIsV2() || hasAudit || lead.statut==='audit_echoue' ? `
                     ${profil ? `<div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:4px">${escHtml(profil)}</div>` : ''}
                     <div style="font-weight:600;font-size:15px;color:var(--ink)">${escHtml(emailSubject)}</div>
                     <div style="font-size:12px;color:${hasEmail ? 'var(--accent)' : 'var(--ink3)'};margin-top:2px">${hasEmail ? 'Email généré' : 'Non généré'}</div>
-                    ${v2Step ? `<div style="font-size:11px;color:#f59e0b;margin-top:2px;font-weight:600">Aperçu — ${escHtml(v2Step.step_label)}</div>` : ''}
+                    ${v2Step ? `<div style="font-size:11px;color:${v2Step.step===0?'var(--accent)':' #f59e0b'};margin-top:2px;font-weight:600">${v2Step.step===0?'✉️':'\uD83D\uDD04'} Prochaine touche : ${escHtml(v2Step.step_label)}</div>` : ''}
                     ${(lead.lien_rapport && lead.lien_rapport.startsWith('http')) ? `<a href="${escHtml(lead.lien_rapport)}" target="_blank" style="font-size:11px;color:var(--blue);margin-top:3px;display:block">Rapport en ligne</a>` : ''}
                 </div>
             </div>

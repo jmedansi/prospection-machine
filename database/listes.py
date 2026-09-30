@@ -141,19 +141,40 @@ def _row_to_dict(row) -> dict | None:
     return dict(row)
 
 
+CORBEILLE_NOM = '🗑 Corbeille'
+
+
 def get_or_create_corbeille(campagne_id: int) -> int:
-    """Retourne l'id de la liste « 🗑 Corbeille » pour une campagne, la crée si absente."""
+    """Retourne l'id de la vue « 🗑 Corbeille » de la campagne, la crée si absente.
+
+    La liste porte `type='corbeille'` : c'est une VUE de tri (prospects écartés,
+    désinscrits, bounces), jamais une liste d'envoi. Les projets qui calculent des
+    lots (calendrier des relances, `relances_due`) l'excluent par ce type, pas par
+    son nom — une liste renommée ne doit pas redevenir une cible d'envoi.
+    """
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM listes WHERE campagne_id = ? AND nom = '🗑 Corbeille' AND statut = 'actif'",
+            "SELECT id, type FROM listes WHERE campagne_id = ? AND type = 'corbeille' "
+            "AND statut = 'actif' ORDER BY id LIMIT 1",
             (campagne_id,),
         ).fetchone()
+        if not row:
+            row = conn.execute(
+                "SELECT id, type FROM listes WHERE campagne_id = ? AND nom = ? "
+                "AND statut = 'actif' ORDER BY id LIMIT 1",
+                (campagne_id, CORBEILLE_NOM),
+            ).fetchone()
         if row:
+            if (row['type'] or 'normal') != 'corbeille':
+                conn.execute("UPDATE listes SET type = 'corbeille' WHERE id = ?", (row['id'],))
+                conn.commit()
             return row['id']
         cur = conn.execute(
-            """INSERT INTO listes (campagne_id, nom, description, icone, couleur, objectif, source, statut)
-               VALUES (?, '🗑 Corbeille', 'Prospects retirés des listes', '🗑', '#8b5cf6', 'general', 'systeme', 'actif')""",
-            (campagne_id,),
+            """INSERT INTO listes (campagne_id, nom, description, icone, couleur,
+                                   objectif, source, statut, type)
+               VALUES (?, ?, 'Prospects retirés des listes', '🗑', '#8b5cf6',
+                       'general', 'systeme', 'actif', 'corbeille')""",
+            (campagne_id, CORBEILLE_NOM),
         )
         conn.commit()
         return cur.lastrowid

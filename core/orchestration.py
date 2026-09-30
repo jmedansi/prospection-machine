@@ -214,6 +214,19 @@ def _next_business_day(dt):
     return dt
 
 
+def add_business_days(start_dt, n_days: int):
+    """Ajoute `n_days` jours ouvrés (du lundi au vendredi) à `start_dt`.
+    Les samedis et dimanches ne sont pas comptabilisés dans le délai."""
+    from datetime import timedelta
+    cur = start_dt
+    added = 0
+    while added < n_days:
+        cur += timedelta(days=1)
+        if cur.weekday() < 5:  # Lundi (0) à Vendredi (4)
+            added += 1
+    return cur
+
+
 def is_business_day(dt) -> bool:
     return dt.weekday() < 5
 
@@ -224,12 +237,11 @@ def relances_due(campagne_id: int | None = None, now=None, *,
     """Prospects éligibles à la relance suivante.
 
     Statut ∈ {en_sequence, relance_1, relance_2}, dernière touche (initial/relance)
-    + `delai_jours` du template suivant ≤ maintenant, template suivant actif.
+    + `delai_jours` ouvrés (week-ends exclus) du template suivant ≤ maintenant, template suivant actif.
     `liste_id` : restreint au lot d'une liste précise (confirmation par lot).
 
-    Jours ouvrés uniquement : les samedis/dimanches sont EXCLUS des jours de relance.
-    Une relance dont l'échéance (`dernière touche + delai_jours`) tombe un week-end est
-    reportée au lundi suivant — et le week-end lui-même ne déclenche aucun envoi.
+    Jours ouvrés uniquement : les samedis/dimanches ne sont jamais comptés dans le délai
+    et aucun envoi de relance n'est déclenché pendant le week-end.
     """
     if campagne_id is None:
         campagne_id = objectif_id
@@ -240,7 +252,8 @@ def relances_due(campagne_id: int | None = None, now=None, *,
     statuts = tuple(sequence_engine.STATUT_NEXT_POSITION.keys())
     placeholders = ",".join("?" * len(statuts))
     params = [campagne_id, *statuts]
-    sql_where = "l.campagne_id = ? AND p.statut IN ({placeholders})".format(placeholders=placeholders)
+    sql_where = ("l.campagne_id = ? AND p.statut IN ({placeholders}) "
+                 "AND (l.type IS NULL OR l.type != 'corbeille')").format(placeholders=placeholders)
     if liste_id is not None:
         sql_where += " AND l.id = ?"
         params.append(int(liste_id))
@@ -278,9 +291,9 @@ def relances_due(campagne_id: int | None = None, now=None, *,
         # ── Jours ouvrés : jamais de relance le samedi/dimanche ──
         if not is_business_day(now):
             continue
-        scheduled = last_dt + timedelta(days=int(template.get('delai_jours') or 0))
-        effective = _next_business_day(scheduled)
-        if effective <= now:
+        delai = int(template.get('delai_jours') or 0)
+        effective = add_business_days(last_dt, delai)
+        if effective.date() <= now.date():
             due.append({'id': r['id'], 'statut': r['statut'], 'last_touch_at': last,
                         'position': position, 'liste_id': r['liste_id'],
                         'liste_nom': r['liste_nom']})

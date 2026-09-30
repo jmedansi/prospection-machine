@@ -274,15 +274,6 @@ def _find_via_groq(url: str, company_name: str, domain: str) -> Optional[tuple[s
 def _find_via_ollama(url: str, domain: str):
     """Ollama a été désactivé — fallback désactivé."""
     return None
-        return _QUOTA_ERROR
-    except Exception as e:
-        err = str(e).lower()
-        if any(k in err for k in ("connection", "refused", "timeout", "unavailable")):
-            logger.warning(f"ceo_finder Ollama: indisponible — {e}")
-            return _QUOTA_ERROR
-        logger.debug(f"ceo_finder Ollama: non disponible — {e}")
-
-    return None
 
 
 def find_ceo(

@@ -51,9 +51,18 @@
   </div>
 </div>
 
-<!-- Section Suivi (v2 : stats campagne + historique des échanges prospect_events) -->
+<!-- Section Suivi (v2 : stats campagne + historique des échanges + calendrier relances) -->
 <div id="section-suivi" class="v-section">
-  {% include "views/sections/suivi_v6.html" %}
+  <div class="section-tabs">
+    <button class="section-tab active" onclick="switchSectionTab('suivi_timeline', this)">📊 Suivi des échanges</button>
+    <button class="section-tab" onclick="switchSectionTab('suivi_calendar', this)">📅 Calendrier des Relances <span id="badge-relances-calendar-due" class="badge-pill" style="display:none;background:#f59e0b;color:#000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px">0</span></button>
+  </div>
+  <div id="subtab-suivi_timeline" class="subtab-content active">
+    {% include "views/sections/suivi_v6.html" %}
+  </div>
+  <div id="subtab-suivi_calendar" class="subtab-content" style="display:none">
+    {% include "views/sections/relances_calendar.html" %}
+  </div>
 </div>
 
 <!-- Section Planning (le wrapper #section-planificateur vit dans l'include) -->
@@ -104,6 +113,7 @@
 <script src="{{ url_for('static', filename='js/modules/campagnes.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/modules/listes.js') }}?v=7"></script>
 <script src="{{ url_for('static', filename='js/modules/suivi.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/modules/relances_calendar.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/modules/objectifs.js') }}?v=2"></script>
 <script src="{{ url_for('static', filename='js/modules/sources.js') }}?v=21"></script>
 <script src="{{ url_for('static', filename='js/modules/stats.js') }}?v=17"></script>

@@ -111,6 +111,12 @@ def prepare_step(campagne_id, prospect_id, position, step_label, *, expected_sta
         return {'ok': False, 'raison': 'oposition', 'objet': '', 'corps': ''}
     if not prospect.get('email'):
         return {'ok': False, 'raison': 'pas_email', 'objet': '', 'corps': ''}
+    # Liste noire globale (bounce dur, plainte, désinscription) — spec §8.
+    # Verrou INDÉPENDANT de `ne_plus_contacter` : un bounce n'est jamais passé
+    # par set_ne_plus_contacter(), le flag seul laisserait repartir l'envoi.
+    # Partagé par send_initial ET send_relance (toutes deux passent par ici).
+    if prospects_repo.is_in_suppression_list(prospect.get('email')):
+        return {'ok': False, 'raison': 'suppression_list', 'objet': '', 'corps': ''}
 
     # Source de vérité absolue : seul un email RÉDIGÉ (agent IA / édition manuelle)
     # peut être envoyé. Aucun repli mécanique sur template de séquence : si aucun
@@ -119,10 +125,17 @@ def prepare_step(campagne_id, prospect_id, position, step_label, *, expected_sta
     # du template, humanization) — jamais au contenu final émis.
     custom = get_custom_step_email(prospect, position)
     template = None
-    if not custom:
-        return {'ok': False, 'raison': 'pas_email_ia', 'objet': '', 'corps': '',
-                'message': "Aucun email rédigé par l'IA pour ce prospect à cette étape."}
-    objet, corps = custom
+    if custom:
+        objet, corps = custom
+    else:
+        template = template_registry.get_step(campagne_id, position=position)
+        if template:
+            rendered = template_registry.render_template(template, prospect)
+            objet = rendered['objet']
+            corps = rendered['corps']
+        else:
+            return {'ok': False, 'raison': 'pas_email_ia', 'objet': '', 'corps': '',
+                    'message': "Aucun email rédigé par l'IA ni template pour ce prospect à cette étape."}
 
     preview = telegram_validation.build_preview(
         obj.get('nom', ''), prospect, objet, corps,
@@ -338,6 +351,57 @@ def send_initial(campagne_id, prospect_id, *, force=False, humanize_on=True,
 
 # â”€â”€â”€ Point d'entrÃ©e public : relance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+def _last_touch_dt(prospect: dict) -> datetime | None:
+    """Dernière touche réelle (initial ou relance) du prospect, datetime UTC naive."""
+    best = None
+    for e in prospect.get('events') or []:
+        if e.get('event_type') not in TOUCH_EVENT_TYPES:
+            continue
+        try:
+            dt = datetime.strptime(str(e.get('created_at'))[:19], '%Y-%m-%d %H:%M:%S')
+        except (TypeError, ValueError):
+            continue
+        if best is None or dt > best:
+            best = dt
+    return best
+
+
+def delai_non_atteint(campagne_id, prospect: dict, position: int) -> str | None:
+    """VERROU DÉLAI — motif du blocage, ou None si l'échéance est atteinte.
+
+    Même règle que `core.orchestration.relances_due()` : `delai_jours` du template
+    en JOURS OUVRÉS (week-ends exclus), échéance ramenée au jour. Un samedi ou un
+    dimanche n'est jamais un jour d'envoi de relance.
+
+    Contrôle structurel placé dans `send_relance` (et non seulement dans la
+    candidature) : la position y est recalculée depuis le statut vivant, un lot
+    concurrent pourrait sinon enchaîner relance_1 puis relance_2 instantanément.
+    """
+    from core.orchestration import add_business_days, is_business_day
+
+    now = datetime.utcnow()
+    if not is_business_day(now):
+        return 'jour_non_ouvre'
+    template = template_registry.get_step(campagne_id, position=position)
+    try:
+        delai = int((template or {}).get('delai_jours') or 0)
+    except (TypeError, ValueError):
+        delai = 0
+    if delai <= 0:
+        return None
+    last = _last_touch_dt(prospect)
+    if last is None:
+        # Pas de touche journalisée : impossible d'évaluer l'échéance → on laisse
+        # passer (parcours manuel / données antérieures au journal des events).
+        # Le chemin AUTOMATIQUE est de toute façon filtré par `relances_due()`,
+        # qui ne sélectionne jamais un prospect sans touche précédente.
+        return None
+    echeance = add_business_days(last, delai)
+    if echeance.date() > now.date():
+        return f"delai {delai} j ouvrés non écoulé (échéance {echeance:%Y-%m-%d})"
+    return None
+
+
 def send_relance(campagne_id, prospect_id, *, force=False, humanize_on=True,
                  dry_run=False, approval=None):
     """Envoie (ou demande la validation Telegram de) la relance suivante.
@@ -354,6 +418,16 @@ def send_relance(campagne_id, prospect_id, *, force=False, humanize_on=True,
     if position is None:
         return {'success': False, 'statut': 'pas_de_relance',
                 'message': f"Aucune relance depuis {prospect.get('statut')}", 'id': None}
+
+    # VERROU DÉLAI (structurel) : jamais d'envoi avant l'échéance du template.
+    # La position est recalculée ici depuis le statut VIVANT du prospect — deux
+    # passes concurrentes (schedulers en doublon) pouvaient donc « sauter »
+    # d'une position et repartir une relance quelques secondes après la précédente.
+    if not force and not dry_run:
+        motif = delai_non_atteint(campagne_id, prospect, position)
+        if motif:
+            return {'success': False, 'statut': 'delai_non_atteint',
+                    'message': f"Relance {position} bloquée : {motif}", 'id': None}
 
     obj = campagnes_repo.get_campagne(campagne_id)
     max_touches = int((obj or {}).get('max_touches') or 3) if obj else 3

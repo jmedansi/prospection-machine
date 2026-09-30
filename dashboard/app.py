@@ -38,6 +38,11 @@ def create_app():
     app = Flask(__name__, 
                 static_folder=os.path.join(ROOT, 'dashboard', 'static'), 
                 static_url_path='/static')
+
+    # Les templates sont lus depuis le disque à chaque rendu (debug=False force le
+    # cache mémoire de Jinja : sans ça, une modification de template reste invisible
+    # tant que le serveur n'est pas redémarré).
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
     
     # Init SocketIO with app
     socketio.init_app(app)

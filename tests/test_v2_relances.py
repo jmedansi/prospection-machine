@@ -319,3 +319,43 @@ def test_relances_due_weekday_nominal_inchange(tmp_db, fake_gateway):
     assert pid in _relances_due_at(oid, wed)
     tue = datetime(2026, 9, 22, 10, 0, 0)   # mardi : pas encore
     assert _relances_due_at(oid, tue) == set()
+
+
+def test_send_relance_bloquee_tant_que_delai_non_passe(tmp_db, fake_gateway):
+    """VERROU DÉLAI : une relance ne part JAMAIS avant son échéance.
+
+    Régression (2026-09-30) : `relances_due()` filtrait le délai côté candidature,
+    mais `send_relance` recalculait la position depuis le statut VIVANT du prospect.
+    Deux `run_relances` concurrents (schedulers en doublon) faisaient donc passer un
+    prospect de `relance_1` à `relance_2` en quelques secondes, sans délai respecté.
+    """
+    oid = _objectif()
+    _seed_template_step(oid, 1, delai_jours=3)
+    _seed_template_step(oid, 2, delai_jours=3)
+    pid = _prospect(oid)
+    _to_en_sequence(pid, oid, days_ago=0)   # initial aujourd'hui → échéance J+3
+
+    from envoi import sequence_engine as seq
+    res = seq.send_relance(oid, pid, approval='auto')
+    assert res['success'] is False
+    assert res['statut'] == 'delai_non_atteint'
+    assert fake_gateway == []                # AUCUN envoi avant l'échéance
+
+    # Échéance atteinte (5 jours civils ≥ 3 jours ouvrés) → la même relance part.
+    from database.connection import get_conn
+    ts = (datetime.utcnow() - timedelta(days=5)).strftime('%Y-%m-%d %H:%M:%S')
+    with get_conn() as c:
+        c.execute("UPDATE prospect_events SET created_at=? "
+                  "WHERE prospect_id=? AND event_type='initial'", (ts, pid))
+        c.commit()
+
+    res2 = seq.send_relance(oid, pid, approval='auto')
+    assert res2['success'] is True, res2
+    assert res2['statut'] == 'envoye' and res2['step'] == 'relance_1'
+    assert len(fake_gateway) == 1
+
+    # La position suivante (relance_2) est immédiatement bloquée : son délai repart.
+    res3 = seq.send_relance(oid, pid, approval='auto')
+    assert res3['success'] is False
+    assert res3['statut'] == 'delai_non_atteint'
+    assert len(fake_gateway) == 1

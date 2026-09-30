@@ -7,11 +7,15 @@ from flask import Blueprint, request, jsonify, redirect
 from datetime import datetime
 from database.repos.emails_repo import emails_repo
 from database import emails as emails_db
+from database import prospects as prospects_repo
 from urllib.parse import urlparse, unquote
 import logging
 
 logger = logging.getLogger(__name__)
 webhooks_bp = Blueprint('webhooks', __name__, url_prefix='/api/webhooks')
+
+# Événements qui rendent l'adresse inutilisable → suppression_list (spec §8)
+_SUPPRESS_ON = {'email.bounced': 'bounce_dur', 'email.complained': 'plainte'}
 
 # ── Tracking maison SMTP : pixel d'ouverture 1x1 (voir envoi/track_links.py) ─────
 _PIXEL_GIF = (
@@ -67,6 +71,33 @@ def track_click(message_id):
     except Exception as e:
         logger.error(f"[TRACK] click {message_id}: {e}")
     return redirect(msg, code=302)
+
+def _suppress_recipient(event_data: dict, raison: str, message_id: str) -> str:
+    """Noircit le destinataire dans suppression_list (spec §8) + file de bounces.
+
+    Le payload Resend porte `to`, mais il est parfois vide (événements
+    partiels) : on retombe sur l'adresse journalisée dans emails_envoyes.
+    Sans cet ajout, un bounce ne bloquait RIEN — `ne_plus_contacter` restait à 0
+    et la séquence re-ciblait l'adresse au tour suivant.
+    """
+    to = event_data.get('to') or []
+    if isinstance(to, str):
+        to = [to]
+    addr = (to[0] if to else '') or emails_repo.get_address(message_id) or ''
+    if '@' not in (addr or ''):
+        logger.warning(f"[WEBHOOK] {raison} : adresse introuvable pour {message_id}")
+        return ''
+    if prospects_repo.add_to_suppression_list(addr, raison):
+        logger.info(f"[WEBHOOK] {raison} : {addr.strip().lower()} → suppression_list")
+    # File de traitement + notif Telegram ✅/❌ (→ 🗑 Corbeille / ignoré)
+    try:
+        from core.bounce_handler import record_bounce
+        record_bounce(addr, raison=raison, motif=event_data.get('reason'),
+                      email_record_id=emails_repo.get_record_id(message_id))
+    except Exception as e:
+        logger.error(f"[WEBHOOK] record_bounce {addr}: {e}")
+    return addr
+
 
 @webhooks_bp.route('/resend', methods=['POST'])
 def resend_webhook():
@@ -128,6 +159,10 @@ def resend_webhook():
 
         if fields:
             emails_repo.update_tracking(message_id, fields)
+
+        # 3. Bounce dur / plainte → liste noire globale (bloque campagnes futures)
+        if event_type in _SUPPRESS_ON:
+            _suppress_recipient(event_data, _SUPPRESS_ON[event_type], message_id)
 
     return jsonify({"status": "success"}), 200
 

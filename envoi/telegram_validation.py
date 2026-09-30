@@ -52,7 +52,7 @@ def get_status(callback_id_value: str) -> str | None:
     try:
         conn = sqlite3.connect(db)
         row = conn.execute(
-            "SELECT status FROM pending WHERE callback_id = ? ORDER BY id DESC LIMIT 1",
+            "SELECT status FROM pending WHERE callback_id = ? ORDER BY timestamp DESC LIMIT 1",
             (callback_id_value,),
         ).fetchone()
         conn.close()

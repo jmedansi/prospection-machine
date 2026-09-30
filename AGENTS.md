@@ -221,13 +221,55 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
     liste) — aucune exécution directe de `run_relances` en auto ;
   − `v2_batch_poll` (1 min) : `consume_approvals()` → envoi des lots ✅ ;
   − `v2_reply_poll` (15 min) : `envoi.reply_poller.run_poll()` (réponses entrantes) ;
-  − `v2_approval_poll` (1 min) : `approve_and_send_initial()` sur callback `v2_approve_*`.
+  − `v2_approval_poll` (1 min) : `approve_and_send_initial()` sur callback `v2_approve_*` ;
+  − `v2_bounce_poll` (1 min) : `core.bounce_handler.consume_bounce_approvals()` — consomme
+    les ✅/❌ des bounces (voir « Délivrabilité » plus bas) ;
+  − `resend_tracking_sync` (15 min) : `envoi.resend_sync.sync()` — réaligne
+    `emails_envoyes` sur l'API Resend et alimente `bounce_queue`.
+
+### Délivrabilité — bounces, suppression, 🗑 Corbeille
+- **L'API Resend est la source de vérité** : le webhook n'apparie qu'une partie des envois
+  (plusieurs `emails_envoyes` stockent un Message-ID RFC au lieu de l'id Resend), d'où un
+  compteur local faussé. `envoi/resend_sync.py → sync()` recalcule `bounce`/`spam`/
+  `statut_envoi`/`ouvert`/`clique` par id Resend puis par destinataire+date, remet à zéro
+  les faux bounces et crée une ligne de trace si l'envoi n'est jamais journalisé localement.
+  Manuel : `python scripts/sync_resend_tracking.py [--apply] [--source <json>]`.
+- Chaîne d'un bounce : `dashboard/routes/webhooks.py → _suppress_recipient()` pose
+  `suppression_list` (spec §8, **jamais court-circuiter**) puis
+  `core/bounce_handler.py → record_bounce()` écrit `bounce_queue` et envoie la notif
+  Telegram ✅/❌ (callback `v2_bounce_{id}`, 48 h). Idempotent : un re-bounce ne renvoie
+  jamais une 2ᵉ demande ; un backfill / une salve de bounces → **UN message Telegram par
+  bounce**, avec sa propre paire ✅/❌ (aucun message multi-lignes).
+  Les libellés dynamiques (adresse, société, motif) passent par `_md()` : sans échappement,
+  un email contenant un `_` (ex. `chef_45@…`) fait échouer le parseur Markdown de Telegram
+  (« Can't parse entities ») et la demande n'est jamais envoyée.
+- ✅ → `archive_bounce()` : `prospects_repo.set_ne_plus_contacter(pid, True, raison=…)`
+  (flag + `suppression_list` + transition finale) PUIS `unlink_prospects()` vers la
+  `🗑 Corbeille` de la campagne (`get_or_create_corbeille`). ❌ → `ignore_bounce()` :
+  aucun mouvement, l'adresse reste bloquée.
+- **Alternative UI** (même logique) : bloc « Bounces à traiter » de l'onglet Suivi
+  (`suivi_v6.html` + `suivi.js`) — boutons par ligne et « Tout archiver / Tout ignorer »
+  sur `GET /api/v2/suivi/bounces` + `POST /api/v2/bounces/<id>/{archive,ignore}`.
+- Stats : `_stats_v2()` calcule `bounces`/`spam`/`emails_ouverts`/`taux_delivraison`/
+  `taux_bounce` depuis `emails_envoyes` ; `taux_delivraison` ne compte que les statuts
+  confirmés Resend (`delivered|opened|clicked|delivré|bounced|complained`).
+  `GET /api/stats?v2=1` force la vue v2 GLOBALE quand aucune campagne n'est choisie
+  (l'onglet Suivi l'utilise — sans cela il renverrait les stats legacy `bounces=0`).
 
 ### Relances v2 — `sequence_engine.send_relance()` / `core.orchestration.relances_due()`
 - Mécanique : statut détermine la position suivante (`en_sequence→1`, `relance_1→2`,
   `relance_2→3`) ; le template position N (`delai_jours`) est dû quand
   `dernière_touche + delai_jours ≤ maintenant` ; chaque relance repasse par le tunnel
   complet (verrous, rendu, humanisation, transition `relance_k → relance_{k+1}`).
+- **VERROU DÉLAI (structurelle) : une relance ne part JAMAIS avant son échéance.**
+  `sequence_engine.delai_non_atteint()` est appelé dans `send_relance()` avant tout
+  envoi : `delai_jours` du template position N en **jours ouvrés** depuis la dernière
+  touche (`initial`/`relance_k`), week-ends exclus, échéance ramenée au jour. Indispensable
+  car la position est recalculée depuis le statut **vivant** du prospect : sans ce verrou,
+  deux `run_relances` concurrents (schedulers en doublon, 2026-09-30) faisaient sauter un
+  prospect de `relance_1` à `relance_2` en quelques secondes. Blocage →
+  `{'statut': 'delai_non_atteint'}` ; réservé à `force=True` / `dry_run`.
+  Test : `tests/test_v2_relances.py::test_send_relance_bloquee_tant_que_delai_non_passe`.
 - **RÈGLE PRODUIT (structurelle) : TOUTE relance exige une ✅ Telegram, sans exception.**
   Dans `send_relance()`, `needs_tg = approval != 'auto' and not dry_run` — `validation_telegram`
   ne s'applique qu'à l'INITIAL ; aucune config ne permet une relance sans validation.
@@ -236,6 +278,9 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
   `relance_batch_validator.ensure_batch_requests()` → un ✅ Telegram par liste → `consume_approvals()`
   → `run_relances(cid, liste_id=..., approval='auto')`. Une campagne `envoi_auto=1` avec
   `validation_relances=0` est IGNORÉE (skip + log) — jamais d'auto-envoi direct.
+  `consume_approvals()` **réclame atomiquement** le lot (`pending → sending`, `rowcount=1`)
+  : un second scheduler ne peut pas relancer le même ✅ ; échec d'envoi → lot fermé en
+  `refuse` (la ✅ est déjà consommée, jamais de re-demande).
 - Bouton panel « Envoyer le mail » (`POST /api/v2/leads/<id>/email/send`) : prospect
   `qualifie` → initial direct (manuel) ; `en_sequence`/`relance_k` → `send_relance(approval='telegram')`
   (demande ✅/❌, aucun envoi direct).

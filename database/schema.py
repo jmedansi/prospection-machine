@@ -221,6 +221,7 @@ def migrate_db():
 
         migrate_email_events_table()
         migrate_lead_lists()
+        migrate_bounce_queue()
 
         # â”€â”€â”€ Migration: pays pour leads_bruts et campagnes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if 'leads_bruts' in table_names:
@@ -400,6 +401,7 @@ def migrate_v2_schema():
             icone       TEXT    DEFAULT '📋',            -- emoji icône (UI sidebar)
             couleur     TEXT    DEFAULT '#6366f1',        -- couleur sidebar (UI)
             objectif    TEXT    DEFAULT 'general',        -- general | web (traitement IA)
+            type        TEXT    DEFAULT 'normal',         -- normal | corbeille (vue corbeille, jamais un lot d'envoi)
             statut      TEXT    DEFAULT 'actif',        -- actif | archive
             created_at  TEXT    DEFAULT (datetime('now')),
             updated_at  TEXT    DEFAULT (datetime('now'))
@@ -507,7 +509,10 @@ def migrate_v2_schema():
         CREATE INDEX IF NOT EXISTS idx_seq_tpl_campagne ON sequence_templates(campagne_id);
         """)
         try:
-            conn.execute("INSERT OR IGNORE INTO sequence_templates (nom, objet, corps, position, delai_jours) VALUES ('Template par dÃ©faut', '{{prenom}}, un mot sur {{secteur}}', 'Bonjour {{prenom}},\\n\\nEn regardant le site de {{entreprise}} ({{secteur}}), j''ai remarquÃ© quelques points qui mÃ©riteraient un coup d''Å“il : j''ai prÃ©parÃ© une Ã©bauche et quelques idÃ©es de modernisation \u2014 pas d''obligation, juste un aperÃ§u si Ã§a vous intÃ©resse.\\n\\n{{site_web}}\\n\\nBien Ã  vous,\\nJean-Marc', 0, 0)")
+            conn.execute("INSERT OR IGNORE INTO sequence_templates (nom, objet, corps, position, delai_jours) VALUES ('Template par défaut', '{{prenom}}, un mot sur {{secteur}}', 'Bonjour {{prenom}},\\n\\nEn regardant le site de {{entreprise}} ({{secteur}}), j''ai remarqué quelques points qui mériteraient un coup d''œil : j''ai préparé une ébauche et quelques idées de modernisation — pas d''obligation, juste un aperçu si ça vous intéresse.\\n\\n{{site_web}}\\n\\nBien à vous,\\nJean-Marc', 0, 0)")
+            conn.execute("INSERT OR IGNORE INTO sequence_templates (nom, objet, corps, position, delai_jours) VALUES ('Relance 1 par défaut', 'Re: {{prenom}}, un mot sur {{secteur}}', 'Bonjour {{prenom}},\\n\\nJe me permets de revenir vers vous suite à mon message précédent concernant {{entreprise}}.\\nAvez-vous eu l''occasion d''y jeter un coup d''œil ?\\n\\nBien à vous,\\nJean-Marc', 1, 3)")
+            conn.execute("INSERT OR IGNORE INTO sequence_templates (nom, objet, corps, position, delai_jours) VALUES ('Relance 2 par défaut', 'Re: {{prenom}}, un mot sur {{secteur}}', 'Bonjour {{prenom}},\\n\\nJe fais suite à mes messages précédents.\\n\\nSeriez-vous disponible pour un court échange de 10 minutes cette semaine ?\\n\\nBien à vous,\\nJean-Marc', 2, 7)")
+            conn.execute("INSERT OR IGNORE INTO sequence_templates (nom, objet, corps, position, delai_jours) VALUES ('Relance 3 par défaut (Dernière)', 'Re: {{prenom}}, un mot sur {{secteur}}', 'Bonjour {{prenom}},\\n\\nDernier mot de ma part pour ne pas encombrer votre boîte.\\n\\nSi vous n''avez pas de besoin pour le moment, aucun souci. N''hésitez pas à me recontacter si le sujet redevient d''actualité.\\n\\nBonne continuation,\\nJean-Marc', 3, 14)")
         except Exception:
             pass
         _migrate_campagnes_cols(conn)
@@ -576,6 +581,7 @@ def _migrate_v2_grouping(conn):
             icone       TEXT    DEFAULT '📋',
             couleur     TEXT    DEFAULT '#6366f1',
             objectif    TEXT    DEFAULT 'general',
+            type        TEXT    DEFAULT 'normal',
             statut      TEXT    DEFAULT 'actif',
             created_at  TEXT    DEFAULT (datetime('now')),
             updated_at  TEXT    DEFAULT (datetime('now'))
@@ -825,6 +831,7 @@ def _migrate_listes_cols(conn):
         ('icone',     "TEXT DEFAULT '📋'"),
         ('couleur',   "TEXT DEFAULT '#6366f1'"),
         ('objectif',  "TEXT DEFAULT 'general'"),
+        ('type',      "TEXT DEFAULT 'normal'"),   # normal | corbeille
     ]
     for col_name, col_def in migrations:
         if col_name not in cols:
@@ -833,6 +840,17 @@ def _migrate_listes_cols(conn):
                 print(f"  [MIGRATION] Colonne ajoutée: listes.{col_name}")
             except Exception:
                 pass
+
+    # Rétro-qualif : la vue « 🗑 Corbeille » de chaque campagne devient un type
+    # explicite (idempotent) — elle ne doit jamais apparaître comme liste d'envoi.
+    try:
+        conn.execute("UPDATE listes SET type = 'normal' WHERE type IS NULL")
+        conn.execute(
+            "UPDATE listes SET type = 'corbeille' "
+            "WHERE type = 'normal' AND nom LIKE '%Corbeille%'"
+        )
+    except Exception:
+        pass
 
 
 def _migrate_prospects_note(conn):
@@ -945,6 +963,39 @@ def migrate_email_events_table():
         conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_type ON email_events(event_type);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_email_events_timestamp ON email_events(timestamp);")
         _drop_email_events_leads_bruts_fk(conn)
+
+
+def migrate_bounce_queue():
+    """Crée la file de traitement des bounces / plaintes (délivrabilité).
+
+    Une ligne = une adresse à statuer. `statut` :
+      pending  → notif Telegram ✅/❌ envoyée, en attente de décision
+      traite   → ✅ : `ne_plus_contacter` + prospect déplacé en 🗑 Corbeille
+      ignore   → ❌ : l'adresse reste dans `suppression_list`, rien d'autre ne bouge
+
+    `email` est UNIQUE : un re-bounce rafraîchit la ligne existante au lieu de
+    dupliquer la demande.
+    """
+    with get_conn() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS bounce_queue (
+                id INTEGER PRIMARY KEY,
+                email TEXT NOT NULL,
+                email_record_id INTEGER,
+                prospect_id INTEGER,
+                campagne_id INTEGER,
+                liste_id INTEGER,
+                motif TEXT,
+                raison TEXT NOT NULL DEFAULT 'bounce_dur',
+                callback_id TEXT,
+                statut TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT
+            );
+        """)
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_bounce_queue_email ON bounce_queue(email);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_bounce_queue_statut ON bounce_queue(statut);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_bounce_queue_prospect ON bounce_queue(prospect_id);")
 
 
 def _drop_email_events_leads_bruts_fk(conn):
