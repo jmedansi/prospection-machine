@@ -167,6 +167,30 @@
 .list-sidebar-item:hover .list-sidebar-edit { opacity: 1; }
 .list-sidebar-edit:hover { background: var(--surface2); color: var(--ink1); }
 
+/* ── Poubelles (type='corbeille') : vue de tri, jamais une liste d'envoi ── */
+.list-sidebar-sub {
+    font-size: 10px;
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, .08);
+    border: 1px dashed rgba(139, 92, 246, .35);
+    border-radius: 7px;
+    padding: 4px 8px 4px 26px;
+    margin: 0 0 6px 8px;
+    cursor: pointer;
+    transition: background .12s;
+}
+.list-sidebar-sub:hover { background: rgba(139, 92, 246, .16); }
+
+.list-sidebar-corbeille {
+    border: 1px solid rgba(139, 92, 246, .25);
+    margin-top: 10px;
+}
+.list-sidebar-corbeille .list-sidebar-nom { color: #8b5cf6; }
+.list-sidebar-corbeille.active {
+    background: rgba(139, 92, 246, .14);
+    border-color: #8b5cf6;
+}
+
 /* ─── Panneau principal ─────────────────────────────────── */
 .lists-main {
     flex: 1;

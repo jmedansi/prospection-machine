@@ -42,7 +42,25 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
   `description`, `secteur`, `validation_telegram` (0=auto, 1=requis), `envoi_auto`
   (1=auto-send, 0=manuel), `max_touches`, `statut` (`actif` / `archive`).
 - `listes` : `id`, `campagne_id` (FK), `nom`, `description`, `secteur`, `source`, `statut`
-  (`actif` / `archive`). Unité opérationnelle qui PORTE les prospects.
+  (`actif` / `archive`), `type` (`normal` / `corbeille`), `corbeille_de` (FK liste source).
+  Unité opérationnelle qui PORTE les prospects.
+- **Corbeille = POUBELLE** (pas une vue de tri) : une **par liste** (`type='corbeille'`,
+  `corbeille_de = liste_id`, créée à la demande par `get_or_create_corbeille_liste()`),
+  créée au premier `unlink_prospects()`. La « Corbeille » de campagne affichée en bas de
+  sidebar n'est qu'une **vue agrégée** (`GET /api/v2/campagnes/<id>/leads?corbeille=1`).
+  Une poubelle n'est JAMAIS une liste d'envoi : exclue de `list_listes()`,
+  `list_prospects()` (sauf `liste_id` explicite ou `corbeille='1'`), `_stats_v2()`,
+  `list_campagnes()`, `relances_due()`, du calendrier et de
+   `get_or_create_liste()` (liste par défaut). Les poubelles sans `corbeille_de`
+   (héritage, liste supprimée) restent visibles dans la vue campagne.
+- **Retour arrière (`database.listes.restore_prospects()` + `POST /api/v2/listes/<poubelle>/restore`)** :
+  remet des prospects dans la liste source (`corbeille_de`) ; une poubelle héritée (origine
+  perdue) exige `target_liste_id` → l'UI ouvre alors le modal `#modal-restore-target`.
+  Refuses : cible inexistante, cible = une poubelle, cible d'une autre campagne, liste non-corbeille.
+  UI : bouton `#liste-restaurer-selection` (↔ `#liste-retirer-selection` dans une vue poubelle)
+  + icône `↩️` par ligne ; `GET /api/v2/listes/<id>/leads` et `list_prospects()` exposent
+  `corbeille_de`/`liste_type` par ligne pour résoudre la cible côté client.
+
 - `prospects` : rattaché à `liste_id`, `statut` = machine à états, `statut_meta` (JSON),
   `data_extra` (JSON libre : lien_maps, logo_url, email_2, campaign_id…).
 - `prospect_events` : journal d'audit (`creation`, `status_change`, `desinscription`…).
@@ -51,7 +69,8 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
 ### Point d'entrée unique de l'ingestion — `core/objectif_registry.py` (nom historique conservé)
 - `resolve_or_create_objectif(nom_ou_id)` → résout la **campagne** par id (numérique) ou par
   nom, crée à la volée, ignore les campagnes archivées. Retourne `(id, nom)` ou `None`.
-- `get_or_create_liste(campagne_id)` → liste par défaut de la campagne (créée si absente).
+- `get_or_create_liste(campagne_id)` → liste par défaut de la campagne (créée si absente),
+  **jamais une poubelle** (`type != 'corbeille'`).
 - `import_lead_as_prospect(campagne_id, lead, source='scraping', data_extra_extra=None)` →
   mapping des clés enrichies (nom/email/telephone/site_web/adresse/ville/rating/nb_avis,
   secteur←category ; extra : lien_maps, logo_url, email_2, email_source, statut_email,
@@ -218,7 +237,8 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
 - Jobs scheduler v2 :
   − ~~`v2_send_initial`~~ SUPPRIMÉ (initial = manuel sans exception) ;
   − `v2_send_relances` (10 min) : `ensure_batch_requests()` uniquement (✅ Telegram par
-    liste) — aucune exécution directe de `run_relances` en auto ;
+    liste) — aucune exécution directe de `run_relances` en auto, et **rien hors fenêtre
+    horaire** (les deux fonctions sortent tôt : `differee: True`) ;
   − `v2_batch_poll` (1 min) : `consume_approvals()` → envoi des lots ✅ ;
   − `v2_reply_poll` (15 min) : `envoi.reply_poller.run_poll()` (réponses entrantes) ;
   − `v2_approval_poll` (1 min) : `approve_and_send_initial()` sur callback `v2_approve_*` ;
@@ -245,7 +265,8 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
   (« Can't parse entities ») et la demande n'est jamais envoyée.
 - ✅ → `archive_bounce()` : `prospects_repo.set_ne_plus_contacter(pid, True, raison=…)`
   (flag + `suppression_list` + transition finale) PUIS `unlink_prospects()` vers la
-  `🗑 Corbeille` de la campagne (`get_or_create_corbeille`). ❌ → `ignore_bounce()` :
+  **poubelle de la liste porteuse** (`get_or_create_corbeille_liste(liste_id)`,
+  cf. « Corbeille = POUBELLE » §1bis). ❌ → `ignore_bounce()` :
   aucun mouvement, l'adresse reste bloquée.
 - **Alternative UI** (même logique) : bloc « Bounces à traiter » de l'onglet Suivi
   (`suivi_v6.html` + `suivi.js`) — boutons par ligne et « Tout archiver / Tout ignorer »
@@ -274,13 +295,39 @@ Tout ingest (scraping Maps, CSV, JSON, IA) doit savoir dans QUELLE campagne rang
   Dans `send_relance()`, `needs_tg = approval != 'auto' and not dry_run` — `validation_telegram`
   ne s'applique qu'à l'INITIAL ; aucune config ne permet une relance sans validation.
   Exceptions : `approval='auto'` (lot déjà ✅ en amont par le batch validator) / `dry_run`.
+- **FENÊTRE HORAIRE (structurelle) : ni demande ni envoi de relance la nuit.**
+  `core.orchestration.is_fenetre_relances()` = jour ouvré ET heure **locale** dans
+  `[RELANCE_HEURE_DEBUT, RELANCE_HEURE_FIN[` (défaut 09h-18h, bornes par variables
+  d'environnement). Les DEUX points automatiques du batch validator la consultent :
+  `ensure_batch_requests()` (aucune notification Telegram la nuit — elle réveillait
+  l'utilisateur à 01h00) et `consume_approvals()` (un ✅ tapé le soir reste `pending`,
+  il est consommé à l'ouverture : **jamais d'envoi la nuit**). `relances_due()` n'est
+  PAS filtré sur l'heure (l'UI/les tests daytime restent-exemptés) ; la fenêtre se lit
+  en heure locale alors que `relances_due` raisonne en UTC — ne pas mélanger les deux.
 - Auto-envoi des relances (`scheduler._run_v2_send_relances`) : UNIQUEMENT via
   `relance_batch_validator.ensure_batch_requests()` → un ✅ Telegram par liste → `consume_approvals()`
   → `run_relances(cid, liste_id=..., approval='auto')`. Une campagne `envoi_auto=1` avec
   `validation_relances=0` est IGNORÉE (skip + log) — jamais d'auto-envoi direct.
-  `consume_approvals()` **réclame atomiquement** le lot (`pending → sending`, `rowcount=1`)
-  : un second scheduler ne peut pas relancer le même ✅ ; échec d'envoi → lot fermé en
-  `refuse` (la ✅ est déjà consommée, jamais de re-demande).
+- **Verrous d'écriture : JAMAIS de transaction ouverte autour d'un appel long.**
+  `consume_approvals()` **réclame atomiquement** le lot (`pending → sending` +1
+  `tentatives`, `rowcount=1`) via `_claim_batch()` qui COMMIT **et FERME** la connexion
+  avant d'appeler `run_relances()` : une transaction tenue pendant l'envoi bloque toute
+  écriture de la base (webhooks Resend, autres jobs) → `database is locked` après
+  `busy_timeout` (2026-10-01 : 21 relances de la liste 180 perdues). Même règle pour
+  `send_validation_request()` (appel réseau) : hors transaction.
+  Idem pour toute reconnexion : ne pas écrire avec une 2ᵉ connexion pendant qu'une
+  transaction d'écriture est ouverte — c'est un deadlock, pas une contention.
+- **Une ✅ n'est jamais perdue sur un échec technique** : exception pendant l'envoi →
+  le lot repasse `pending` (`tentatives` +1) et la ✅ n'est PAS `mark_completed` → le
+  poll suivant rejoue le lot, jusqu'à `_MAX_TENTATIVES` (3) ; au-delà le lot passe
+  `erreur` (⚠️ distinct de `refuse` = ❌ utilisateur) et attend une revalidation
+  manuelle via le bouton « Valider » (`POST /api/v2/relances/batch-validate`, qui
+  supprime la ligne du lot). Un lot `erreur`/`refuse`/`sent` inchangé n'est jamais
+  re-demandé automatiquement. Tests :
+  `tests/test_v2_batch_validation.py::test_echec_technique_retry_puis_erreur`.
+- Reprise après crash : `_reset_sending_orphelins()` remet `pending` les lots
+  `sending` de plus de 10 min (process mort en plein envoi) — `run_relances` étant
+  idempotent, le rejeu ne renvoie pas deux fois le même email.
 - Bouton panel « Envoyer le mail » (`POST /api/v2/leads/<id>/email/send`) : prospect
   `qualifie` → initial direct (manuel) ; `en_sequence`/`relance_k` → `send_relance(approval='telegram')`
   (demande ✅/❌, aucun envoi direct).

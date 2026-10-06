@@ -83,6 +83,9 @@
     // ─── État interne ──────────────────────────────────────────────────────
     const _state = {
         listes: [],
+        corbeilles: {},          // {campagne_id: {total, listes:{liste_id:n}}}
+        corbeilleCampagneId: null, // mode « vue Corbeille de campagne »
+        activeListOverride: null,  // liste hors sidebar (poubelle) chargée à part
         activeListId: null,
         leads: [],
         page: 1,
@@ -111,6 +114,8 @@
         },
 
         get activeList() {
+            const o = _state.activeListOverride;
+            if (o && o.id === _state.activeListId) return o;
             return _state.listes.find(l => l.id === _state.activeListId) || null;
         },
 
@@ -154,12 +159,17 @@
                 const r = await fetch(`/api/v2/listes?${params.toString()}`);
                 const d = await r.json();
                 _state.listes = (d && d.listes) || [];
+                _state.corbeilles = (d && d.corbeilles) || {};
             } catch (e) {
                 console.error('[listes] load', e);
                 _state.listes = [];
+                _state.corbeilles = {};
             }
             // La liste active a disparu (filtre, campagne, suppression) → placeholder.
-            if (_state.activeListId && !_state.listes.find(l => l.id === _state.activeListId)) {
+            const stillActive = _state.activeListId && (
+                _state.listes.find(l => l.id === _state.activeListId)
+                || (_state.activeListOverride && _state.activeListOverride.id === _state.activeListId));
+            if (_state.activeListId && !stillActive) {
                 this.clearSelection();
             }
             return _state.listes;
@@ -199,7 +209,7 @@
             const grp = new Map();
             for (const l of _state.listes) {
                 const k = l.campagne_id ?? 0;
-                if (!grp.has(k)) grp.set(k, { nom: l.campagne_nom || '—', listes: [] });
+                if (!grp.has(k)) grp.set(k, { nom: l.campagne_nom || '—', listes: [], cid: k });
                 grp.get(k).listes.push(l);
             }
 
@@ -211,9 +221,35 @@
                     html += `<div class="list-sidebar-section">${esc(g.nom)} · ${g.listes.length} · ${t}</div>`;
                 }
                 html += g.listes.map(lst => this._item(lst)).join('');
+                html += this._corbeilleItem(g);
             }
             items.innerHTML = html;
             this._updateMobileCount(_state.listes.length);
+        },
+
+        /** Entrée « 🗑 Corbeille » de la campagne = vue agrégée de toutes ses poubelles. */
+        _corbeilleItem(g) {
+            if (!g.cid) return '';
+            const cnt = (_state.corbeilles[g.cid] || {}).total || 0;
+            const active = _state.corbeilleCampagneId === g.cid;
+            return `<div class="list-sidebar-item list-sidebar-corbeille ${active ? 'active' : ''}"
+                     style="border-left:3px solid #8b5cf6"
+                     onclick="ListesModule.selectCorbeilleCampagne(${g.cid})">
+                <span class="list-sidebar-icone">🗑</span>
+                <div class="list-sidebar-info">
+                    <div class="list-sidebar-nom">Corbeille</div>
+                    <div class="list-sidebar-meta">${cnt} déchet${cnt !== 1 ? 's' : ''} · vue campagne</div>
+                </div>
+            </div>`;
+        },
+
+        /** Poubelle d'une liste : enfant cliquable sous la liste source. */
+        _corbeilleSub(l) {
+            const n = l.nb_corbeille || 0;
+            if (!l.corbeille_id || n <= 0) return '';
+            return `<div class="list-sidebar-sub" title="Poubelle de « ${esc(l.nom)} »"
+                     onclick="event &amp;&amp; event.stopPropagation(); ListesModule.selectList(${l.corbeille_id})">
+                🗑 Poubelle (${n})</div>`;
         },
 
         _item(l) {
@@ -233,7 +269,7 @@
                 </div>
                 <button class="list-sidebar-edit" title="Modifier la liste"
                         onclick="event &amp;&amp; event.stopPropagation(); ListesModule.openEditList(${l.id})">✏️</button>
-            </div>`;
+            </div>${this._corbeilleSub(l)}`;
         },
 
         _updateMobileCount(n) {
@@ -246,8 +282,38 @@
 
         // ─── Sélection d'une liste ────────────────────────────────
         async selectList(listId) {
+            _state.corbeilleCampagneId = null;
+            _state.activeListOverride = null;
             _state.activeListId = listId;
-            const lst = this.activeList;
+            let lst = this.activeList;
+            if (!lst && listId) {
+                // Poubelles : hors `list_listes`, on la charge à part.
+                try {
+                    const r = await fetch(`/api/v2/listes?liste_id=${listId}`);
+                    const d = await r.json();
+                    if (d && d.success && d.liste) {
+                        _state.activeListOverride = d.liste;
+                        lst = d.liste;
+                    }
+                } catch (e) {
+                    console.error('[listes] selectList', e);
+                }
+            }
+            await this._openView(lst);
+        },
+
+        /** Vue « 🗑 Corbeille » de la campagne : agrège toutes ses poubelles. */
+        async selectCorbeilleCampagne(cid) {
+            _state.corbeilleCampagneId = cid;
+            _state.activeListId = `c${cid}`;
+            _state.activeListOverride = {
+                id: `c${cid}`, campagne_id: cid, nom: '🗑 Corbeille', icone: '🗑',
+                type: 'corbeille_campagne', statut: 'actif', objectif: 'general',
+            };
+            await this._openView(this.activeList);
+        },
+
+        async _openView(lst) {
             this.render();
 
             const ph = sel('lists-placeholder');
@@ -260,9 +326,12 @@
             const icone = sel('liste-active-icone');
             if (icone) icone.textContent = lst?.icone || '📋';
             const id = sel('liste-active-id');
-            if (id) id.textContent = lst ? `#${lst.id}` : '#—';
+            if (id) id.textContent = (lst && typeof lst.id === 'number') ? `#${lst.id}` : '#—';
             const count = sel('liste-active-count');
             if (count) count.textContent = '—';
+
+            const trashBadge = sel('liste-active-corbeille');
+            if (trashBadge) trashBadge.style.display = lst?.type === 'corbeille' ? 'inline-block' : 'none';
 
             const ob = sel('liste-active-objectif');
             if (ob) {
@@ -286,12 +355,22 @@
                 sb.style.display = 'inline-block';
             }
 
+            // Dans une vue poubelle, le retrait (→ poubelle-de-poubelle) n'a pas lieu d'être,
+            // mais la restauration (retour arrière) devient l'action principale.
+            const inTrash = _state.corbeilleCampagneId !== null || lst?.type === 'corbeille';
+            const rmBtn = sel('liste-retirer-selection');
+            if (rmBtn) rmBtn.style.display = inTrash ? 'none' : '';
+            const rsBtn = sel('liste-restaurer-selection');
+            if (rsBtn) rsBtn.style.display = inTrash ? '' : 'none';
+
             const ls = sel('liste-lead-search');
             if (ls) ls.value = '';
             _state.leadsSearch = '';
-            this.loadListNote();
-            this._wireImport();
-            this._initNoteAutoSave();
+            if (_state.corbeilleCampagneId === null) {
+                this.loadListNote();
+                this._wireImport();
+                this._initNoteAutoSave();
+            }
             this.closeMobileSidebar();
             this._setSelection([]);
             await this.loadLeads(1);
@@ -299,6 +378,8 @@
 
         clearSelection() {
             _state.activeListId = null;
+            _state.activeListOverride = null;
+            _state.corbeilleCampagneId = null;
             _state.leads = [];
             const ph = sel('lists-placeholder');
             if (ph) ph.style.display = '';
@@ -329,7 +410,10 @@
             if (ecarte === '0') params.set('ecarte', '0');
 
             try {
-                const r = await fetch(`/api/v2/listes/${_state.activeListId}/leads?${params}`);
+                const url = _state.corbeilleCampagneId
+                    ? `/api/v2/campagnes/${_state.corbeilleCampagneId}/leads?corbeille=1&${params}`
+                    : `/api/v2/listes/${_state.activeListId}/leads?${params}`;
+                const r = await fetch(url);
                 const d = await r.json();
                 if (d.error) throw new Error(d.error);
 
@@ -450,6 +534,17 @@
             const n = this._checkedIds().length;
             btn.disabled = n === 0;
             btn.textContent = n > 0 ? `🗑 Retirer (${n})` : '🗑 Retirer sélection';
+            const rb = sel('liste-restaurer-selection');
+            if (rb) {
+                rb.disabled = n === 0;
+                rb.textContent = n > 0 ? `↩️ Restaurer (${n})` : '↩️ Restaurer sélection';
+            }
+        },
+
+        /** Vue poubelle (liste 🗑) ou vue agrégée « Corbeille » de campagne. */
+        _inTrashView() {
+            return _state.corbeilleCampagneId !== null
+                || this.activeList?.type === 'corbeille';
         },
 
         async removeSelectedLeads() {
@@ -470,6 +565,116 @@
             const ok = window.confirm(`Retirer « ${label} » de cette liste (→ Corbeille, non destructif) ?`);
             if (!ok) return;
             await this._unlink(ids);
+        },
+
+        // ─── Restauration (retour arrière depuis la Poubelle) ────────
+        /**
+         * Regroupe les ids par poubelle porteuse. La cible par défaut est la liste
+         * source (`corbeille_de`) ; une poubelle héritée sans source → `target=null`
+         * (le modal impose le choix). Chaque ligne porte `corbeille_de` (SQL).
+         */
+        _restoreGroups(ids) {
+            const want = new Set(ids.map(Number));
+            const groups = new Map();
+            for (const r of _state.leads) {
+                if (!want.has(Number(r.id))) continue;
+                const cbId = parseInt(r.liste_id, 10);
+                if (!cbId) continue;
+                const src = r.corbeille_de ? parseInt(r.corbeille_de, 10) : null;
+                if (!groups.has(cbId)) groups.set(cbId, { cbId, target: src, ids: [] });
+                const g = groups.get(cbId);
+                if (!g.target && src) g.target = src;
+                g.ids.push(r.id);
+            }
+            return [...groups.values()].filter(g => g.ids.length);
+        },
+
+        async restoreSelectedLeads() {
+            const ids = this._checkedIds();
+            if (!ids.length) return;
+            await this._startRestore(ids);
+        },
+
+        async restoreLead(id) {
+            const selIds = this._checkedIds();
+            const ids = selIds.includes(id) ? selIds : [id];
+            await this._startRestore(ids);
+        },
+
+        async _startRestore(ids) {
+            const groups = this._restoreGroups(ids);
+            if (!groups.length) {
+                toast('Destination introuvable (poubelle héritée sans liste source).', 'error');
+                return;
+            }
+            if (groups.some(g => !g.target)) {
+                this._openRestoreModal(groups);
+                return;
+            }
+            const total = groups.reduce((n, g) => n + g.ids.length, 0);
+            const nom = groups.length === 1
+                ? (_state.listes.find(x => x.id === groups[0].target) || {}).nom : null;
+            const ok = window.confirm(`Remettre ${total} prospect(s) dans ${nom ? `« ${nom} »` : 'leur liste d\'origine'} ?`);
+            if (!ok) return;
+            await this._runRestore(groups);
+        },
+
+        _openRestoreModal(groups) {
+            const hint = sel('restore-hint');
+            const rows = _state.leads.filter(x => groups.some(g => g.ids.includes(x.id)));
+            const cid = groups.some(g => !g.target)
+                ? (rows.find(r => !r.corbeille_de) || {}).campagne_id
+                : (rows[0] || {}).campagne_id;
+            const n = groups.reduce((m, g) => m + g.ids.length, 0);
+            if (hint) {
+                hint.textContent = `Poubelle héritée : sa liste d'origine est perdue. Choisis la `
+                    + `destination des ${n} prospect(s) — listes de `
+                    + `${cid ? 'cette campagne' : 'la campagne'}.`;
+            }
+            const selEl = sel('restore-target-liste');
+            if (selEl) {
+                const cands = (_state.listes || []).filter(l =>
+                    l.type !== 'corbeille'
+                    && (!cid || Number(l.campagne_id) === Number(cid)));
+                selEl.innerHTML = cands.length
+                    ? cands.map(l => `<option value="${l.id}">${l.nom}</option>`).join('')
+                    : '<option value="">— aucune liste disponible —</option>';
+            }
+            this._pendingRestore = groups;
+            if (typeof window.openModal === 'function') window.openModal('modal-restore-target');
+        },
+
+        async confirmRestore() {
+            const groups = this._pendingRestore;
+            if (!groups || !groups.length) return;
+            const target = parseInt((sel('restore-target-liste') || {}).value, 10);
+            if (!target) { toast('Choisis une liste de destination.', 'error'); return; }
+            if (typeof window.closeModal === 'function') closeModal('modal-restore-target');
+            this._pendingRestore = null;
+            await this._runRestore(groups.map(g => (g.target ? g : { ...g, target })));
+        },
+
+        async _runRestore(groups) {
+            let moved = 0;
+            try {
+                for (const g of groups) {
+                    const r = await fetch(`/api/v2/listes/${g.cbId}/restore`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lead_ids: g.ids, target_liste_id: g.target }),
+                    });
+                    const d = await r.json();
+                    if (!d.success) throw new Error(d.message || d.error || 'Erreur');
+                    moved += d.moved || 0;
+                }
+                toast(`${moved} prospect(s) restauré(s)`, 'success');
+                await this.loadLeads(_state.page);
+                await this.refresh();
+                await this._refreshStats();
+            } catch (e) {
+                console.error('[listes] restore', e);
+                toast(e.message || 'Erreur', 'error');
+            }
         },
 
         async _unlink(ids) {
@@ -526,7 +731,11 @@
             }
             b.push(`<button class="ul-act ${l.ecarte ? 'revert' : 'warn'}" onclick="ListesModule.toggleEcarte(${l.id})" title="${l.ecarte ? 'Réintégrer' : "Écarter des flux d'envoi"}" aria-label="Écarter">${l.ecarte ? '↩' : '🚫'}</button>`);
             b.push(`<button class="ul-act ${l.desinscrit ? 'revert' : 'danger'}" onclick="ListesModule.toggleDesinscrit(${l.id})" title="${l.desinscrit ? 'Réactiver' : "Désinscrire (opposition)"}" aria-label="Désinscrire">${l.desinscrit ? '✓' : '✋'}</button>`);
-            b.push(`<button class="ul-act" onclick="ListesModule.removeLead(${l.id})" title="Retirer de la liste (→ Corbeille)" aria-label="Retirer">✕</button>`);
+            if (this._inTrashView()) {
+                b.push(`<button class="ul-act" onclick="ListesModule.restoreLead(${l.id})" title="Remettre dans la liste d'origine (retour arrière)" aria-label="Restaurer">↩️</button>`);
+            } else {
+                b.push(`<button class="ul-act" onclick="ListesModule.removeLead(${l.id})" title="Retirer de la liste (→ Corbeille)" aria-label="Retirer">✕</button>`);
+            }
             b.push(`<button class="ul-act danger" onclick="ListesModule.deleteLead(${l.id})" title="Supprimer définitivement (irréversible)" aria-label="Supprimer">🗑</button>`);
             return `<div class="row-actions">${b.join('')}</div>`;
         },

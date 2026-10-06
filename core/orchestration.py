@@ -11,6 +11,9 @@ Règles (2026-09, produit) :
     → `run_relances(..., approval='auto')`).
   - Par campagne `campagnes.envoi_auto` (0 = la campagne est gérée à la main,
     le scheduler ne la touche pas ; 1 = relances auto via batch validator).
+  - FENÊTRE HORAIRE : ni demande ni envoi de relance hors jours ouvrés 09h-18h
+    (heure locale) — voir `is_fenetre_relances()`. Un ✅ Telegram donné la nuit
+    est CONSERVÉ et consommé à l'ouverture de la fenêtre, jamais envoyé la nuit.
   - Chaque émission passe par `sequence_engine` (verrous machine à états, template,
     humanisation, validation Telegram, quota). Le scheduler ne fait PAS de transition
     directe : tout passe par le tunnel.
@@ -229,6 +232,40 @@ def add_business_days(start_dt, n_days: int):
 
 def is_business_day(dt) -> bool:
     return dt.weekday() < 5
+
+
+# ─── Fenêtre horaire des relances ──────────────────────────────────────────────
+# RÈGLE PRODUIT : ni la DEMANDE de validation Telegram, ni l'ENVOI des relances
+# n'ont lieu hors de cette plage (jours ouvrés 09h-18h par défaut, heures
+# LOCALES). Sans elle, le job `v2_send_relances` (toutes les 10 min, 24 h/24)
+# notifiait à 01h00 et un ✅ tapé la nuit déclenchait un envoi la nuit.
+# Bornes : variables d'environnement RELANCE_HEURE_DEBUT / RELANCE_HEURE_FIN.
+# ATTENTION : la fenêtre se lit en heure LOCALE alors que `relances_due` raisonne
+# en UTC (`datetime.utcnow`) — mélanger les deux décalerait la plage d'1 h.
+def _borne_heur(nom_env: str, defaut: int) -> int:
+    try:
+        return max(0, min(23, int(os.getenv(nom_env, ''))))
+    except (TypeError, ValueError):
+        return defaut
+
+
+def fenetre_relances() -> tuple[int, int]:
+    """Plage horaire des relances : (heure_debut incluse, heure_fin exclue)."""
+    return _borne_heur('RELANCE_HEURE_DEBUT', 9), _borne_heur('RELANCE_HEURE_FIN', 18)
+
+
+def is_fenetre_relances(dt=None) -> bool:
+    """Vrai si l'on est dans la fenêtre d'envoi des relances (ouvré + plage horaire).
+
+    `dt=None` → heure locale courante. Un `dt` explicite est interprété tel quel
+    (les tests passent des `datetime` locaux).
+    """
+    from datetime import datetime
+    dt = dt or datetime.now()
+    if not is_business_day(dt):
+        return False
+    debut, fin = fenetre_relances()
+    return debut <= dt.hour < fin
 
 
 def relances_due(campagne_id: int | None = None, now=None, *,

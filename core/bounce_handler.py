@@ -227,7 +227,7 @@ def get_bounce(bounce_id: int) -> dict | None:
 def archive_bounce(bounce_id: int) -> dict:
     """✅ : `ne_plus_contacter` (suppression_list + transition) + déplacement 🗑 Corbeille."""
     from database import prospects as prospects_repo
-    from database.listes import get_or_create_corbeille, unlink_prospects
+    from database.listes import unlink_prospects
 
     bounce = get_bounce(bounce_id)
     if not bounce:
@@ -246,15 +246,15 @@ def archive_bounce(bounce_id: int) -> dict:
         if not res.get('success'):
             logger.warning("[bounce] set_ne_plus_contacter #%s: %s", pid, res.get('error'))
         else:
-            # 2. déplacement non destructif vers la 🗑 Corbeille de la campagne
+            # 2. déplacement non destructif vers la POUBELLE de la liste porteuse
             try:
-                if campagne_id:
-                    get_or_create_corbeille(int(campagne_id))
                 prosp = prospects_repo.get_prospect(int(pid)) or {}
                 liste_id = prosp.get('liste_id') or bounce.get('liste_id')
                 if liste_id:
                     r = unlink_prospects(int(liste_id), [int(pid)])
                     moved = r.get('moved', 0) if r.get('success') else 0
+                else:
+                    logger.warning("[bounce] #%s sans liste porteuse : pas de déplacement", bounce_id)
             except Exception as e:
                 logger.error("[bounce] déplacement corbeille #%s: %s", pid, e)
 

@@ -63,16 +63,30 @@ def get_liste(liste_id: int):
 
 
 def list_listes(campagne_id: int | None = None, include_archives: bool = False,
-                statut: str | None = None, search: str | None = None) -> list:
-    """Liste les listes (optionnellement d'une seule campagne) avec comptages."""
+                statut: str | None = None, search: str | None = None,
+                include_corbeille: bool = False) -> list:
+    """Liste les listes (optionnellement d'une seule campagne) avec comptages.
+
+    Les poubelles (`type='corbeille'`) sont EXCLUES par défaut : ce ne sont pas des
+    listes d'envoi. Chaque liste normale expose sa propre poubelle via
+    `corbeille_id` + `nb_corbeille`.
+    """
     with get_conn() as conn:
         sql = """SELECT l.*, c.nom AS campagne_nom,
                         (SELECT COUNT(*) FROM prospects p WHERE p.liste_id = l.id) AS nb_leads,
-                        (SELECT MAX(p.updated_at) FROM prospects p WHERE p.liste_id = l.id) AS derniere_touche
+                        (SELECT MAX(p.updated_at) FROM prospects p WHERE p.liste_id = l.id) AS derniere_touche,
+                        (SELECT cb.id FROM listes cb
+                          WHERE cb.corbeille_de = l.id AND cb.statut = 'actif'
+                          ORDER BY cb.id LIMIT 1) AS corbeille_id,
+                        (SELECT COUNT(*) FROM prospects p
+                          WHERE p.liste_id IN (SELECT cb2.id FROM listes cb2
+                                               WHERE cb2.corbeille_de = l.id)) AS nb_corbeille
                  FROM listes l
                  JOIN campagnes c ON c.id = l.campagne_id """
         where = []
         params = []
+        if not include_corbeille:
+            where.append("(l.type IS NULL OR l.type != 'corbeille')")
         if campagne_id is not None:
             where.append("l.campagne_id = ?")
             params.append(campagne_id)
@@ -145,23 +159,24 @@ CORBEILLE_NOM = '🗑 Corbeille'
 
 
 def get_or_create_corbeille(campagne_id: int) -> int:
-    """Retourne l'id de la vue « 🗑 Corbeille » de la campagne, la crée si absente.
+    """Corbeille ORPHELINE d'une campagne (défaut, sans liste source connue).
 
-    La liste porte `type='corbeille'` : c'est une VUE de tri (prospects écartés,
-    désinscrits, bounces), jamais une liste d'envoi. Les projets qui calculent des
-    lots (calendrier des relances, `relances_due`) l'excluent par ce type, pas par
-    son nom — une liste renommée ne doit pas redevenir une cible d'envoi.
+    Les déchets rangés au quotidien vont dans la poubelle de LEUR liste
+    (`get_or_create_corbeille_liste`) ; celle-ci sert aux cas où la liste source
+    n'existe plus (héritage, liste supprimée).
     """
     with get_conn() as conn:
         row = conn.execute(
             "SELECT id, type FROM listes WHERE campagne_id = ? AND type = 'corbeille' "
-            "AND statut = 'actif' ORDER BY id LIMIT 1",
+            "AND (corbeille_de IS NULL OR corbeille_de = 0) AND statut = 'actif' "
+            "ORDER BY id LIMIT 1",
             (campagne_id,),
         ).fetchone()
         if not row:
             row = conn.execute(
                 "SELECT id, type FROM listes WHERE campagne_id = ? AND nom = ? "
-                "AND statut = 'actif' ORDER BY id LIMIT 1",
+                "AND (corbeille_de IS NULL OR corbeille_de = 0) AND statut = 'actif' "
+                "ORDER BY id LIMIT 1",
                 (campagne_id, CORBEILLE_NOM),
             ).fetchone()
         if row:
@@ -180,19 +195,128 @@ def get_or_create_corbeille(campagne_id: int) -> int:
         return cur.lastrowid
 
 
-def unlink_prospects(liste_id: int, lead_ids: list[int]) -> dict:
-    """Retire des prospects d'une liste en les déplaçant vers la Corbeille (non destructif)."""
+def get_or_create_corbeille_liste(liste_id: int) -> int:
+    """Poubelle propre à UNE liste (`type='corbeille'`, `corbeille_de = liste_id`).
+
+    C'est la destination de tout prospect retiré de `liste_id` : chaque liste a sa
+    propre poubelle, la corbeille de campagne n'est qu'une vue qui les agrège.
+    """
+    with get_conn() as conn:
+        src = conn.execute(
+            "SELECT campagne_id, nom FROM listes WHERE id = ?", (liste_id,)
+        ).fetchone()
+        if not src:
+            raise ValueError("Liste introuvable")
+        row = conn.execute(
+            "SELECT id FROM listes WHERE corbeille_de = ? AND statut = 'actif' "
+            "ORDER BY id LIMIT 1",
+            (liste_id,),
+        ).fetchone()
+        if row:
+            return row['id']
+        cur = conn.execute(
+            """INSERT INTO listes (campagne_id, nom, description, icone, couleur,
+                                   objectif, source, statut, type, corbeille_de)
+               VALUES (?, ?, ?, '🗑', '#8b5cf6', 'general', 'systeme',
+                       'actif', 'corbeille', ?)""",
+            (src['campagne_id'], f"🗑 Poubelle — {src['nom'] or 'liste'}",
+             f"Prospects retirés de « {src['nom'] or 'liste'} »", int(liste_id)),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def corbeille_counts(campagne_id: int | None = None) -> dict:
+    """Comptages des poubelles : `{campagne_id: {'total': n, 'listes': {src_id: n}}}`.
+
+    Alimente le badge « Poubelle (n) » de chaque liste et l'entrée « 🗑 Corbeille »
+    en bas de sidebar (vue campagne).
+    """
+    with get_conn() as conn:
+        sql = ("""SELECT cb.campagne_id AS cid, cb.corbeille_de AS src, COUNT(p.id) AS n
+                  FROM listes cb
+                  LEFT JOIN prospects p ON p.liste_id = cb.id
+                  WHERE cb.type = 'corbeille'""")
+        params = []
+        if campagne_id is not None:
+            sql += " AND cb.campagne_id = ?"
+            params.append(int(campagne_id))
+        sql += " GROUP BY cb.id"
+        out: dict[int, dict] = {}
+        for r in conn.execute(sql, params).fetchall():
+            cid = int(r['cid'])
+            bucket = out.setdefault(cid, {'total': 0, 'listes': {}})
+            bucket['total'] += int(r['n'] or 0)
+            if r['src']:
+                bucket['listes'][int(r['src'])] = int(r['n'] or 0)
+        return out
+
+
+def restore_prospects(corbeille_id: int, lead_ids: list[int],
+                      target_liste_id: int | None = None) -> dict:
+    """Retour arrière : remet des prospects de la poubelle dans une liste normale.
+
+    Cible par défaut = la liste source (`corbeille_de`). Une poubelle héritée
+    (orpheline, `corbeille_de IS NULL`) impose `target_liste_id` — on ne devine
+    jamais la liste d'origine.
+    """
     if not lead_ids:
         return {'success': False, 'error': 'Aucun lead sélectionné'}
     with get_conn() as conn:
-        liste = conn.execute("SELECT campagne_id FROM listes WHERE id = ?", (liste_id,)).fetchone()
+        cb = conn.execute(
+            "SELECT id, campagne_id, type, corbeille_de FROM listes WHERE id = ?",
+            (int(corbeille_id),),
+        ).fetchone()
+        if not cb or cb['type'] != 'corbeille':
+            return {'success': False, 'error': 'Ce n\'est pas une poubelle'}
+        if target_liste_id:
+            target = int(target_liste_id)
+        elif cb['corbeille_de']:
+            target = int(cb['corbeille_de'])
+        else:
+            return {'success': False, 'error': 'liste_cible_requise',
+                    'message': 'Poubelle héritée : choisis la liste de destination'}
+        if target == int(corbeille_id):
+            return {'success': False, 'error': 'La liste cible est la poubelle elle-même'}
+        dst = conn.execute(
+            "SELECT campagne_id, type FROM listes WHERE id = ?", (target,)
+        ).fetchone()
+        if not dst:
+            return {'success': False, 'error': 'Liste cible introuvable'}
+        if dst['type'] == 'corbeille':
+            return {'success': False, 'error': 'La liste cible est elle-même une poubelle'}
+        if int(dst['campagne_id']) != int(cb['campagne_id']):
+            return {'success': False, 'error': 'La liste cible est dans une autre campagne'}
+        ph = ','.join('?' * len(lead_ids))
+        cur = conn.execute(
+            f"UPDATE prospects SET liste_id = ? WHERE liste_id = ? AND id IN ({ph})",
+            (target, int(corbeille_id), *[int(x) for x in lead_ids]),
+        )
+        conn.commit()
+        logger.info("Restauration %s prospect(s) : poubelle #%s → liste #%s",
+                    cur.rowcount, corbeille_id, target)
+        return {'success': True, 'moved': cur.rowcount, 'target_liste_id': target}
+
+
+def unlink_prospects(liste_id: int, lead_ids: list[int]) -> dict:
+    """Retire des prospects d'une liste en les déposant dans la POUBELLE de cette
+    liste (non destructif, réversible uniquement par migration SQL)."""
+    if not lead_ids:
+        return {'success': False, 'error': 'Aucun lead sélectionné'}
+    with get_conn() as conn:
+        liste = conn.execute("SELECT campagne_id, type FROM listes WHERE id = ?", (liste_id,)).fetchone()
         if not liste:
             return {'success': False, 'error': 'Liste introuvable'}
-        corbeille_id = get_or_create_corbeille(liste['campagne_id'])
+        if liste['type'] == 'corbeille':
+            # Déjà à la poubelle : pas de poubelle-de-poubelle, on les met à terre
+            # dans la corbeille orpheline de la campagne.
+            target_id = get_or_create_corbeille(liste['campagne_id'])
+        else:
+            target_id = get_or_create_corbeille_liste(liste_id)
         placeholders = ','.join('?' * len(lead_ids))
         cur = conn.execute(
             f"UPDATE prospects SET liste_id = ? WHERE liste_id = ? AND id IN ({placeholders})",
-            (corbeille_id, liste_id, *lead_ids),
+            (target_id, liste_id, *lead_ids),
         )
         conn.commit()
-        return {'success': True, 'moved': cur.rowcount}
+        return {'success': True, 'moved': cur.rowcount, 'corbeille_id': target_id}

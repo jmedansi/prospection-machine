@@ -92,9 +92,11 @@ def list_campagnes(include_archives: bool = False) -> list:
         sql = """SELECT c.*,
                         (SELECT COUNT(*) FROM listes l
                           JOIN prospects p ON p.liste_id = l.id
-                         WHERE l.campagne_id = c.id) AS nb_leads,
+                         WHERE l.campagne_id = c.id
+                           AND (l.type IS NULL OR l.type != 'corbeille')) AS nb_leads,
                         (SELECT COUNT(*) FROM listes l
-                         WHERE l.campagne_id = c.id AND l.statut = 'actif') AS nb_listes
+                         WHERE l.campagne_id = c.id AND l.statut = 'actif'
+                           AND (l.type IS NULL OR l.type != 'corbeille')) AS nb_listes
                  FROM campagnes c """
         if not include_archives:
             sql += "WHERE c.statut = 'actif' "

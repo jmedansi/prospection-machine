@@ -50,7 +50,8 @@ def get_or_create_liste(campagne_id: int, nom: str | None = None) -> int | None:
     campagne_id = int(campagne_id)
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM listes WHERE campagne_id = ? AND statut = 'actif' ORDER BY id LIMIT 1",
+            "SELECT id FROM listes WHERE campagne_id = ? AND statut = 'actif' "
+            "AND (type IS NULL OR type != 'corbeille') ORDER BY id LIMIT 1",
             (campagne_id,),
         ).fetchone()
         if row:

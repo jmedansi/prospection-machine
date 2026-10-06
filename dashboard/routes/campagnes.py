@@ -289,6 +289,7 @@ def api_list_all_prospects():
         liste_id=args.get('liste_id', type=int),
         ecarte=args.get('ecarte', ''),
         desinscrit=args.get('desinscrit', ''),
+        corbeille=args.get('corbeille', ''),
     )
     for lead in res.get('leads', []):
         lead['statut_display'] = statut_display(lead.get('statut'))
@@ -314,6 +315,7 @@ def api_list_prospects(campagne_id):
         liste_id=args.get('liste_id', type=int),
         ecarte=args.get('ecarte', ''),
         desinscrit=args.get('desinscrit', ''),
+        corbeille=args.get('corbeille', ''),
     )
     for lead in res.get('leads', []):
         lead['statut_display'] = statut_display(lead.get('statut'))
@@ -977,13 +979,28 @@ def api_relances_batch_validate():
         return jsonify({'success': False, 'error': 'campagne_id et liste_id requis'}), 400
 
     from core.relance_batch_validator import ensure_batch_requests, batch_callback
-    from database.connection import get_conn
 
-    # Réinitialise le batch s'il était complété/refusé pour permettre une nouvelle validation
+    # Ne demande QUE la liste cliquée : sans filtre, `ensure_batch_requests()` balaie
+    # TOUTES les campagnes/listes dues → un clic sur la liste 180 déclenchait aussi
+    # une notification pour 155 et 181. `force=True` = re-demande explicite de
+    # l'utilisateur (autorisée même si le lot est `refuse`/`sent`/`erreur`).
     cb = batch_callback(campagne_id, liste_id)
-    with get_conn() as conn:
-        conn.execute("DELETE FROM relance_batches WHERE callback_id = ?", (cb,))
-        conn.commit()
-
-    res = ensure_batch_requests()
-    return jsonify({'success': True, 'result': res, 'callback_id': cb})
+    res = ensure_batch_requests(campagne_id=campagne_id, liste_id=liste_id, force=True)
+    for r in res.get('requests', []):
+        if r.get('callback_id') != cb:
+            continue
+        # `reuse` = le hub avait DÉJÀ une réponse pour ce callback : aucune nouvelle
+        # notification n'est partie, mais le lot est réenregistré et sera consommé
+        # au prochain poll. On le dit plutôt que de mentir sur un envoi.
+        if 'reuse' in r:
+            return jsonify({'success': True, 'callback_id': cb, 'result': res,
+                            'envoyee': False,
+                            'message': {'ok': 'déjà validée — envoi au prochain poll',
+                                        'no': 'déjà refusée',
+                                        'pending': 'demande déjà en attente de réponse'}.get(
+                                            r['reuse'], 'demande déjà en attente')})
+        return jsonify({'success': True, 'callback_id': cb, 'result': res, 'envoyee': True})
+    raison = ('hors fenêtre horaire (9 h – 18 h, jours ouvrés)' if res.get('differee')
+              else 'déjà en attente de réponse, ou hub Telegram indisponible')
+    return jsonify({'success': False, 'result': res, 'callback_id': cb,
+                    'error': f'aucune demande envoyée — {raison}'}), 200

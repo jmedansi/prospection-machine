@@ -295,7 +295,8 @@ def list_prospects(liste_id: int | None = None, campagne_id: int | None = None,
                    search: str = '', statut: str = '', include_archives: bool = False,
                    source: str = '', secteur: str = '', site: str = '',
                    email: str = '', notes: str = '', score: str = '',
-                   objectif_liste: str = '', ecarte: str = '', desinscrit: str = '') -> dict:
+                   objectif_liste: str = '', ecarte: str = '', desinscrit: str = '',
+                   corbeille: str = '') -> dict:
     """Liste paginée des prospects d'une liste, d'une campagne, ou de toutes
     les campagnes si aucun filtre (mode « toutes campagnes » v2).
 
@@ -308,7 +309,9 @@ def list_prospects(liste_id: int | None = None, campagne_id: int | None = None,
       - score            : 'bad' (<70) · 'good' (≥70) · 'unscored' (NULL)
       - objectif_liste   : 'web' | 'general' → via l.objectif de la liste porteuse
       - ecarte           : '' (tout) · '0' (exclut écartés) · '1' (uniquement écartés)
-      - desinscrit       : '' (tout) · '0' (exclut oppositions) · '1' (uniquement oppositions)"""
+      - desinscrit       : '' (tout) · '0' (exclut oppositions) · '1' (uniquement oppositions)
+      - corbeille        : '' (exclues sauf `liste_id` explicite) · '1' (uniquement
+                           les poubelles du périmètre) · '0' (jamais)"""
     scope = listes = None
     clauses = ['p.liste_id = l.id']
     params = []
@@ -318,6 +321,15 @@ def list_prospects(liste_id: int | None = None, campagne_id: int | None = None,
     elif campagne_id is not None:
         clauses.append("l.campagne_id = ?")
         params.append(int(campagne_id))
+    # Poubelles (`type='corbeille'`) : hors des vues opérationnelles par défaut.
+    # `corbeille='1'` → UNIQUEMENT les poubelles du périmètre (vue « 🗑 Corbeille »
+    # de campagne) ; un `liste_id` explicite reste non filtré (ciblage direct).
+    if corbeille == '1':
+        clauses.append("l.type = 'corbeille'")
+    elif corbeille == '0':
+        clauses.append("(l.type IS NULL OR l.type != 'corbeille')")
+    elif liste_id is None:
+        clauses.append("(l.type IS NULL OR l.type != 'corbeille')")
     page = max(1, int(page))
     limit = min(10000, max(1, int(limit)))
     if search:
@@ -372,7 +384,9 @@ def list_prospects(liste_id: int | None = None, campagne_id: int | None = None,
         total_pages = max(1, -(-total // limit))
         offset = (page - 1) * limit
         rows = conn.execute(
-            f"""SELECT p.*, l.id AS liste_id, l.nom AS liste_nom, l.objectif, l.campagne_id, c.nom AS campagne_nom
+            f"""SELECT p.*, l.id AS liste_id, l.nom AS liste_nom, l.objectif, l.campagne_id,
+                       c.nom AS campagne_nom, l.corbeille_de AS corbeille_de,
+                       l.type AS liste_type
                 FROM prospects p
                 JOIN listes l ON p.liste_id = l.id
                 JOIN campagnes c ON c.id = l.campagne_id

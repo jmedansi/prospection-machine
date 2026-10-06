@@ -402,6 +402,7 @@ def migrate_v2_schema():
             couleur     TEXT    DEFAULT '#6366f1',        -- couleur sidebar (UI)
             objectif    TEXT    DEFAULT 'general',        -- general | web (traitement IA)
             type        TEXT    DEFAULT 'normal',         -- normal | corbeille (vue corbeille, jamais un lot d'envoi)
+            corbeille_de INTEGER,                         -- si type='corbeille' : id de la liste source (NULL = orphelin)
             statut      TEXT    DEFAULT 'actif',        -- actif | archive
             created_at  TEXT    DEFAULT (datetime('now')),
             updated_at  TEXT    DEFAULT (datetime('now'))
@@ -582,6 +583,7 @@ def _migrate_v2_grouping(conn):
             couleur     TEXT    DEFAULT '#6366f1',
             objectif    TEXT    DEFAULT 'general',
             type        TEXT    DEFAULT 'normal',
+            corbeille_de INTEGER,
             statut      TEXT    DEFAULT 'actif',
             created_at  TEXT    DEFAULT (datetime('now')),
             updated_at  TEXT    DEFAULT (datetime('now'))
@@ -768,7 +770,8 @@ def _backfill_listes(conn):
         return
     for row in conn.execute("SELECT id, nom, description FROM campagnes").fetchall():
         has = conn.execute(
-            "SELECT COUNT(*) AS n FROM listes WHERE campagne_id = ?", (row['id'],)
+            "SELECT COUNT(*) AS n FROM listes WHERE campagne_id = ? "
+            "AND (type IS NULL OR type != 'corbeille')", (row['id'],)
         ).fetchone()['n']
         if has:
             continue
@@ -796,7 +799,9 @@ def _migrate_relance_validation(conn):
 
     - campagnes.validation_relances : 0 = relances auto, 1 = confirmation Telegram
       par lot (1 message par liste) avant envoi.
-    - relance_batches : état persistant des lots (pending | sent | refuse).
+    - relance_batches : état persistant des lots
+      (pending | sending | sent | refuse | erreur) + `tentatives` (échecs techniques
+      de suite : le lot revient `pending` et la ✅ est rejouée, au lieu d'être perdue).
     Idempotent : colonne ajoutée si absente, table créée le cas échéant.
     """
     if 'campagnes' in _table_names(conn):
@@ -814,11 +819,19 @@ def _migrate_relance_validation(conn):
             liste_id    INTEGER NOT NULL,
             position    INTEGER DEFAULT 1,
             count       INTEGER DEFAULT 0,
-            statut      TEXT DEFAULT 'pending',        -- pending | sent | refuse
+            statut      TEXT DEFAULT 'pending',   -- pending | sending | sent | refuse | erreur
+            tentatives  INTEGER DEFAULT 0,        -- échecs techniques (retry sur 'pending')
             created_at  TEXT DEFAULT (datetime('now')),
             updated_at  TEXT
         )"""
     )
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(relance_batches)").fetchall()]
+    if 'tentatives' not in cols:
+        try:
+            conn.execute("ALTER TABLE relance_batches ADD COLUMN tentatives INTEGER DEFAULT 0")
+            print("  [MIGRATION] Colonne ajoutée: relance_batches.tentatives")
+        except Exception:
+            pass
 
 
 def _migrate_listes_cols(conn):
@@ -832,6 +845,7 @@ def _migrate_listes_cols(conn):
         ('couleur',   "TEXT DEFAULT '#6366f1'"),
         ('objectif',  "TEXT DEFAULT 'general'"),
         ('type',      "TEXT DEFAULT 'normal'"),   # normal | corbeille
+        ('corbeille_de', "INTEGER"),              # liste source d'une corbeille
     ]
     for col_name, col_def in migrations:
         if col_name not in cols:

@@ -22,7 +22,8 @@ def _stub_telegram_hub(monkeypatch):
         'notifications': [],   # (outil, preview)
     }
 
-    def _send_validation_request(outil, preview, callback_id, timeout_minutes=None):
+    def _send_validation_request(outil, preview, callback_id, timeout_minutes=None,
+                                 titre=None):
         store['requests'].append((outil, preview, callback_id, timeout_minutes))
         store['status'].setdefault(callback_id, None)
         return 'pending'

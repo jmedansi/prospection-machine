@@ -179,14 +179,13 @@ def _stats_v2(conn, campagne_id: int | None, date_start: str | None = None, date
     Même contrat de clés que la branche legacy (lecteurs : routes/stats.py, stats.js,
     api.js, dashboard_core.js, sidebar).
     """
-    if campagne_id is None:
-        from_t = "FROM prospects p"
-        where = "WHERE 1=1"
-        params = []
-    else:
-        from_t = "FROM prospects p JOIN listes l ON p.liste_id = l.id"
-        where = "WHERE l.campagne_id = ?"
-        params = [campagne_id]
+    # Les poubelles (listes `type='corbeille'`) sont du déchet : jamais comptées.
+    from_t = "FROM prospects p JOIN listes l ON p.liste_id = l.id"
+    where = "WHERE (l.type IS NULL OR l.type != 'corbeille')"
+    params: list = []
+    if campagne_id is not None:
+        where += " AND l.campagne_id = ?"
+        params.append(campagne_id)
     if date_start and date_end:
         where += " AND DATE(p.created_at) >= ? AND DATE(p.created_at) <= ?"
         params += [date_start, date_end]
@@ -219,16 +218,14 @@ def _stats_v2(conn, campagne_id: int | None, date_start: str | None = None, date
     # ── Délivrabilité — source: emails_envoyes (alimentée par le webhook Resend) ──
     # Les anciennes valeurs codées en dur (bounces=0, spam=0, ouverts=0)
     # masquaient 20 bounces réels sur 188 envois.
-    if campagne_id is None:
-        e_from = "FROM emails_envoyes e"
-        e_where = "WHERE 1=1"
-        e_params: list = []
-    else:
-        e_from = ("FROM emails_envoyes e "
-                  "JOIN prospects p ON p.id = e.lead_id "
-                  "JOIN listes l ON p.liste_id = l.id")
-        e_where = "WHERE l.campagne_id = ?"
-        e_params = [campagne_id]
+    e_from = ("FROM emails_envoyes e "
+              "JOIN prospects p ON p.id = e.lead_id "
+              "JOIN listes l ON p.liste_id = l.id")
+    e_where = "WHERE (l.type IS NULL OR l.type != 'corbeille')"
+    e_params: list = []
+    if campagne_id is not None:
+        e_where += " AND l.campagne_id = ?"
+        e_params.append(campagne_id)
     if date_start and date_end:
         e_where += " AND DATE(e.date_envoi) >= ? AND DATE(e.date_envoi) <= ?"
         e_params += [date_start, date_end]

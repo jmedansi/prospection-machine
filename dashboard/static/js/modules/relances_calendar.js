@@ -583,10 +583,16 @@ window.RelancesCalendarModule = (function () {
         }
     }
 
-    function triggerTelegramValidation(campagneId, listeId, listeNom) {
-        if (!confirm('Voulez-vous envoyer une demande de validation Telegram immédiate pour "' + listeNom + '" ?')) {
-            return;
-        }
+    async function triggerTelegramValidation(campagneId, listeId, listeNom) {
+        // Vrai popup (et non window.confirm natif) — même helper que le reste de la V6.
+        var confirmFn = (window.UI && window.UI.confirm) || window.showConfirm;
+        var ok = await confirmFn(
+            'Envoyer une demande de validation Telegram pour « ' + listeNom + ' » ?\n\n' +
+            'Rappel : l\'envoi n\'a lieu qu\'avec ton ✅, et seulement entre 9 h et 18 h ' +
+            '(jours ouvrés).',
+            { title: '📲 Validation Telegram', confirmText: 'Envoyer la demande' }
+        );
+        if (!ok) return;
 
         fetch('/api/v2/relances/batch-validate', {
             method: 'POST',
@@ -595,11 +601,16 @@ window.RelancesCalendarModule = (function () {
         })
         .then(function (res) { return res.json(); })
         .then(function (data) {
-            if (data.success) {
-                if (typeof showToast === 'function') showToast('Demande Telegram envoyée pour ' + listeNom + ' !', 'success');
+            var toast = (typeof showToast === 'function') ? showToast : function () {};
+            if (data.success && data.envoyee) {
+                toast('📲 Demande Telegram envoyée pour ' + listeNom, 'success');
+                loadData();
+            } else if (data.success) {
+                // Aucune notification partie : réponse déjà dans le hub.
+                toast('ℹ️ ' + listeNom + ' — ' + (data.message || 'rien à demander'), 'info');
                 loadData();
             } else {
-                if (typeof showToast === 'function') showToast('Erreur : ' + (data.error || 'échec'), 'error');
+                toast('⚠️ ' + (data.error || 'échec'), 'error');
             }
         })
         .catch(function (err) {

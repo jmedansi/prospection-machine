@@ -90,6 +90,8 @@
             <span id="liste-active-id" class="lists-count-badge" style="font-family:monospace">#—</span>
             <span id="liste-active-objectif" class="lists-objectif-badge">🎯 Général</span>
             <span id="liste-active-count" class="lists-count-badge">0 prospect</span>
+            <span id="liste-active-corbeille" class="lists-count-badge"
+                  style="display:none;background:rgba(139,92,246,.14);color:#8b5cf6">🗑 Poubelle</span>
             <span id="liste-active-statut" class="lists-campaign-badge"></span>
             <span id="liste-active-campagne" class="lists-campaign-badge">🎯 Campagne</span>
           </div>
@@ -159,6 +161,9 @@
             <span class="lists-toolbar-sep"></span>
             <button id="liste-retirer-selection" class="ld-btn ld-red"
                     onclick="ListesModule.removeSelectedLeads()" disabled title="Retirer la sélection (→ Corbeille)">🗑 Retirer sélection</button>
+            <button id="liste-restaurer-selection" class="ld-btn ld-green"
+                    onclick="ListesModule.restoreSelectedLeads()" disabled
+                    title="Remettre la sélection dans une liste (retour arrière)">↩️ Restaurer sélection</button>
             <button class="ld-btn ld-ghost" onclick="ListesModule.viewLeads()" title="Ouvrir la campagne porteuse dans l'onglet Leads">→ Leads</button>
           </div>
 
@@ -313,6 +318,30 @@
     <div class="mf">
       <button type="button" class="btn bg1 sm" onclick="closeModal('modal-list-form')">Annuler</button>
       <button type="button" class="btn bp1 sm" onclick="ListesModule.saveListFromModal()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔁 Modal : destination d'une restauration (poubelles héritées sans liste source) -->
+<div id="modal-restore-target" class="modal-overlay" onclick="if(event.target===this) closeModal('modal-restore-target')">
+  <div class="modal-content" style="width:460px;max-width:95%">
+    <div class="mh">
+      <div class="mh-t">↩️ Restaurer vers…</div>
+      <button type="button" class="btn bg0" onclick="closeModal('modal-restore-target')" title="Fermer">✕</button>
+    </div>
+    <div class="mb">
+      <p id="restore-hint" style="font-size:12px;line-height:1.5;color:var(--ink3);margin:0 0 12px"></p>
+      <div class="form-grp">
+        <label>Liste de destination *</label>
+        <select id="restore-target-liste" class="inp"></select>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:8px">
+        Les prospect(s) reprennent leur place dans la liste normale choisie.
+      </p>
+    </div>
+    <div class="mf">
+      <button type="button" class="btn bg1 sm" onclick="closeModal('modal-restore-target')">Annuler</button>
+      <button type="button" class="btn bp1 sm" onclick="ListesModule.confirmRestore()">Restaurer</button>
     </div>
   </div>
 </div>

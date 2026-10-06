@@ -100,13 +100,17 @@ def api_list_listes():
         if not liste:
             return jsonify({'success': False, 'error': 'Liste introuvable'}), 404
         return jsonify({'success': True, 'liste': liste, 'listes': [liste]})
+    campagne_id = args.get('campagne_id', type=int)
     return jsonify({
         'success': True,
         'listes': listes_repo.list_listes(
-            campagne_id=args.get('campagne_id', type=int),
+            campagne_id=campagne_id,
             statut=args.get('statut', '') or None,
             search=args.get('search', '') or None,
+            include_corbeille=args.get('corbeille', '') == '1',
         ),
+        # comptages des poubelles : badge « Poubelle (n) » par liste + total campagne
+        'corbeilles': listes_repo.corbeille_counts(campagne_id),
     })
 
 
@@ -221,6 +225,27 @@ def api_unlink_liste_prospects(liste_id):
         return jsonify({'success': False, 'error': 'Aucun lead sélectionné'}), 400
     res = listes_repo.unlink_prospects(liste_id, lead_ids)
     return jsonify(res), (200 if res['success'] else 400)
+
+
+@listes_bp.route('/api/v2/listes/<int:liste_id>/restore', methods=['POST'])
+def api_restore_liste_prospects(liste_id):
+    """Retour arrière : remet des prospects d'une Poubelle dans une liste normale."""
+    liste = listes_repo.get_liste(liste_id)
+    if not liste:
+        return jsonify({'success': False, 'error': 'Liste introuvable'}), 404
+    if liste.get('type') != 'corbeille':
+        return jsonify({'success': False,
+                        'error': 'Cette liste n\'est pas une poubelle'}), 400
+    data = request.get_json(silent=True) or {}
+    lead_ids = data.get('lead_ids', [])
+    if not lead_ids:
+        return jsonify({'success': False, 'error': 'Aucun lead sélectionné'}), 400
+    res = listes_repo.restore_prospects(
+        liste_id, lead_ids, target_liste_id=data.get('target_liste_id'))
+    if res['success']:
+        return jsonify(res), 200
+    status = 409 if res.get('error') == 'liste_cible_requise' else 400
+    return jsonify(res), status
 
 
 # ─── Suivi temps réel des envois par liste ─────────────────────────────────
