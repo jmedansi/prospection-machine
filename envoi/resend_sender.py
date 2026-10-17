@@ -97,6 +97,11 @@ def send_prospecting_email(
             "erreur": None
         }
 
+    if not os.getenv('ALLOW_LIVE_EMAILS', '').strip().lower() in {'1', 'true', 'yes', 'on'}:
+        msg = 'Envoi de mail réel désactivé par sécurité. Définir ALLOW_LIVE_EMAILS=1 pour l’autoriser explicitement.'
+        logger.error(msg)
+        return {"success": False, "statut": "envoi_bloque", "message_id": None, "erreur": msg}
+
     # --- Lecture des clés ---
     try:
         acc = get_next_resend_account()
@@ -141,13 +146,14 @@ def send_prospecting_email(
     if not message_id or not str(message_id).strip():
         domain = sender_email.split('@')[-1] if sender_email and '@' in sender_email else None
         message_id = make_msgid(domain=domain)
-    resend_headers = [{"name": "Message-ID", "value": message_id}]
+    resend_headers: Dict[str, str] = {"Message-ID": message_id}
     if in_reply_to:
-        resend_headers.append({"name": "In-Reply-To", "value": in_reply_to})
+        resend_headers["In-Reply-To"] = in_reply_to
     if references:
-        resend_headers.append({"name": "References", "value": references})
+        resend_headers["References"] = references
     for hname, hval in (custom_headers or {}).items():
-        resend_headers.append({"name": hname, "value": hval})
+        if hname and hval is not None:
+            resend_headers[hname] = str(hval)
 
     payload = {
         "from": f"{sender_name} <onboarding@resend.dev>" if "resend.dev" in sender_email else f"{sender_name} <{sender_email}>",

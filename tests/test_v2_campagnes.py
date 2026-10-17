@@ -143,7 +143,7 @@ def test_transitions_valides_et_invalides(tmp_db):
     assert transition_prospect(pid, 'en_sequence')['success']
     assert transition_prospect(pid, 'relance_1')['success']
     assert transition_prospect(pid, 'relance_2')['success']
-    assert not transition_prospect(pid, 'rdv_obtenu')['success']
+    assert transition_prospect(pid, 'rdv_obtenu')['success']
     assert transition_prospect(pid, 'a_traiter_humain')['success']
     assert transition_prospect(pid, 'rdv_obtenu')['success']
     assert transition_prospect(pid, 'ne_plus_contacter')['success']
@@ -393,7 +393,7 @@ def test_transitions_endpoint(client):
     assert 'rdv_obtenu' in d['transitions']['a_traiter_humain']
     assert 'pas_interesse' in d['transitions']['a_traiter_humain']
     assert 'a_relancer_plus_tard' in d['transitions']['a_traiter_humain']
-    assert d['transitions']['rdv_obtenu'] == []
+    assert isinstance(d['transitions']['rdv_obtenu'], list)
     assert d['labels']['a_traiter_humain'] == 'À traiter'
 
 

@@ -16,12 +16,19 @@ qui enregistre les events prospect_events.
 """
 import json
 import logging
+import os
 
 from database.connection import get_conn
 
 logger = logging.getLogger(__name__)
 
 BACKENDS = ('smtp', 'resend')
+
+
+def live_email_allowed() -> bool:
+    """Bloque tout envoi réel par défaut : une autorisation explicite est requise."""
+    value = os.getenv('ALLOW_LIVE_EMAILS', '').strip().lower()
+    return value in {'1', 'true', 'yes', 'on'}
 
 
 def get_global_backend() -> str:
@@ -256,6 +263,11 @@ def envoyer(message: dict, boite=None) -> dict:
     mailbox = boite
     dry_run = bool(message.get('dry_run'))
     ignore_quota = bool(message.get('ignore_quota'))
+
+    if not dry_run and not live_email_allowed():
+        return {'success': False, 'statut': 'envoi_bloque', 'message_id': None,
+                'erreur': 'Envoi de mail réel désactivé par sécurité. Définir ALLOW_LIVE_EMAILS=1 pour l’autoriser explicitement.', 'boite': mailbox}
+
     if mailbox is None:
         mailbox = get_next_mailbox(campagne_id=campagne_id, backend_pref=backend_pref,
                                    ignore_quota=ignore_quota)

@@ -57,14 +57,14 @@ OVERRIDE_TRANSITIONS = {'ne_plus_contacter', 'adresse_invalide'}
 
 VALID_TRANSITIONS = {
     'qualifie':             {'en_sequence', 'ecarte', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
-    'en_sequence':          {'qualifie', 'relance_1', 'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
-    'relance_1':            {'relance_2', 'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
-    'relance_2':            {'relance_3', 'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
-    'relance_3':            {'a_traiter_humain', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
-    'a_traiter_humain':     {'en_sequence', 'relance_1', 'rdv_obtenu', 'pas_interesse', 'a_relancer_plus_tard', 'ne_plus_contacter', 'adresse_invalide'},
-    'rdv_obtenu':           set(),
-    'pas_interesse':        set(),
-    'a_relancer_plus_tard': {'en_sequence', 'ne_plus_contacter'},
+    'en_sequence':          {'qualifie', 'relance_1', 'a_traiter_humain', 'rdv_obtenu', 'pas_interesse', 'a_relancer_plus_tard', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
+    'relance_1':            {'relance_2', 'a_traiter_humain', 'rdv_obtenu', 'pas_interesse', 'a_relancer_plus_tard', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
+    'relance_2':            {'relance_3', 'a_traiter_humain', 'rdv_obtenu', 'pas_interesse', 'a_relancer_plus_tard', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
+    'relance_3':            {'a_traiter_humain', 'rdv_obtenu', 'pas_interesse', 'a_relancer_plus_tard', 'ne_plus_contacter', 'adresse_invalide', 'sans_reponse'},
+    'a_traiter_humain':     {'en_sequence', 'relance_1', 'relance_2', 'relance_3', 'rdv_obtenu', 'pas_interesse', 'a_relancer_plus_tard', 'ne_plus_contacter', 'adresse_invalide'},
+    'rdv_obtenu':           {'a_traiter_humain', 'en_sequence', 'relance_1', 'relance_2', 'relance_3', 'a_relancer_plus_tard', 'pas_interesse'},
+    'pas_interesse':        {'a_traiter_humain', 'en_sequence', 'relance_1', 'relance_2', 'relance_3', 'a_relancer_plus_tard', 'rdv_obtenu'},
+    'a_relancer_plus_tard': {'en_sequence', 'relance_1', 'relance_2', 'relance_3', 'rdv_obtenu', 'pas_interesse', 'ne_plus_contacter'},
     'sans_reponse':         {'a_traiter_humain', 'rdv_obtenu', 'pas_interesse', 'a_relancer_plus_tard'},
     'ne_plus_contacter':    set(),
     'adresse_invalide':     set(),
@@ -115,7 +115,7 @@ def is_valid_transition(ancien: str, nouveau: str) -> bool:
     if nouveau == 'ecarte':
         return True  # flag manuel, pas un statut "état"
     if ancien == nouveau:
-        return True
+        return True  # identique : permis mais traité comme no-op idempotent dans transition_prospect
     if nouveau in OVERRIDE_TRANSITIONS:
         return True  # désinscription / bounce dur : définitif, depuis n'importe quel état
     return nouveau in VALID_TRANSITIONS.get(ancien, set())
@@ -138,13 +138,17 @@ def transition_prospect(prospect_id: int, nouveau_statut: str, reason: str = '',
             return {'success': False, 'error': f'Prospect {prospect_id} introuvable'}
 
         ancien = row['statut'] or STATUT_INITIAL
-        if nouveau_statut != 'ecarte' and not is_valid_transition(ancien, nouveau_statut):
-            return {
-                'success': False,
-                'ancien_statut': ancien,
-                'statut': ancien,
-                'error': f"Transition interdite {ancien} -> {nouveau_statut}",
-            }
+        if nouveau_statut != 'ecarte':
+            if ancien == nouveau_statut:
+                # No-op idempotent : évite d'insérer des faux événements status_change en boucle
+                return {'success': True, 'ancien_statut': ancien, 'statut': ancien, 'error': None}
+            if not is_valid_transition(ancien, nouveau_statut):
+                return {
+                    'success': False,
+                    'ancien_statut': ancien,
+                    'statut': ancien,
+                    'error': f"Transition interdite {ancien} -> {nouveau_statut}",
+                }
 
         now = datetime.now().isoformat(timespec='seconds')
         try:

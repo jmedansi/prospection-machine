@@ -727,6 +727,26 @@
     color: var(--accent, #3b82f6);
 }
 
+.leads-collapse-btn-primary {
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #047857 !important;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, .25), inset 0 1px 0 rgba(255, 255, 255, .2) !important;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .15);
+}
+
+.leads-collapse-btn-primary:hover {
+    background: linear-gradient(180deg, #059669 0%, #047857 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, .35) !important;
+}
+
+.leads-collapse-btn-primary.active {
+    background: linear-gradient(180deg, #047857 0%, #065f46 100%) !important;
+    color: #ffffff !important;
+    border-color: #065f46 !important;
+}
+
 .leads-collapse-arrow {
     font-size: 10px;
     transition: transform .25s ease;

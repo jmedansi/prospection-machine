@@ -157,9 +157,22 @@ def prepare_initial(campagne_id, prospect_id, *, humanize_on=False, dry_run=Fals
 def _perform_send(campagne_id, prospect, objet, corps, *, template_id=None,
                   was_humanized=False, dry_run=False, mailbox=None,
                   expected_statut='qualifie', to_statut='en_sequence', step='initial'):
-    """Envoyer via la faÃ§ade + transition + event. Idempotent sur le statut attendu."""
-    if prospect.get('statut') != expected_statut and not dry_run:
-        return {'success': False, 'statut': 'deja_en_flux', 'message': 'statut changÃ©', 'id': None}
+    """Envoyer via la façade + transition + event. Idempotent sur le statut attendu et l'étape."""
+    with get_conn() as conn:
+        fresh = conn.execute(
+            "SELECT statut FROM prospects WHERE id = ?",
+            (prospect['id'],),
+        ).fetchone()
+        current_statut = dict(fresh).get('statut') if fresh is not None else prospect.get('statut')
+        if current_statut != expected_statut and not dry_run:
+            return {'success': False, 'statut': 'deja_en_flux', 'message': 'statut changé', 'id': None}
+
+        dupe = conn.execute(
+            "SELECT 1 FROM prospect_events WHERE prospect_id = ? AND event_type = ? AND direction = 'out' LIMIT 1",
+            (prospect['id'], step),
+        ).fetchone()
+        if dupe is not None and not dry_run:
+            return {'success': False, 'statut': 'deja_envoye', 'message': f"{step} déjà envoyé", 'id': None}
 
     # ── Threading RFC 2822 : fil de conversation dans prospect_events ──────────
     prior = threading.last_touch_event(prospect.get('events'))

@@ -359,3 +359,27 @@ def test_send_relance_bloquee_tant_que_delai_non_passe(tmp_db, fake_gateway):
     assert res3['success'] is False
     assert res3['statut'] == 'delai_non_atteint'
     assert len(fake_gateway) == 1
+
+
+def test_send_relance_bloquee_si_step_deja_emis(tmp_db, fake_gateway):
+    """Vérifie que l'idempotence SQL empêche formellement de réémettre une même étape."""
+    from envoi import sequence_engine as seq
+    from database.connection import get_conn
+    oid = _objectif('Anti-dupe')
+    pid = _prospect(oid)
+    _to_en_sequence(pid, oid)
+
+    # Simuler que relance_1 a déjà été envoyée
+    with get_conn() as c:
+        c.execute(
+            "INSERT INTO prospect_events (prospect_id, campagne_id, event_type, direction) VALUES (?, ?, 'relance_1', 'out')",
+            (pid, oid)
+        )
+        c.commit()
+
+    # Tentative d'envoi forcé sur relance_1
+    res = seq._perform_send(oid, {'id': pid, 'statut': 'en_sequence', 'email': 't@t.fr'},
+                            'Objet', 'Corps', expected_statut='en_sequence', step='relance_1')
+    assert res['success'] is False
+    assert res['statut'] == 'deja_envoye'
+    assert fake_gateway == []

@@ -1003,4 +1003,197 @@ def api_relances_batch_validate():
     raison = ('hors fenêtre horaire (9 h – 18 h, jours ouvrés)' if res.get('differee')
               else 'déjà en attente de réponse, ou hub Telegram indisponible')
     return jsonify({'success': False, 'result': res, 'callback_id': cb,
-                    'error': f'aucune demande envoyée — {raison}'}), 200
+                    'error': f'aucune demande envoyée — {raison}'}), 200
+
+
+@campagnes_bp.route('/api/v2/relances/batch-send-direct', methods=['POST'])
+def api_relances_batch_send_direct():
+    """Déclenchement direct d'un lot de relances depuis l'interface web (contourne Telegram).
+
+    Utilise le même système de job temps réel que /api/v2/listes/<id>/send :
+    Socket.IO (list_send_progress / list_send_done), barre de progression, annulation.
+    """
+    import os
+    import sqlite3
+    import threading
+    import time
+
+    data = request.get_json(silent=True) or {}
+    campagne_id = data.get('campagne_id')
+    liste_id = data.get('liste_id')
+
+    if not campagne_id or not liste_id:
+        return jsonify({'success': False, 'error': 'campagne_id et liste_id requis'}), 400
+
+    from core.orchestration import relances_due, run_relances
+    from core.relance_batch_validator import batch_callback
+    from core.config import HUB_TELEGRAM
+    from dashboard.routes.listes import _list_send_jobs
+
+    liste_id = int(liste_id)
+    campagne_id = int(campagne_id)
+
+    # Récupérer les candidats de cette liste pour avoir le total
+    due = relances_due(campagne_id, liste_id=liste_id)
+    total = len(due)
+
+    if total == 0:
+        return jsonify({'success': True, 'total': 0,
+                        'message': 'Aucune relance due pour cette liste.'}), 200
+
+    # Vérifier si un job est déjà en cours pour cette liste
+    existing = _list_send_jobs.get(liste_id)
+    if existing and existing.get('running'):
+        return jsonify({'success': False,
+                        'error': 'Un envoi est déjà en cours pour cette liste'}), 409
+
+    # Purger les verrous Telegram
+    cb = batch_callback(campagne_id, liste_id)
+    with get_conn() as conn:
+        conn.execute('DELETE FROM relance_batches WHERE campagne_id = ? AND liste_id = ?',
+                     (campagne_id, liste_id))
+        conn.commit()
+    pending_path = os.path.join(HUB_TELEGRAM, 'pending.db')
+    if os.path.exists(pending_path):
+        try:
+            with sqlite3.connect(pending_path) as hconn:
+                hconn.execute('DELETE FROM pending WHERE callback_id = ?', (cb,))
+                hconn.commit()
+        except Exception:
+            pass
+
+    # Obtenir le nom de la liste
+    with get_conn() as conn:
+        row = conn.execute('SELECT nom FROM listes WHERE id = ?', (liste_id,)).fetchone()
+    liste_nom = row['nom'] if row else f'Liste #{liste_id}'
+
+    # Créer un job temps réel identique au système listes.py
+    job_id = f'relance_batch_{liste_id}_{int(time.time() * 1000)}'
+    job = {
+        'job_id': job_id,
+        'liste_id': liste_id,
+        'liste_nom': liste_nom,
+        'campagne_id': campagne_id,
+        'running': True,
+        'cancelled': False,
+        'current': 0,
+        'total': total,
+        'sent': 0,
+        'failed': 0,
+        'percentage': 0,
+        'current_lead': None,
+        'status': 'en_cours',
+        'started_at': __import__('datetime').datetime.now().isoformat(),
+        'finished_at': None,
+        'history': [],
+    }
+    cancel_event = threading.Event()
+    job['_cancel_event'] = cancel_event
+    _list_send_jobs[liste_id] = job
+
+    def _prog_cb(cur, tot, cand, res):
+        if job.get('cancelled'):
+            raise Exception("Envoi annulé par l'utilisateur")
+        job['current'] = cur
+        job['percentage'] = round((cur / tot) * 100) if tot > 0 else 100
+        is_ok = (res.get('statut') == 'envoye' or res.get('success') is True)
+        if is_ok:
+            job['sent'] += 1
+        else:
+            job['failed'] += 1
+        lead_info = {
+            'prospect_id': cand.get('id') or cand.get('prospect_id'),
+            'nom': cand.get('nom') or cand.get('entreprise') or 'Prospect',
+            'email': cand.get('email') or '',
+            'statut': res.get('statut'),
+            'success': is_ok,
+            'message': res.get('message', ''),
+        }
+        job['current_lead'] = lead_info
+        job['history'].append(lead_info)
+        try:
+            from dashboard.app import socketio
+            if socketio:
+                socketio.emit('list_send_progress', {
+                    'job_id': job_id,
+                    'liste_id': liste_id,
+                    'liste_nom': liste_nom,
+                    'current': cur,
+                    'total': tot,
+                    'percentage': job['percentage'],
+                    'sent': job['sent'],
+                    'failed': job['failed'],
+                    'lead': lead_info,
+                })
+        except Exception:
+            pass
+
+    def _worker():
+        try:
+            run_relances(campagne_id=campagne_id, liste_id=liste_id,
+                         approval='auto', manual=True, delay_range=(2, 8),
+                         progress_callback=_prog_cb, cancel_event=cancel_event)
+            job['status'] = 'termine' if not job.get('cancelled') else 'annule'
+        except Exception as e:
+            logger.error("[batch-send-direct] erreur envoi lot %s: %s", cb, e)
+            job['status'] = 'erreur'
+            job['error'] = str(e)
+        finally:
+            job['running'] = False
+            job['finished_at'] = __import__('datetime').datetime.now().isoformat()
+            try:
+                from dashboard.app import socketio
+                if socketio:
+                    socketio.emit('list_send_done', {
+                        'job_id': job_id,
+                        'liste_id': liste_id,
+                        'liste_nom': liste_nom,
+                        'total': job['total'],
+                        'sent': job['sent'],
+                        'failed': job['failed'],
+                        'status': job['status'],
+                    })
+            except Exception:
+                pass
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+    return jsonify({
+        'success': True,
+        'job_id': job_id,
+        'total': total,
+        'liste_nom': liste_nom,
+        'message': f'Envoi de {total} relance(s) lancé — suivi en temps réel dans le panneau Suivi.'
+    })
+
+
+@campagnes_bp.route('/api/v2/relances/batch-reset-lock', methods=['POST'])
+def api_relances_batch_reset_lock():
+    """Réinitialise les verrous Telegram bloqués pour un lot."""
+    import os
+    import sqlite3
+    data = request.get_json(silent=True) or {}
+    campagne_id = data.get('campagne_id')
+    liste_id = data.get('liste_id')
+
+    if not campagne_id or not liste_id:
+        return jsonify({'success': False, 'error': 'campagne_id et liste_id requis'}), 400
+
+    from core.relance_batch_validator import batch_callback
+    from core.config import HUB_TELEGRAM
+
+    cb = batch_callback(campagne_id, liste_id)
+    with get_conn() as conn:
+        conn.execute('DELETE FROM relance_batches WHERE campagne_id = ? AND liste_id = ?', (campagne_id, liste_id))
+        conn.commit()
+
+    pending_path = os.path.join(HUB_TELEGRAM, 'pending.db')
+    if os.path.exists(pending_path):
+        try:
+            with sqlite3.connect(pending_path) as hconn:
+                hconn.execute('DELETE FROM pending WHERE callback_id = ?', (cb,))
+                hconn.commit()
+        except Exception:
+            pass
+
+    return jsonify({'success': True, 'message': 'Verrou réinitialisé avec succès'})

@@ -305,7 +305,8 @@ def test_resend_transmet_headers_threading(tmp_db, monkeypatch):
                                     in_reply_to='<parent@x.fr>',
                                     references='<a@x.fr> <parent@x.fr>')
     assert res['success']
-    headers = {h['name']: h['value'] for h in captured['payload']['headers']}
+    headers = captured['payload']['headers']
+    assert isinstance(headers, dict)
     assert headers['In-Reply-To'] == '<parent@x.fr>'
     assert headers['References'] == '<a@x.fr> <parent@x.fr>'
     assert headers['Message-ID'].startswith('<')

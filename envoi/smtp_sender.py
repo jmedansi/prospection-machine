@@ -142,6 +142,11 @@ def send_prospecting_email_smtp(
             'erreur': None,
         }
 
+    if not os.getenv('ALLOW_LIVE_EMAILS', '').strip().lower() in {'1', 'true', 'yes', 'on'}:
+        msg = 'Envoi de mail réel désactivé par sécurité. Définir ALLOW_LIVE_EMAILS=1 pour l’autoriser explicitement.'
+        logger.error(msg)
+        return {'success': False, 'statut': 'envoi_bloque', 'message_id': None, 'erreur': msg}
+
     smtp_host = host or os.getenv('SMTP_HOST', '').strip()
     if not smtp_host:
         # Fallback sur la configuration IMAP

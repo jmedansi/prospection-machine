@@ -15,6 +15,11 @@ import core.telegram_adapter as ta
 
 
 @pytest.fixture(autouse=True)
+def _test_env(monkeypatch):
+    monkeypatch.setenv('ALLOW_LIVE_EMAILS', '1')
+
+
+@pytest.fixture(autouse=True)
 def _stub_telegram_hub(monkeypatch):
     store = {
         'requests': [],        # (outil, preview, callback_id, timeout_minutes)

@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 _BATCH_HIGH_LIMIT = 500  # un lot validé lance TOUTE la liste (pas de plafond de 20)
 _TIMEOUT_MINUTES = 2880  # 48h, cohérent avec la validation par prospect
 _MAX_TENTATIVES = 3      # échecs techniques de suite avant de clore le lot
-_SENDING_ORPHELIN_MIN = 10  # un lot 'sending' plus vieux que ça = process mort
+_SENDING_ORPHELIN_MIN = 60  # un lot 'sending' plus vieux que ça = process mort
 
 
 def _md(text) -> str:

@@ -300,7 +300,7 @@ def relances_due(campagne_id: int | None = None, now=None, *,
         params.extend(int(pid) for pid in prospect_ids)
     with get_conn() as conn:
         rows = conn.execute(
-            f"""SELECT p.id, p.statut, l.id AS liste_id, l.nom AS liste_nom,
+            f"""SELECT p.id, p.nom, p.prenom, p.email, p.statut, l.id AS liste_id, l.nom AS liste_nom,
                        MAX(CASE WHEN ev.event_type IN ('initial','relance_1','relance_2','relance_3')
                                 THEN ev.created_at END) AS last_touch_at
                 FROM prospects p
@@ -331,9 +331,12 @@ def relances_due(campagne_id: int | None = None, now=None, *,
         delai = int(template.get('delai_jours') or 0)
         effective = add_business_days(last_dt, delai)
         if effective.date() <= now.date():
+            nom_complet = (f"{r['prenom'] or ''} {r['nom'] or ''}").strip()
             due.append({'id': r['id'], 'statut': r['statut'], 'last_touch_at': last,
                         'position': position, 'liste_id': r['liste_id'],
-                        'liste_nom': r['liste_nom']})
+                        'liste_nom': r['liste_nom'],
+                        'nom': nom_complet or 'Prospect',
+                        'email': r['email'] or ''})
     return due
 
 

@@ -2166,12 +2166,14 @@ function setLeadsView(view) {
 
 function ulToggleSection(section) {
     const el = document.getElementById(`ul-section-${section}`);
-    const btn = event.currentTarget;
+    const btn = (typeof event !== 'undefined' && event && event.currentTarget) || document.getElementById(`leads-${section}-btn`);
     if (!el) return;
     const isOpen = el.classList.toggle('open');
-    btn.classList.toggle('active', isOpen);
-    const arrow = btn.querySelector('.leads-collapse-arrow');
-    if (arrow) arrow.textContent = isOpen ? '▴' : '▾';
+    if (btn) {
+        btn.classList.toggle('active', isOpen);
+        const arrow = btn.querySelector('.leads-collapse-arrow');
+        if (arrow) arrow.textContent = isOpen ? '▴' : '▾';
+    }
 }
 
 function renderKanban(leads) {

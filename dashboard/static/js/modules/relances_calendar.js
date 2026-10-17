@@ -500,16 +500,42 @@ window.RelancesCalendarModule = (function () {
             // Action validation Telegram si le lot est dû
             if (b.status === 'due') {
                 var btnTg = document.createElement('button');
-                btnTg.className = 'btn primary sm';
+                btnTg.className = 'btn sm';
                 btnTg.style.fontSize = '11px';
                 btnTg.style.padding = '3px 8px';
                 btnTg.style.background = '#f59e0b';
                 btnTg.style.color = '#000';
-                btnTg.textContent = '📲 Déclencher Telegram';
+                btnTg.textContent = '📲 Telegram';
+                btnTg.title = "Demander l'approbation sur Telegram";
                 btnTg.onclick = function () {
                     triggerTelegramValidation(b.campagne_id, b.liste_id, b.liste_nom);
                 };
                 btnRow.appendChild(btnTg);
+
+                var btnSendDirect = document.createElement('button');
+                btnSendDirect.className = 'btn primary sm';
+                btnSendDirect.style.fontSize = '11px';
+                btnSendDirect.style.padding = '3px 8px';
+                btnSendDirect.style.background = '#10b981';
+                btnSendDirect.style.color = '#fff';
+                btnSendDirect.textContent = '🚀 Envoyer (' + b.count + ')';
+                btnSendDirect.title = "Envoyer directement sans attendre Telegram";
+                btnSendDirect.onclick = function () {
+                    triggerDirectSend(b.campagne_id, b.liste_id, b.liste_nom, b.count);
+                };
+                btnRow.appendChild(btnSendDirect);
+
+                var btnReset = document.createElement('button');
+                btnReset.className = 'btn sm';
+                btnReset.style.fontSize = '11px';
+                btnReset.style.padding = '3px 8px';
+                btnReset.style.border = '1px solid var(--border)';
+                btnReset.textContent = '🔄 Débloquer';
+                btnReset.title = "Réinitialiser le verrou de ce lot";
+                btnReset.onclick = function () {
+                    triggerResetLock(b.campagne_id, b.liste_id, b.liste_nom);
+                };
+                btnRow.appendChild(btnReset);
             }
 
             card.appendChild(btnRow);
@@ -615,6 +641,203 @@ window.RelancesCalendarModule = (function () {
         })
         .catch(function (err) {
             console.error('[triggerTelegramValidation]', err);
+            if (typeof showToast === 'function') showToast('Erreur de communication', 'error');
+        });
+    }
+
+    async function triggerDirectSend(campagneId, listeId, listeNom, count) {
+        var confirmFn = (window.UI && window.UI.confirm) || window.showConfirm;
+        var ok = await confirmFn(
+            'Confirmer l\'envoi DIRECT et immédiat de ' + count + ' relance(s) pour « ' + listeNom + ' » ?\n\n' +
+            'Cette action contourne Telegram et déclenche l\'envoi sécurisé des emails directement depuis le cockpit.',
+            { title: '🚀 Envoi direct de relances', confirmText: 'Envoyer maintenant' }
+        );
+        if (!ok) return;
+
+        var toast = (typeof showToast === 'function') ? showToast : function () {};
+
+        // Afficher un bandeau de progression autonome immédiatement
+        _showCalBatchProgress(listeNom, 0, count);
+
+        fetch('/api/v2/relances/batch-send-direct', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campagne_id: campagneId, liste_id: listeId })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.success && data.job_id) {
+                toast('🚀 Envoi lancé : ' + (data.total || count) + ' relance(s) — Suivi en temps réel', 'info');
+
+                // 1. Si ListesModule est accessible, utiliser son panneau de progression natif
+                if (window.ListesModule && typeof window.ListesModule._startProgressTracking === 'function') {
+                    window.ListesModule._startProgressTracking(listeId, data.job_id, data.total || count);
+                    // Naviguer vers l'onglet Listes pour voir la barre
+                    var tabListes = document.querySelector('[data-tab="listes"], [data-section="listes"], #tab-listes');
+                    if (tabListes && typeof tabListes.click === 'function') tabListes.click();
+                }
+
+                // 2. Polling local pour mettre à jour le bandeau calendrier + rafraîchir à la fin
+                _pollCalBatchProgress(listeId, data.job_id, data.total || count, listeNom);
+
+            } else if (!data.success) {
+                _hideCalBatchProgress();
+                toast('⚠️ ' + (data.error || 'Erreur lors de l\'envoi'), 'error');
+            } else {
+                _hideCalBatchProgress();
+                toast('ℹ️ ' + (data.message || 'Aucune relance à envoyer'), 'info');
+            }
+        })
+        .catch(function (err) {
+            _hideCalBatchProgress();
+            console.error('[triggerDirectSend]', err);
+            toast('Erreur de communication', 'error');
+        });
+    }
+
+    // ── Bandeau de progression autonome dans le calendrier ──────────────────
+    var _calBatchPollTimer = null;
+
+    function _showCalBatchProgress(listeNom, current, total) {
+        var existing = document.getElementById('cal-batch-progress-banner');
+        if (!existing) {
+            existing = document.createElement('div');
+            existing.id = 'cal-batch-progress-banner';
+            existing.style.cssText = [
+                'position:fixed', 'bottom:24px', 'right:24px', 'z-index:9999',
+                'background:var(--surface2,#1e293b)', 'border:1px solid var(--border,#334155)',
+                'border-radius:12px', 'padding:16px 20px', 'min-width:320px', 'max-width:420px',
+                'box-shadow:0 8px 32px rgba(0,0,0,.4)', 'color:var(--ink,#e2e8f0)',
+                'font-family:inherit', 'font-size:13px', 'transition:opacity .3s'
+            ].join(';');
+            existing.innerHTML = [
+                '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">',
+                '  <span style="font-size:20px">📤</span>',
+                '  <div style="flex:1">',
+                '    <div id="cal-bp-title" style="font-weight:700;color:var(--accent,#38bdf8)"></div>',
+                '    <div id="cal-bp-sub" style="font-size:11px;color:var(--ink3,#94a3b8);margin-top:2px"></div>',
+                '  </div>',
+                '</div>',
+                '<div style="background:var(--surface3,#0f172a);border-radius:6px;overflow:hidden;height:6px;margin-bottom:8px">',
+                '  <div id="cal-bp-fill" style="height:100%;background:linear-gradient(90deg,#38bdf8,#818cf8);width:0%;transition:width .4s;border-radius:6px"></div>',
+                '</div>',
+                '<div id="cal-bp-lead" style="font-size:11px;color:var(--ink2,#cbd5e1);min-height:16px"></div>',
+            ].join('');
+            document.body.appendChild(existing);
+        }
+        var title = document.getElementById('cal-bp-title');
+        var sub   = document.getElementById('cal-bp-sub');
+        var fill  = document.getElementById('cal-bp-fill');
+        var lead  = document.getElementById('cal-bp-lead');
+        if (title) title.textContent = 'Envoi en cours — ' + listeNom;
+        if (sub)   sub.textContent   = '0 / ' + total + ' relances';
+        if (fill)  fill.style.width  = '0%';
+        if (lead)  lead.textContent  = 'Démarrage…';
+        existing.style.opacity = '1';
+        existing.style.display = 'block';
+    }
+
+    function _hideCalBatchProgress() {
+        if (_calBatchPollTimer) { clearInterval(_calBatchPollTimer); _calBatchPollTimer = null; }
+        var el = document.getElementById('cal-batch-progress-banner');
+        if (el) {
+            el.style.opacity = '0';
+            setTimeout(function () { if (el) el.remove(); }, 400);
+        }
+    }
+
+    function _updateCalBatchProgress(job) {
+        if (!job) return;
+        var fill  = document.getElementById('cal-bp-fill');
+        var sub   = document.getElementById('cal-bp-sub');
+        var lead  = document.getElementById('cal-bp-lead');
+        var title = document.getElementById('cal-bp-title');
+        var pct = job.percentage || 0;
+        if (fill) fill.style.width = pct + '%';
+        if (sub)  sub.textContent = (job.current || 0) + ' / ' + (job.total || 0) + ' relances — ' + (job.sent || 0) + ' envoyées';
+        if (job.current_lead && lead) {
+            var l = job.current_lead;
+            lead.textContent = (l.success ? '✅' : '⚠️') + ' ' + (l.nom || 'Prospect') + ' <' + (l.email || '') + '>';
+        }
+        if (!job.running) {
+            var toast = (typeof showToast === 'function') ? showToast : function () {};
+            if (job.status === 'termine') {
+                if (title) title.textContent = '✅ Envoi terminé';
+                if (lead) lead.textContent = 'Bilan : ' + (job.sent || 0) + ' envoyé(s), ' + (job.failed || 0) + ' erreur(s)';
+                toast('✅ Envoi terminé : ' + (job.sent || 0) + ' relance(s) envoyée(s)', 'success');
+            } else if (job.status === 'annule') {
+                if (title) title.textContent = '⏹️ Envoi interrompu';
+                toast('Envoi interrompu', 'warning');
+            } else {
+                if (title) title.textContent = '❌ Erreur d\'envoi';
+                toast(job.error || 'Erreur lors de l\'envoi des relances', 'error');
+            }
+            setTimeout(_hideCalBatchProgress, 8000);
+            loadData(); // Rafraîchir le calendrier
+        }
+    }
+
+    function _pollCalBatchProgress(listeId, jobId, total, listeNom) {
+        // Écoute Socket.IO si disponible (mise à jour instantanée)
+        var sock = window.socket || (typeof io !== 'undefined' ? window.socketio : null);
+        if (sock && typeof sock.on === 'function') {
+            sock.on('list_send_progress', function (payload) {
+                if (payload && payload.liste_id === listeId) {
+                    _updateCalBatchProgress(Object.assign({ running: true }, payload,
+                        { current_lead: payload.lead || null }));
+                }
+            });
+            sock.on('list_send_done', function (payload) {
+                if (payload && payload.liste_id === listeId) {
+                    _updateCalBatchProgress({ running: false, status: payload.status,
+                        sent: payload.sent, failed: payload.failed, total: payload.total,
+                        current: payload.total, percentage: 100 });
+                }
+            });
+        }
+
+        // Polling de secours toutes les 1,5 s
+        if (_calBatchPollTimer) clearInterval(_calBatchPollTimer);
+        _calBatchPollTimer = setInterval(function () {
+            fetch('/api/v2/listes/' + listeId + '/send/status')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.job) _updateCalBatchProgress(data.job);
+                    if (!data.running) {
+                        clearInterval(_calBatchPollTimer);
+                        _calBatchPollTimer = null;
+                    }
+                })
+                .catch(function () {});
+        }, 1500);
+    }
+
+    async function triggerResetLock(campagneId, listeId, listeNom) {
+        var confirmFn = (window.UI && window.UI.confirm) || window.showConfirm;
+        var ok = await confirmFn(
+            'Réinitialiser le verrou de « ' + listeNom + ' » ?\n\n' +
+            'Cela débloquera le lot si une notification Telegram était restée figée ou en attente.',
+            { title: '🔄 Débloquer le lot', confirmText: 'Débloquer' }
+        );
+        if (!ok) return;
+
+        fetch('/api/v2/relances/batch-reset-lock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campagne_id: campagneId, liste_id: listeId })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            var toast = (typeof showToast === 'function') ? showToast : function () {};
+            if (data.success) {
+                toast('✅ Verrou réinitialisé pour ' + listeNom, 'success');
+                loadData();
+            } else {
+                toast('⚠️ ' + (data.error || 'Échec'), 'error');
+            }
+        })
+        .catch(function (err) {
+            console.error('[triggerResetLock]', err);
             if (typeof showToast === 'function') showToast('Erreur de communication', 'error');
         });
     }

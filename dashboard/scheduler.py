@@ -21,6 +21,194 @@ from core.pipeline_registry import registry
 
 logger = logging.getLogger(__name__)
 _scheduler = None
+_scheduler_lock_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.scheduler.lock')
+
+
+_LOCK_RELEASED = False
+_LOCK_HOOK_INSTALLED = False
+
+
+def _lock_raw():
+    """Contenu brut du fichier lock, ou None (absent/illisible)."""
+    try:
+        with open(_scheduler_lock_path, 'r', encoding='utf-8') as f:
+            return (f.read() or '').strip()
+    except OSError:
+        return None
+
+
+def _pid_running(pid) -> bool:
+    """Vrai si `pid` est un processus encore vivant (STILL_ACTIVE)."""
+    if not pid or pid <= 0:
+        return False
+    try:
+        import ctypes
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        STILL_ACTIVE = 259
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, int(pid))
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True          # indécidable → on reste prudent (0 risk de 2 schedulers)
+            return code.value == STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    except Exception:
+        return True                  # prudent : mieux vaut refuser que d'en démarrer 2
+
+
+def _pid_start_key(pid):
+    """Heure de CRÉATION du processus (FILETIME) ou None.
+
+    Windows RÉEMPLOIE massivement les PID : un simple PID vivant ne prouve pas
+    que c'est NOTRE scheduler. On consigne donc (pid|création) pour lever le doute.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, int(pid))
+        if not handle:
+            return None
+        try:
+            creation, sortie, kernel, user = (wintypes.FILETIME(), wintypes.FILETIME(),
+                                              wintypes.FILETIME(), wintypes.FILETIME())
+            ok = kernel32.GetProcessTimes(handle, ctypes.byref(creation), ctypes.byref(sortie),
+                                          ctypes.byref(kernel), ctypes.byref(user))
+            if not ok:
+                return None
+            return (creation.dwHighDateTime << 32) | creation.dwLowDateTime
+        finally:
+            kernel32.CloseHandle(handle)
+    except Exception:
+        return None
+
+
+def _lock_owner_alive():
+    """Interprète le fichier lock.
+
+    True  → détenu par un scheduler EN COURS DE VIE (on n'y touche pas) ;
+    False → absent, orphelin (PID mort), PID réemployé ou contenu corrompu
+            (=> on peut reprendre) ;
+    True  en dernier recours si l'état est indécidable (prudence : 0 scheduler
+            vaut mieux que 2).
+    """
+    brut = _lock_raw()
+    if brut is None:
+        return False                       # pas de lock du tout
+    if not brut:
+        return False                       # fichier vide → corrompu, pas un lock valide
+    if '|' in brut:
+        try:
+            pid_txt, cle_txt = brut.split('|', 1)
+            pid, cle = int(pid_txt), int(cle_txt)
+        except ValueError:
+            return False                   # corrompu → on reprend
+        if not _pid_running(pid):
+            return False                   # ORPHELIN : processus mort
+        return _pid_start_key(pid) == cle  # False si le PID a été réemployé
+    try:
+        return _pid_running(int(brut))     # format ancien (PID seul, rétro-compat)
+    except ValueError:
+        return False                       # non numérique → corrompu → on reprend
+
+
+def _write_lock():
+    """Crée le lock de façon ATOMIQUE (O_EXCL) avec notre identité (pid|création)."""
+    cle = _pid_start_key(os.getpid())
+    contenu = f"{os.getpid()}|{cle}" if cle is not None else str(os.getpid())
+    fd = os.open(_scheduler_lock_path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        f.write(contenu)
+
+
+def _acquire_scheduler_lock() -> bool:
+    """Empêche qu'un second APScheduler démarre simultanément sur la même base.
+
+    CORRECTIF 2026-10-15 — le lock n'était JAMAIS libéré : tout arrêt brutal
+    (redémarrage machine, `taskkill`, plantage) laissait le fichier derrière et
+    AUCUN scheduler ne pouvait plus jamais démarrer. Constat : `.scheduler.lock`
+    tenait le PID 3536 (mort), les deux processus relancés à 06h46 ont échoué à
+    le prendre → 59 relances bloquées jusqu'à 21 jours.
+
+    Maintenant : un lock dont le propriétaire n'est plus vivant est un lock
+    ORPHELIN que l'on reprend. `O_EXCL` reste l'arbitre final — si un pair
+    recrée le fichier entre-temps, on lui cède la main (deuxième passage).
+    """
+    for tentative in (0, 1):
+        try:
+            _write_lock()
+            return True
+        except FileExistsError:
+            if _lock_owner_alive():
+                logger.info("[scheduler] lock détenu par un processus vivant — "
+                            "scheduler déjà actif, démarrage annulé")
+                return False
+            if tentative:
+                logger.warning("[scheduler] lock repris entre-temps par un pair — "
+                               "démarrage du scheduler annulé")
+                return False
+
+            brut = _lock_raw()
+            logger.warning("[scheduler] lock orphelin (%r) — reprise : %s",
+                           brut, _scheduler_lock_path)
+            # Ne supprimer QUE si le contenu est toujours celui qu'on vient de juger
+            # invalide : un pair aurait pu écrire le sien entre-temps.
+            if _lock_raw() != brut:
+                continue
+            try:
+                os.remove(_scheduler_lock_path)
+            except FileNotFoundError:
+                continue
+            except OSError as e:
+                logger.error("[scheduler] reprise du lock impossible (%s): %s",
+                             _scheduler_lock_path, e)
+                return False
+        except Exception as e:
+            logger.error("[scheduler] impossible d'acquérir le lock %s: %s",
+                         _scheduler_lock_path, e)
+            return False
+    return False
+
+
+def _release_scheduler_lock():
+    """Relâche le lock UNIQUEMENT s'il nous appartient — jamais celui d'un pair."""
+    global _LOCK_RELEASED
+    if _LOCK_RELEASED:
+        return
+    try:
+        if not os.path.exists(_scheduler_lock_path):
+            _LOCK_RELEASED = True
+            return
+        brut = _lock_raw()
+        try:
+            pid = int((brut or '').split('|', 1)[0])
+        except ValueError:
+            return                          # contenu d'un tiers : on ne touche pas
+        if pid != os.getpid():
+            return                          # lock d'un autre processus : on ne touche pas
+        os.remove(_scheduler_lock_path)
+        _LOCK_RELEASED = True
+    except Exception as e:
+        logger.warning("[scheduler] impossible de relâcher le lock %s: %s",
+                       _scheduler_lock_path, e)
+
+
+def _install_lock_release_hook():
+    """Libère le lock à la fin du process (arrêt propre, Ctrl+C, `atexit`)."""
+    global _LOCK_HOOK_INSTALLED
+    if _LOCK_HOOK_INSTALLED:
+        return
+    try:
+        import atexit
+        atexit.register(_release_scheduler_lock)
+        _LOCK_HOOK_INSTALLED = True
+    except Exception as e:
+        logger.warning("[scheduler] hook de libération du lock non installé: %s", e)
 
 # --- Logique de Log ---
 def _log_job(job_id: str):
@@ -150,8 +338,14 @@ def run_startup_catchup():
 
 def init_scheduler(_app=None):
     global _scheduler
-    if _scheduler and _scheduler.running: return _scheduler
+    if _scheduler and _scheduler.running:
+        return _scheduler
 
+    if not _acquire_scheduler_lock():
+        logger.warning("[scheduler] init_scheduler annulé — un autre scheduler est déjà actif sur ce dépôt")
+        return None
+
+    _install_lock_release_hook()
     _scheduler = BackgroundScheduler(timezone='Europe/Paris')
 
     # Core Jobs (le legacy fill_check/sequence_relances est décommissionné : tables purgées)
@@ -384,7 +578,7 @@ def init_scheduler(_app=None):
     
     # Background loops
     # from dashboard.pipeline.scraper_loop import start_background_scraper
-    # start_background_scraper()
+
 
     threading.Thread(target=run_startup_catchup, daemon=True).start()
     return _scheduler

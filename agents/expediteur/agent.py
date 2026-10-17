@@ -74,6 +74,12 @@ class ExpediteurAgent(BaseAgent):
         from database import prospects as prospects_repo
         from envoi import sequence_engine, gateway
 
+        if not gateway.live_email_allowed():
+            return self.fail(
+                'Envoi réel désactivé par sécurité. Définir ALLOW_LIVE_EMAILS=1 pour autoriser un envoi manuel explicite.',
+                error_type='SendBlocked',
+            )
+
         prospect = prospects_repo.get_prospect(lead_id)
         if not prospect:
             return self.fail(f"Prospect {lead_id} introuvable", error_type="NotFoundError")

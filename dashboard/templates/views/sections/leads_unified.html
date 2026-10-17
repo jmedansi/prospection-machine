@@ -28,14 +28,14 @@
             <input id="ul-search" type="search" placeholder="Rechercher…" oninput="unifiedLeadsLoad(1)"
                 class="leads-search">
         </div>
-        <button class="leads-collapse-btn" onclick="ulToggleSection('actions')">
+        <button class="leads-collapse-btn leads-collapse-btn-primary" id="leads-actions-btn" onclick="ulToggleSection('actions')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>
             Actions
             <span class="leads-collapse-arrow">▾</span>
         </button>
-        <button class="leads-collapse-btn" onclick="ulToggleSection('filters')">
+        <button class="leads-collapse-btn leads-collapse-btn-primary" id="leads-filtres-btn" onclick="ulToggleSection('filters')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
@@ -62,7 +62,7 @@
     </span>
 </div>
 
-<!-- Panneau Actions (caché par défaut) -->
+<!-- Panneau Actions (rétractable) -->
 <div id="ul-section-actions" class="leads-section-collapse">
     <div class="leads-actions">
         <button class="leads-btn-primary" onclick="nav('sources', document.querySelector('[data-nav=sources]'))"
@@ -130,7 +130,7 @@
     </div>
 </div>
 
-<!-- Panneau Filtres (caché par défaut) -->
+<!-- Panneau Filtres (rétractable) -->
 <div id="ul-section-filters" class="leads-section-collapse">
     <div class="leads-filters">
         <select id="ul-filter-list" onchange="unifiedLeadsLoad(1)" class="leads-filter-select">
