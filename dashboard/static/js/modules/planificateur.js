@@ -76,6 +76,7 @@ async function addPlannedCampaign() {
     const leads   = parseInt(document.getElementById('plan-leads')?.value)  || 50;
     const date    = document.getElementById('plan-date')?.value            || '';
     const heure   = document.getElementById('plan-heure')?.value           || '09:00';
+    const source  = document.getElementById('plan-source')?.value          || 'maps';
 
     if (!keyword) { if (typeof showToast === 'function') showToast('Saisir un mot-clé', 'warning'); return; }
     if (!city)    { if (typeof showToast === 'function') showToast('Saisir une ville', 'warning'); return; }
@@ -85,7 +86,15 @@ async function addPlannedCampaign() {
         const r = await fetch('/api/planning', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sector, keyword, city, leads, date, heure, statut: 'planned' })
+            body: JSON.stringify({
+                secteur: sector,
+                keyword,
+                city,
+                limit_leads: leads,
+                date_planifiee: date,
+                heure,
+                source
+            })
         });
         const d = await r.json();
         if (d.error) {

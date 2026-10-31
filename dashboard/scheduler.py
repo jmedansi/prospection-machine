@@ -247,11 +247,25 @@ def get_emails_sent_today() -> int:
 
 # --- Jobs Core ---
 def run_planned_scrapings():
-    today = date.today().isoformat()
+    now = datetime.now(_scheduler.timezone) if _scheduler and _scheduler.timezone else datetime.now()
+    today = now.date().isoformat()
+    current_time = datetime.strptime(now.strftime('%H:%M'), '%H:%M').time()
     try:
         with get_conn() as conn:
-            campaigns = conn.execute("SELECT * FROM planned_campaigns WHERE date_planifiee=? AND statut='planned'", (today,)).fetchall()
+            campaigns = [dict(c) for c in conn.execute(
+                "SELECT * FROM planned_campaigns WHERE date_planifiee=? AND statut='planned'",
+                (today,),
+            ).fetchall()]
         for c in campaigns:
+            try:
+                scheduled_time = datetime.strptime(c.get('heure') or '09:00', '%H:%M').time()
+            except (TypeError, ValueError):
+                logger.error("[SCHEDULER] planned_scrapings: heure invalide campagne #%s: %r",
+                             c['id'], c.get('heure'))
+                continue
+            if scheduled_time > current_time:
+                continue
+
             campaign_name = f"{c['secteur']} {c['city']} {today}"
             limit = c.get('limit_leads', 50)
             source = c.get('source', 'maps')
@@ -347,6 +361,10 @@ def init_scheduler(_app=None):
 
     _install_lock_release_hook()
     _scheduler = BackgroundScheduler(timezone='Europe/Paris')
+
+    # Campagnes planifiées : lancer les campagnes du jour à l'heure prévue.
+    _scheduler.add_job(run_planned_scrapings, IntervalTrigger(minutes=1),
+                       id='planned_scrapings', max_instances=1, coalesce=True)
 
     # Core Jobs (le legacy fill_check/sequence_relances est décommissionné : tables purgées)
 

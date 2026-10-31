@@ -137,7 +137,7 @@ def _reset_sending_orphelins():
     try:
         cur = conn.execute(
             "UPDATE relance_batches SET statut='pending', updated_at=datetime('now') "
-            "WHERE statut='sending' AND updated_at < datetime('now', ?)",
+            "WHERE statut='sending' AND updated_at <= datetime('now', ?)",
             (f"-{_SENDING_ORPHELIN_MIN} minutes",))
         n = cur.rowcount
         if n:
